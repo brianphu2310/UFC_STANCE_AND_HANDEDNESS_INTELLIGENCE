@@ -26,148 +26,293 @@ to me
 <img width="797" height="399" alt="image" src="https://github.com/user-attachments/assets/fa6c53a0-4083-437b-922e-9eb1c0632b14" />
 <img width="554" height="403" alt="image" src="https://github.com/user-attachments/assets/b864161b-f465-4ebf-96d7-16d525b3dbd6" />
 
+# UFC Stance & Handedness Intelligence
+### *An end-to-end data project that started on the sparring mats at UFC Gym Townhall, Sydney*
 
+[![Streamlit App](https://img.shields.io/badge/🥊_Streamlit_App-Live-00C7A3?style=for-the-badge&logo=streamlit&logoColor=white)](https://36kgywkvnlkwdy46v7tukw.streamlit.app)
+[![Tableau](https://img.shields.io/badge/📊_Tableau_Dashboard-Live-9B59EF?style=for-the-badge&logo=tableau&logoColor=white)](https://public.tableau.com/app/profile/brian.ma5935/viz/UFCRECOMENDATIONENGINE/Dashboard1)
+[![Colab](https://img.shields.io/badge/📓_Full_Analysis-Google_Colab-F9AB00?style=for-the-badge&logo=googlecolab&logoColor=white)](https://colab.research.google.com/drive/1zp4jVJM39wCb73EvXKWwPtgzM1n6mwWz)
+[![License: MIT](https://img.shields.io/badge/License-MIT-gray?style=for-the-badge)](LICENSE)
 
-
-
-
------
+---
 
 ## The Problem I Was Actually Trying to Solve
 
-I train Kickboxing and Muay Thai at UFC Gym Townhall in Sydney — not professionally, just because I can’t stop. One sparring session, I stepped on my partner’s foot mid-combination. Not clumsiness. We were in mirror-image stances and our footwork geometries simply collided.
+I train Kickboxing and Muay Thai at UFC Gym Townhall in Sydney — not professionally, just because I can't stop. One sparring session, I stepped on my partner's foot mid-combination. Not clumsiness — we were in **mirror-image stances** and our footwork geometries simply collided.
 
-That small collision surfaced a real question: **does stance actually change a fighter’s win probability, or is it just a training inconvenience?**
+That small collision surfaced a real question: **does stance actually change a fighter's win probability, or is it just a training inconvenience?**
 
-Then I noticed something stranger about myself. I’m Southpaw (right foot forward). Conventional wisdom says a Southpaw’s nuclear weapon is the rear left cross — the weapon Conor McGregor, Alex Pereira, and Israel Adesanya all built their careers on. But my most dangerous punch is my **Jab**. My lead-hand jab has stunned training partners and controls distance in ways my rear cross doesn’t.
+Then I noticed something stranger about myself. I'm Southpaw (right foot forward). Conventional wisdom says a Southpaw's nuclear weapon is the rear left cross — the weapon Conor McGregor, Alex Pereira, and Israel Adesanya all built their careers on. But my most dangerous punch is my **jab**. My lead-hand jab has stunned training partners and controls distance in ways my rear cross doesn't.
 
-This created a testable hypothesis: *Right-handed fighters who adopt a Southpaw stance might fight differently — and possibly more effectively — than left-handed Southpaws, because their dominant hand is now the “unexpected” lead hand.*
+This created a testable hypothesis:
+
+> *Right-handed fighters who adopt a Southpaw stance might fight differently — and possibly more effectively — than left-handed Southpaws, because their dominant hand is now the "unexpected" lead hand.*
 
 I stopped speculating and built a data pipeline to find out.
 
------
+---
 
-## What This Project Does
+## 🎯 What This Project Solves
 
-This is a **full-stack analytics project** spanning web scraping, statistical testing, machine learning, database engineering, and business intelligence — all answering a single, well-defined question.
+### Problem 1: Fighters don't know who to study
+
+| Before | After |
+|--------|-------|
+| Beginners watch random UFC fights with no direction | App recommends **top 5 similar fighters** based on your physical stats |
+| "Who fights like me?" takes months to figure out | **30 seconds** to get personalized recommendations |
+| No data on which fighters match your stance + handedness combo | KNN algorithm finds **statistically similar fighters** |
+
+**Solution:** Streamlit app with KNN + MinMaxScaler → finds your fighter twin.
+
+---
+
+### Problem 2: Coaches can't prove stance advantages with data
+
+| Before | After |
+|--------|-------|
+| "Southpaw advantage" is just gym talk, no evidence | **Statistical tests** (T-Test, p-value, Cohen's d) show the real effect |
+| No one knows if the advantage is stance OR handedness | **Interaction analysis** (stance × handedness) isolates the real variable |
+| Decisions based on anecdotes, not data | **Evidence-based** coaching decisions |
+
+**Solution:** Statistical analysis in Python (SciPy) + Tableau dashboard.
+
+---
+
+### Problem 3: Trainees waste time watching wrong fighters
+
+| Before | After |
+|--------|-------|
+| A right-handed Southpaw watches Orthodox fighters → wrong techniques | App recommends **right-handed Southpaw** fighters specifically |
+| No filter by weight class | **Weight class filter** in Tableau dashboard |
+| "What should I learn from this fighter?" → no guidance | **Specific tips** for each recommended fighter |
+
+**Solution:** Fighter recommender + training tips + geographic map.
+
+---
+
+### Problem 4: No one knows if the "rare style" actually wins
+
+| Before | After |
+|--------|-------|
+| Everyone says Southpaw is rare, but does it help? | **Quantified:** 23/117 fighters (19.6%) are right-handed Southpaws |
+| "Right-handed Southpaw might be good" — no numbers | **74.3% mean win rate** vs 70.2% for Orthodox+Right |
+| Coaches can't decide which stance to teach | **Cohen's d = 0.43** (small-medium practical advantage) |
+
+**Solution:** Effect size measurement + win rate analysis by group.
+
+---
+
+## 🕸️ Data Collection — Scraping from UFCSTATS.com
+
+**File:** `UFC_DATA_SCRAPING.ipynb`
+
+All data comes from real UFC fighter profiles. No synthetic data. No third-party datasets.
+
+```python
+for fighter_url in fighter_links:
+    response = requests.get(fighter_url)
+    soup = BeautifulSoup(response.content, 'html.parser')
+
+    name       = soup.find('span', class_='fighter-name').text
+    stance     = soup.find('div', string='Stance').find_next('div').text
+    handedness = soup.find('div', string='Handedness').find_next('div').text
+    win_rate   = calculate_win_rate(soup)
+
+    fighters.append({...})
+```
+
+| Data point | Source |
+|---|---|
+| Fighter name | Profile header |
+| Height | Physical attributes |
+| Reach | Physical attributes |
+| Weight class | Division metadata |
+| Stance (Orthodox / Southpaw) | Fighting style section |
+| Handedness (Right / Left) | Fighting style section |
+| Wins / Losses | Career record |
+| Win rate % | Calculated: Wins ÷ (Wins + Losses) |
+
+**Raw output:** `UFC_Data_Raw.xlsx` — 117 fighters × 12 attributes. No API. No paid data source. Just Python, BeautifulSoup, and patience.
+
+---
+
+## 📊 Key Findings
+
+### Finding 1 — Stance alone doesn't predict winning
+
+| Group | n | Mean Win Rate | T-stat | P-value |
+|-------|---|--------------|--------|---------|
+| Orthodox | 93 | 72.1% | 0.96 | 0.34 |
+| Southpaw | 24 | 73.8% | — | — |
+
+Southpaws win slightly more often, but the difference is **not statistically significant** (p = 0.34). Claiming "Southpaw advantage" from stance alone would be misleading.
+
+---
+
+### Finding 2 — Stance × handedness tells a different story
+
+| Group | n | Mean Win Rate |
+|-------|---|--------------|
+| Orthodox + Right-handed | 78 | 70.2% |
+| **Southpaw + Right-handed** | **23** | **74.3%** |
+
+| Comparison | T-stat | P-value | Cohen's d | Interpretation |
+|---|---|---|---|---|
+| Southpaw+Right vs Orthodox+Right | 1.85 | 0.07 | **0.43** | Marginal significance, small-medium practical effect |
+
+> p = 0.07 is not significant at α = 0.05, but **Cohen's d = 0.43** represents a real-world performance gap a coach or betting analyst would care about. Statistical significance ≠ practical significance — both are surfaced explicitly here.
+
+---
+
+### Finding 3 — The rare style is well-represented at the top
+
+Only **19.6%** of UFC fighters are right-handed Southpaws. The group's highest performer is **Sean O'Malley at 94.4% win rate** — a fighter explicitly known for using his lead hand as a weapon in unorthodox ways.
+
+---
+
+## 🥋 How to Find Your Fighter Twin
+
+### Method 1 — Streamlit App (easiest)
+
+**Link:** [https://36kgywkvnlkwdy46v7tukw.streamlit.app](https://36kgywkvnlkwdy46v7tukw.streamlit.app)
+
+| Step | What to do |
+|------|-----------|
+| 1 | Enter your **Height** (cm) |
+| 2 | Enter your **Reach** (cm) |
+| 3 | Enter your **Weight** (lbs) |
+| 4 | Select your **Stance** (Orthodox / Southpaw) |
+| 5 | Select your **Handedness** (Right / Left) |
+| 6 | Click **"Find My Fighter Twin"** |
+
+**What you get:**
+- Top 5 most similar fighters (KNN, normalized physical attributes)
+- Match score (higher = more similar)
+- Specific technique tips for each twin
+- Interactive world map of where your twins come from
+
+---
+
+### Method 2 — Tableau Dashboard (deep analysis)
+
+**Link:** [Tableau Public Dashboard](https://public.tableau.com/app/profile/brian.ma5935/viz/UFCRECOMENDATIONENGINE/Dashboard1)
+
+| Filter | What it does |
+|--------|-------------|
+| Stance | Show only Orthodox OR Southpaw fighters |
+| Handedness | Show only Right-handed OR Left-handed |
+| Weight Class | Focus on your division |
+| Continent | See geographic patterns |
+
+---
+
+### Method 3 — Google Colab (statistical analysis)
+
+**Link:** [Open in Colab](https://colab.research.google.com/drive/1zp4jVJM39wCb73EvXKWwPtgzM1n6mwWz)
+
+Click **Runtime → Run all** to see T-test results, Cohen's d effect sizes, and distribution plots.
+
+---
+
+## 🏆 Who You Should Study (According to the Data)
+
+| Your Style | Fighter | Win Rate | Focus |
+|---|---|---|---|
+| **Southpaw + Right-handed** | Sean O'Malley | 94.4% | Lead hand precision, distance control, unconventional angles |
+| **Southpaw + Right-handed** | Israel Adesanya | 88.9% | Feints, jab setups, counter striking |
+| **Southpaw + Right-handed** | Conor McGregor | 78.6% | Left hand timing, precision striking |
+| **Orthodox + Right-handed** | Khabib Nurmagomedov | 88.9% | Pressure, wrestling, fight IQ |
+| **Orthodox + Right-handed** | Alexander Volkanovski | 88.2% | Footwork, adaptability, cardio |
+| **Any + Left-handed** | Alex Pereira | 83.3% | Power striking, clinch setups |
+
+---
+
+## 🏗️ Full Data Pipeline
 
 ```
-UFC Stats Website
+UFC Stats Website (UFCSTATS.com)
 │
 ▼
 Web Scraping (BeautifulSoup + Requests)
-│
+│                    UFC_DATA_SCRAPING.ipynb
 ▼
 Data Cleaning & Feature Engineering (Pandas + NumPy)
+│                    UFC_DATA_CLEANING_PROCESSING.ipynb
 │
-├──► Excel Dataset (Pandas → .xlsx)
+├──► Excel Dataset (.xlsx)
 │
 ├──► Statistical Analysis (SciPy: T-Test, Shapiro-Wilk, Levene, Cohen's d)
+│                    UFC_Visualization.ipynb
 │
 ├──► PostgreSQL Database (convert.py + stored procedure match_fighters())
 │
 ├──► Interactive Dashboard (Panel + HoloViews + Plotly)
+│                    ufc_panel_dashboard.py
 │
 ├──► Fighter Recommender App (Streamlit + KNN via scikit-learn)
+│                    ufc_intelligence_app.py
 │
 └──► Business Intelligence Dashboard (Tableau Public)
+                     ufc_data.csv
 ```
 
------
+---
 
-## Key Findings
+## ⚙️ Technical Stack
 
-The data answered my hypothesis — with an important nuance.
+| Layer | Tool | Why This Tool |
+|---|---|---|
+| Scraping | BeautifulSoup, Requests | Lightweight for static HTML; no Selenium overhead |
+| Processing | Pandas, NumPy | Industry standard; vectorized operations |
+| Statistics | SciPy | T-test, Levene's, Shapiro-Wilk — full assumption checking |
+| ML | scikit-learn (KNN + MinMaxScaler) | Simple, interpretable similarity at this scale |
+| Dashboard | Panel, HoloViews, Plotly | Reactive Python-native, no frontend framework needed |
+| Web App | Streamlit | Fastest path from Python analysis to deployed product |
+| Database | PostgreSQL + stored procedure | Encapsulated query logic, decoupled from app layer |
+| BI | Tableau Public | Stakeholder-facing geographic and performance visualization |
 
-### Finding 1: Stance alone doesn’t predict winning
+### Why KNN with MinMaxScaler?
 
-|Group |Fighters (n)|Mean Win Rate|T-stat|P-value|
-|--------|------------|-------------|------|-------|
-|Orthodox|93 |72.1% |0.96 |0.34 |
-|Southpaw|24 |73.8% |— |— |
+Fighter attributes (height, reach, weight) are on different scales. Raw Euclidean distance would make weight dominate over reach, even though reach is more predictive of striking range. MinMaxScaler normalizes all features to [0, 1], making similarity physically meaningful.
 
-Southpaws win slightly more often, but the difference is **not statistically significant** (p = 0.34). Claiming “Southpaw advantage” from this data alone would be misleading.
+### Why PostgreSQL with a stored procedure?
 
-### Finding 2: The interaction of stance × handedness tells a different story
+The `match_fighters()` stored procedure encapsulates matching logic server-side. Any application layer — Streamlit, an API, a future mobile app — calls one function and gets structured results, without reimplementing filtering logic client-side.
 
-|Group |Fighters (n)|Mean Win Rate|
-|---------------------------|------------|-------------|
-|Orthodox + Right-handed |78 |70.2% |
-|**Southpaw + Right-handed**|**23** |**74.3%** |
+### Why Excel as the Streamlit data source (not PostgreSQL directly)?
 
-|Comparison |T-stat|P-value |Cohen’s d|Interpretation |
-|--------------------------------|------|--------|---------|----------------------------------------------------|
-|Southpaw+Right vs Orthodox+Right|1.85 |**0.07**|**0.43** |Marginal significance, small-medium practical effect|
+Deliberate deployment decision. Streamlit Cloud has no persistent connection to a local PostgreSQL instance. The Excel file acts as a portable data mart — pre-cleaned, pre-validated — that deploys with zero infrastructure dependency.
 
-A p-value of 0.07 is not significant at α=0.05, but Cohen’s d of 0.43 represents a real-world performance gap that a decision-maker — say, a coach or a betting analyst — would care about. **Statistical significance ≠ practical significance.** I explicitly surface both in the analysis.
+### Why report Cohen's d alongside p-values?
 
-### Finding 3: My style is rare and well-represented at the top
+With n = 23 in the Southpaw+Right group, a small sample will almost always return a non-significant p-value even when a real effect exists. Cohen's d measures effect size independent of sample size. Reporting only p-values here would be analytically dishonest — the kind of mistake that leads to bad decisions in sports analytics, clinical research, and A/B testing alike.
 
-Only 19.6% of UFC fighters are right-handed Southpaws. The group’s highest performer is Sean O’Malley at 94.4% win rate — a fighter explicitly known for using his lead hand as a weapon in unorthodox ways.
+---
 
-This is me in the data. And now I know who to study.
-
------
-
-## Engineering Decisions (The “Why”, Not Just the “What”)
-
-**Why KNN for fighter matching, not cosine similarity or Euclidean distance on raw values?**
-
-Fighter physical attributes (height, reach, weight) are on different scales. Raw Euclidean distance would make weight (in kg) dominate over reach (in cm) despite reach being more predictive of striking range. I used MinMaxScaler before KNN to normalize all features to [0,1], making the similarity metric physically meaningful rather than just mathematically convenient.
-
-**Why PostgreSQL with a stored procedure, not just query the CSV directly?**
-
-The `match_fighters()` stored procedure encapsulates the matching logic server-side. This means any application layer (Streamlit, an API, a future mobile app) can call one function and get structured results — without each client reimplementing filtering logic. It’s the same reason production data teams write stored procedures: to decouple business logic from presentation layer.
-
-**Why keep the Excel file as the Streamlit data source instead of querying PostgreSQL directly?**
-
-Deliberate deployment decision. Streamlit Cloud doesn’t have a persistent database connection to a local PostgreSQL instance. The Excel file acts as a portable “data mart” — pre-cleaned, pre-validated — that deploys with zero infrastructure dependency. The PostgreSQL layer exists for analytical workloads and future API integration, not for the demo app.
-
-**Why report Cohen’s d alongside p-values?**
-
-With n=23 in the Southpaw+Right group, I’m working with a small sample. A small sample will almost always return a non-significant p-value even when a real effect exists. Cohen’s d measures the effect size independent of sample size. Reporting only p-values here would be analytically dishonest — the kind of mistake that leads to bad decisions in sports analytics, clinical research, and A/B testing alike.
-
------
-
-## Technical Stack
-
-|Layer |Tool |Why This Tool |
-|--------------|---------------------------------|-----------------------------------------------------------------------------------------|
-|**Scraping** |BeautifulSoup, Requests |Lightweight, sufficient for static HTML; no Selenium overhead needed |
-|**Processing**|Pandas, NumPy |Industry standard; vectorized operations for clean/transform pipelines |
-|**Statistics**|SciPy |T-test, Levene’s (variance equality), Shapiro-Wilk (normality) — full assumption checking|
-|**ML** |scikit-learn (KNN + MinMaxScaler)|Simple, interpretable similarity — right tool for a recommendation problem at this scale |
-|**Dashboard** |Panel, HoloViews, Plotly |Reactive Python-native dashboard without frontend framework overhead |
-|**Web App** |Streamlit |Fastest path from Python analysis to deployed interactive product |
-|**Database** |PostgreSQL + stored procedure |Production-pattern ETL and encapsulated query logic |
-|**BI** |Tableau Public |Stakeholder-facing geographic and performance visualization |
-
------
-
-## Project Structure
+## 📁 Project Structure
 
 ```
 UFC_STANCE_AND_HANDEDNESS_INTELLIGENCE/
 │
-├── UFC_DATA_SCRAPING.ipynb # Web scraping pipeline from UFC stats
-├── UFC_DATA_CLEANING_PROCESSING.ipynb # Cleaning, feature engineering, validation
-├── UFC_Visualization.ipynb # EDA, T-tests, Cohen's d, distribution plots
+├── UFC_DATA_SCRAPING.ipynb              # Web scraping from UFCSTATS.com
+├── UFC_DATA_CLEANING_PROCESSING.ipynb   # Cleaning & feature engineering
+├── UFC_Visualization.ipynb              # EDA, T-Tests, Cohen's d
 │
-├── ufc_intelligence_app.py # Streamlit app (678 lines, KNN recommender)
-├── ufc_panel_dashboard.py # Panel dashboard (3 tabs: Recommend/Stats/Geo)
-├── convert.py # ETL: Excel → PostgreSQL
+├── ufc_intelligence_app.py              # Streamlit app (KNN recommender)
+├── ufc_panel_dashboard.py               # Panel dashboard (3 tabs)
+├── convert.py                           # ETL: Excel → PostgreSQL
 │
-├── UFC_FINAL_DATASET.xlsx # Master cleaned dataset (used by Streamlit)
-├── UFC_Data_Raw.xlsx # Raw scraped data
-├── ufc_data.csv # Exported for Tableau
+├── UFC_FINAL_DATASET.xlsx               # Master dataset (used by Streamlit)
+├── UFC_Data_Raw.xlsx                    # Raw scraped data
+├── ufc_data.csv                         # Exported for Tableau
 │
-├── UNIT_TEST.py # Unit tests for data pipeline functions
-└── requirements.txt # Pinned dependencies
+├── UNIT_TEST.py                         # Unit tests for data pipeline
+└── requirements.txt                     # Pinned dependencies
 ```
 
------
+---
 
-## How to Run Locally
+## 🚀 How to Run Locally
 
 ```bash
 # Clone
@@ -179,39 +324,46 @@ pip install -r requirements.txt
 
 # Run Streamlit app
 streamlit run ufc_intelligence_app.py
-
-# Or open notebooks in order:
-# 1. UFC_DATA_SCRAPING.ipynb
-# 2. UFC_DATA_CLEANING_PROCESSING.ipynb
-# 3. UFC_Visualization.ipynb
 ```
 
-Or **no installation needed** — everything runs in browser:
+**Or run notebooks in order:**
+1. `UFC_DATA_SCRAPING.ipynb` — re-scrape if needed
+2. `UFC_DATA_CLEANING_PROCESSING.ipynb`
+3. `UFC_Visualization.ipynb`
 
-|Platform |Link |What you get |
-|-----------------|----------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------|
-|Streamlit App |[Launch →]([https://36kgywkvnlkwdy46v7tukw.streamlit.app](https://ufcstanceandhandednessintelligence-qsdqucvqpj5hhwymhqbeji.streamlit.app)) |Enter your stats, find your fighter twin, see the map |
-|Tableau Dashboard|[View →]([https://public.tableau.com/app/profile/brian.ma5935/viz/UFC_STANCE_AND_HANDEDNESS_DASHBOARD/Dashboard1](https://public.tableau.com/app/profile/brian.ma5935/viz/UFC_STANCE_AND_HANDEDNESS_DASHBOARD/Dashboard1))|Stance/handedness performance by continent and weight class|
-|Google Colab |[Open →]([https://colab.research.google.com/drive/1zp4jVJM39wCb73EvXKWwPtgzM1n6mwWz](https://colab.research.google.com/drive/1zp4jVJM39wCb73EvXKWwPtgzM1n6mwWz)) |Full statistical analysis with Panel dashboard |
+---
 
------
+## ⚠️ Limitations & What I'd Do With More Data
 
-## What I’d Do Differently With More Data
+The most honest limitation: n = 117 fighters is small for the interaction analysis. The Southpaw+Right group has only 23 observations, which is why p = 0.07 sits just outside significance.
 
-The most honest limitation of this project: n=117 fighters is small for the interaction analysis. The Southpaw+Right group has only 23 observations, which is why p=0.07 sits just outside significance. With a larger dataset I would:
+With a larger dataset I would:
 
 - **Stratify by weight class** — the Southpaw advantage may be more pronounced in striking-heavy divisions (Bantamweight, Featherweight) than wrestling-dominant ones
-- **Add temporal analysis** — does the Southpaw advantage erode as more coaches develop Southpaw-specific defence training?
-- **Include strike accuracy and significant strikes landed** — win rate is a blunt instrument; per-minute striking metrics would validate whether the lead-hand hypothesis holds at the technique level
+- **Add temporal analysis** — does the advantage erode as more coaches develop Southpaw-specific defence training?
+- **Include strike accuracy and significant strikes landed** — win rate is a blunt instrument; per-minute striking metrics would validate whether the lead-hand hypothesis holds at technique level
 
-These are questions I’d pursue if I had access to the full UFC Stats API rather than scraped summary data.
+---
 
------
+## 📬 About
 
-## About
+**Brian Phu** — Data Analyst & Southpaw Kickboxer, UFC Gym Townhall Sydney
 
-Brian Phu — Data Analyst & Southpaw Kickboxer
-UFC Gym Townhall, Sydney
-[LinkedIn]([https://www.linkedin.com/in/brianphu2310](https://www.linkedin.com/in/brian-phu-data-analysta55353390/)) · [GitHub]([https://github.com/brianphu2310](https://github.com/brianphu2310))
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=flat&logo=linkedin&logoColor=white)](https://linkedin.com/in/brianphu2310)
+[![GitHub](https://img.shields.io/badge/GitHub-181717?style=flat&logo=github&logoColor=white)](https://github.com/brianphu2310)
+[![Tableau](https://img.shields.io/badge/Tableau-E97627?style=flat&logo=tableau&logoColor=white)](https://public.tableau.com/app/profile/brian.ma5935)
 
-> *“Every question I’ve answered in this project started with a physical observation on the mats. That’s what I want my data work to always do — stay connected to a real problem.”*
+> *"Every question I've answered in this project started with a physical observation on the mats. That's what I want my data work to always do — stay connected to a real problem."*
+
+---
+
+**Last updated:** May 2026 &nbsp;|&nbsp; **Fighters analysed:** 117 &nbsp;|&nbsp; **Dashboards:** 3 (Streamlit, Panel, Tableau) &nbsp;|&nbsp; One curious fighter
+
+---
+
+*MIT License — free to use, modify, and share.*
+
+
+
+
+
