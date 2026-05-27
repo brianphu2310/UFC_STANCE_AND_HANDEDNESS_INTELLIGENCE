@@ -19,7 +19,7 @@
 # UFC Stance & Handedness Intelligence
 ### *An end-to-end data project that started on the sparring mats at UFC Gym Townhall, Sydney*
 
-[![Streamlit App](https://img.shields.io/badge/🥊_Streamlit_App-Live-00C7A3?style=for-the-badge&logo=streamlit&logoColor=white)][(https://36kgywkvnlkwdy46v7tukw.streamlit.app)](https://ufcstanceandhandednessintelligence-qsdqucvqpj5hhwymhqbeji.streamlit.app)
+[![Streamlit App](https://img.shields.io/badge/🥊_Streamlit_App-Live-00C7A3?style=for-the-badge&logo=streamlit&logoColor=white)](https://ufcstanceandhandednessintelligence-qsdqucvqpj5hhwymhqbeji.streamlit.app)
 [![Tableau](https://img.shields.io/badge/📊_Tableau_Dashboard-Live-9B59EF?style=for-the-badge&logo=tableau&logoColor=white)](https://public.tableau.com/app/profile/brian.ma5935/viz/UFCRECOMENDATIONENGINE/Dashboard1)
 [![Colab](https://img.shields.io/badge/📓_Full_Analysis-Google_Colab-F9AB00?style=for-the-badge&logo=googlecolab&logoColor=white)](https://colab.research.google.com/drive/1zp4jVJM39wCb73EvXKWwPtgzM1n6mwWz)
 [![License: MIT](https://img.shields.io/badge/License-MIT-gray?style=for-the-badge)](LICENSE)
