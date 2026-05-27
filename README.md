@@ -243,6 +243,38 @@ print(f"Final dataset: {len(df)} fighters")  # → 117 fighters
 
 **Raw output:** `UFC_Data_Raw.xlsx` — 117 fighters × 12 attributes.
 
+
+## 📊 Excel Dashboard — Pivot Tables + XLOOKUP for Fighter Analysis
+
+**File:** `UFC_FINAL_DATASET.xlsx`
+<img width="753" height="666" alt="image" src="https://github.com/user-attachments/assets/bc193a7b-6f28-49c0-adfb-19b7fb3bf617" />
+
+
+Not every fight fan wants to run Python code or navigate Tableau. Sometimes you just want to open Excel, type a name, and get answers.
+
+So I built an Excel dashboard for the dataset — because quick questions deserve quick answers.
+
+### What's Inside (5 Sheets)
+
+| Sheet | Core Excel Feature | What It Does |
+|-------|-------------------|---------------|
+| 🏆 **Fighter Lookup** | XLOOKUP | Type a fighter name → stance, handedness, win rate, weight class |
+| 📊 **Stance Pivot** | Pivot Table | Average win rate by stance (Orthodox vs Southpaw) |
+| ✋ **Handedness Pivot** | Pivot Table | Average win rate by handedness (Right vs Left) |
+| 🔄 **Stance × Handedness** | Pivot Table | Interaction analysis — 4 groups (Orthodox+Right, Southpaw+Right, etc.) |
+| 🎯 **Weight Class Pivot** | Pivot Table + Slicer | Win rate by weight class — filter by stance or handedness |
+
+### The XLOOKUP Setup (Fighter Lookup Sheet)
+
+```excel
+# User types fighter name in B2 → everything below appears automatically
+
+=XLOOKUP(B2, Fighters[Name], Fighters[Stance], "Not found")
+=XLOOKUP(B2, Fighters[Name], Fighters[Handedness], "Not found")
+=XLOOKUP(B2, Fighters[Name], Fighters[Win_Rate], "Not found")
+=XLOOKUP(B2, Fighters[Name], Fighters[Weight_Class], "Not found")
+=XLOOKUP(B2, Fighters[Name], Fighters[Nationality], "Not found")
+
 ---
 
 ## 📦 Dataset on Kaggle
