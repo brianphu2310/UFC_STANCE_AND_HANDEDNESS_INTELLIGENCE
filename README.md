@@ -1,25 +1,15 @@
 
-Brian phu <brianphu2310@gmail.com>
-9:22 AM (15 minutes ago)
-to me
 
-# UFC Stance & Handedness Intelligence
-
-### *An end-to-end data project that started on the sparring mats at UFC Gym Townhall, Sydney*
-
-[![Live App][(https://img.shields.io/badge/🥊_Streamlit_App-Live-00E5CC?style=for-the-badge)](https://36kgywkvnlkwdy46v7tukw.streamlit.app](https://ufcstanceandhandednessintelligence-qsdqucvqpj5hhwymhqbeji.streamlit.app))
 <img width="1512" height="799" alt="image" src="https://github.com/user-attachments/assets/d12d185e-c309-474f-a513-7427188b05a6" />
 <img width="1512" height="798" alt="image" src="https://github.com/user-attachments/assets/1cafe294-e9c9-451c-b872-aa469dae21ae" />
 <img width="1512" height="800" alt="image" src="https://github.com/user-attachments/assets/c1b2ec7b-6fa4-47c3-bb11-625cbbc11591" />
 <img width="1512" height="798" alt="image" src="https://github.com/user-attachments/assets/4f2caf2f-3022-4ac7-b1bd-44820f742c66" />
 <img width="1512" height="799" alt="image" src="https://github.com/user-attachments/assets/0d14f465-8d83-4191-9134-e1e9a715a4c7" />
 
-[![Tableau][(https://img.shields.io/badge/📊_Tableau_Dashboard-Live-9B59EF?style=for-the-badge)]](https://public.tableau.com/app/profile/brian.ma5935/viz/UFC_STANCE_AND_HANDEDNESS_DASHBOARD/Dashboard1)(https://public.tableau.com/app/profile/brian.ma5935/viz/UFC_STANCE_AND_HANDEDNESS_DASHBOARD/Dashboard1)
 <img width="1058" height="750" alt="image" src="https://github.com/user-attachments/assets/ad5b300a-2c37-4eb8-985f-2bbfbd37c498" />
 <img width="1037" height="744" alt="image" src="https://github.com/user-attachments/assets/a68c84c7-75ab-4d03-b4a0-80a0c31d0122" />
 
 
-[![Colab][(https://img.shields.io/badge/📓_Full_Analysis-Google_Colab-F9AB00?style=for-the-badge)]](https://colab.research.google.com/drive/1zp4jVJM39wCb73EvXKWwPtgzM1n6mwWz)(https://colab.research.google.com/drive/1zp4jVJM39wCb73EvXKWwPtgzM1n6mwWz)
 <img width="1009" height="601" alt="image" src="https://github.com/user-attachments/assets/b4222659-6bb1-4c16-8185-f1bdda12caad" />
 <img width="895" height="501" alt="image" src="https://github.com/user-attachments/assets/3dcdc38c-ffc5-4aaf-93b9-670e4db2c331" />
 <img width="895" height="496" alt="image" src="https://github.com/user-attachments/assets/f121850f-7b4b-47af-81cf-77d6dccc61b8" />
@@ -29,7 +19,7 @@ to me
 # UFC Stance & Handedness Intelligence
 ### *An end-to-end data project that started on the sparring mats at UFC Gym Townhall, Sydney*
 
-[![Streamlit App](https://img.shields.io/badge/🥊_Streamlit_App-Live-00C7A3?style=for-the-badge&logo=streamlit&logoColor=white)](https://36kgywkvnlkwdy46v7tukw.streamlit.app)
+[![Streamlit App](https://img.shields.io/badge/🥊_Streamlit_App-Live-00C7A3?style=for-the-badge&logo=streamlit&logoColor=white)][(https://36kgywkvnlkwdy46v7tukw.streamlit.app)](https://ufcstanceandhandednessintelligence-qsdqucvqpj5hhwymhqbeji.streamlit.app)
 [![Tableau](https://img.shields.io/badge/📊_Tableau_Dashboard-Live-9B59EF?style=for-the-badge&logo=tableau&logoColor=white)](https://public.tableau.com/app/profile/brian.ma5935/viz/UFCRECOMENDATIONENGINE/Dashboard1)
 [![Colab](https://img.shields.io/badge/📓_Full_Analysis-Google_Colab-F9AB00?style=for-the-badge&logo=googlecolab&logoColor=white)](https://colab.research.google.com/drive/1zp4jVJM39wCb73EvXKWwPtgzM1n6mwWz)
 [![License: MIT](https://img.shields.io/badge/License-MIT-gray?style=for-the-badge)](LICENSE)
