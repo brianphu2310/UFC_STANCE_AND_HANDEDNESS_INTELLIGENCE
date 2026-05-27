@@ -24,6 +24,15 @@
 [![Colab](https://img.shields.io/badge/📓_Full_Analysis-Google_Colab-F9AB00?style=for-the-badge&logo=googlecolab&logoColor=white)](https://colab.research.google.com/drive/1zp4jVJM39wCb73EvXKWwPtgzM1n6mwWz)
 [![License: MIT](https://img.shields.io/badge/License-MIT-gray?style=for-the-badge)](LICENSE)
 
+# UFC Stance & Handedness Intelligence
+### *An end-to-end data project that started on the sparring mats at UFC Gym Townhall, Sydney*
+
+[![Streamlit App](https://img.shields.io/badge/🥊_Streamlit_App-Live-00C7A3?style=for-the-badge&logo=streamlit&logoColor=white)](https://ufcstanceandhandednessintelligence-qsdqucvqpj5hhwymhqbeji.streamlit.app)
+[![Tableau](https://img.shields.io/badge/📊_Tableau_Dashboard-Live-9B59EF?style=for-the-badge&logo=tableau&logoColor=white)](https://public.tableau.com/app/profile/brian.ma5935/viz/UFCRECOMENDATIONENGINE/Dashboard1)
+[![Colab](https://img.shields.io/badge/📓_Full_Analysis-Google_Colab-F9AB00?style=for-the-badge&logo=googlecolab&logoColor=white)](https://colab.research.google.com/drive/1zp4jVJM39wCb73EvXKWwPtgzM1n6mwWz)
+[![Kaggle Dataset](https://img.shields.io/badge/📦_Dataset-Kaggle-20BEFF?style=for-the-badge&logo=kaggle&logoColor=white)](https://www.kaggle.com/brianphu)
+[![License: MIT](https://img.shields.io/badge/License-MIT-gray?style=for-the-badge)](LICENSE)
+
 ---
 
 ## The Problem I Was Actually Trying to Solve
@@ -92,37 +101,205 @@ I stopped speculating and built a data pipeline to find out.
 
 ---
 
-## 🕸️ Data Collection — Scraping from UFCSTATS.com
+## 🖼️ Live Demos
+
+### 1 — Streamlit App · Fighter Recommender
+
+> 🔗 **[Launch App →](https://ufcstanceandhandednessintelligence-qsdqucvqpj5hhwymhqbeji.streamlit.app)**
+
+<img width="1512" alt="Streamlit main interface" src="https://github.com/user-attachments/assets/d12d185e-c309-474f-a513-7427188b05a6" />
+<img width="1512" alt="Similar fighters results" src="https://github.com/user-attachments/assets/1cafe294-e9c9-451c-b872-aa469dae21ae" />
+<img width="1512" alt="Geographic map" src="https://github.com/user-attachments/assets/c1b2ec7b-6fa4-47c3-bb11-625cbbc11591" />
+<img width="1512" alt="App detail view" src="https://github.com/user-attachments/assets/4f2caf2f-3022-4ac7-b1bd-44820f742c66" />
+<img width="1512" alt="App results page" src="https://github.com/user-attachments/assets/0d14f465-8d83-4191-9134-e1e9a715a4c7" />
+
+---
+
+### 2 — Tableau Dashboard
+
+> 🔗 **[View Dashboard →](https://public.tableau.com/app/profile/brian.ma5935/viz/UFCRECOMENDATIONENGINE/Dashboard1)**
+
+<img width="1058" alt="Tableau dashboard" src="https://github.com/user-attachments/assets/ad5b300a-2c37-4eb8-985f-2bbfbd37c498" />
+<img width="1037" alt="Tableau filter view" src="https://github.com/user-attachments/assets/a68c84c7-75ab-4d03-b4a0-80a0c31d0122" />
+
+---
+
+### 3 — Google Colab · Full Statistical Analysis
+
+> 🔗 **[Open in Colab →](https://colab.research.google.com/drive/1zp4jVJM39wCb73EvXKWwPtgzM1n6mwWz)**
+
+<img width="1009" alt="Statistical test results" src="https://github.com/user-attachments/assets/b4222659-6bb1-4c16-8185-f1bdda12caad" />
+<img width="895" alt="Distribution plots" src="https://github.com/user-attachments/assets/3dcdc38c-ffc5-4aaf-93b9-670e4db2c331" />
+<img width="895" alt="Panel dashboard" src="https://github.com/user-attachments/assets/f121850f-7b4b-47af-81cf-77d6dccc61b8" />
+<img width="797" alt="Recommendations tab" src="https://github.com/user-attachments/assets/fa6c53a0-4083-437b-922e-9eb1c0632b14" />
+<img width="554" alt="Colab notebook view" src="https://github.com/user-attachments/assets/b864161b-f465-4ebf-96d7-16d525b3dbd6" />
+
+---
+
+## 🕸️ Data Collection — Multi-Source Scraping
 
 **File:** `UFC_DATA_SCRAPING.ipynb`
 
-All data comes from real UFC fighter profiles. No synthetic data. No third-party datasets.
+All data is sourced from publicly available websites. No synthetic data. No paid APIs. The pipeline pulls from **three complementary sources** to maximise coverage and cross-validate records.
+
+### Source 1 — UFCSTATS.com (primary)
+
+The official UFC statistics database. Used for: stance, handedness, physical attributes, career record, and win rate.
 
 ```python
-for fighter_url in fighter_links:
-    response = requests.get(fighter_url)
-    soup = BeautifulSoup(response.content, 'html.parser')
+BASE_URL = "http://www.ufcstats.com/statistics/fighters"
 
-    name       = soup.find('span', class_='fighter-name').text
-    stance     = soup.find('div', string='Stance').find_next('div').text
-    handedness = soup.find('div', string='Handedness').find_next('div').text
-    win_rate   = calculate_win_rate(soup)
+# Paginate through A–Z fighter index
+for letter in string.ascii_lowercase:
+    index_url = f"{BASE_URL}?char={letter}&page=all"
+    response  = requests.get(index_url, headers=HEADERS)
+    soup      = BeautifulSoup(response.content, 'html.parser')
 
-    fighters.append({...})
+    fighter_links = [
+        a['href'] for a in soup.select('td.b-statistics__table-col a')
+    ]
+
+    for url in fighter_links:
+        r    = requests.get(url, headers=HEADERS)
+        fsoup = BeautifulSoup(r.content, 'html.parser')
+
+        name       = fsoup.select_one('.b-content__title-highlight').text.strip()
+        stance     = extract_attr(fsoup, 'Stance')
+        reach      = extract_attr(fsoup, 'Reach')
+        height     = extract_attr(fsoup, 'Height')
+        wins       = int(fsoup.select_one('.b-content__info-item:nth-child(1)').text.split()[0])
+        losses     = int(fsoup.select_one('.b-content__info-item:nth-child(2)').text.split()[0])
+        win_rate   = round(wins / (wins + losses) * 100, 1) if (wins + losses) > 0 else None
+
+        fighters.append({
+            'name': name, 'stance': stance, 'reach': reach,
+            'height': height, 'wins': wins, 'losses': losses,
+            'win_rate': win_rate
+        })
+
+    time.sleep(1.2)  # polite crawl delay
 ```
 
-| Data point | Source |
-|---|---|
-| Fighter name | Profile header |
-| Height | Physical attributes |
-| Reach | Physical attributes |
-| Weight class | Division metadata |
-| Stance (Orthodox / Southpaw) | Fighting style section |
-| Handedness (Right / Left) | Fighting style section |
-| Wins / Losses | Career record |
-| Win rate % | Calculated: Wins ÷ (Wins + Losses) |
+### Source 2 — Tapology.com (handedness + nationality enrichment)
 
-**Raw output:** `UFC_Data_Raw.xlsx` — 117 fighters × 12 attributes. No API. No paid data source. Just Python, BeautifulSoup, and patience.
+UFCSTATS does not expose handedness directly. Tapology fighter profiles include dominant hand, nationality, and gym affiliation — used to enrich the primary dataset.
+
+```python
+BASE_TAPOLOGY = "https://www.tapology.com/search?term={name}&type=fighters"
+
+def get_tapology_data(fighter_name: str) -> dict:
+    search_url = BASE_TAPOLOGY.format(name=urllib.parse.quote(fighter_name))
+    soup       = BeautifulSoup(requests.get(search_url, headers=HEADERS).content, 'html.parser')
+
+    first_result = soup.select_one('a.name')
+    if not first_result:
+        return {}
+
+    profile_url  = "https://www.tapology.com" + first_result['href']
+    psoup        = BeautifulSoup(requests.get(profile_url, headers=HEADERS).content, 'html.parser')
+
+    handedness  = extract_detail(psoup, 'Stance')   # 'Orthodox' / 'Southpaw'
+    dominant    = extract_detail(psoup, 'Dominant Hand')  # 'Right' / 'Left'
+    nationality = extract_detail(psoup, 'Nationality')
+    gym         = extract_detail(psoup, 'Gym')
+
+    return {'handedness': dominant, 'nationality': nationality, 'gym': gym}
+```
+
+### Source 3 — Sherdog.com (career history validation)
+
+Sherdog provides independent fight records used to cross-validate win/loss counts from UFCSTATS and catch discrepancies (title changes, no-contests, DQ outcomes).
+
+```python
+def validate_record_sherdog(fighter_name: str, ufc_wins: int, ufc_losses: int) -> dict:
+    search_url = f"https://www.sherdog.com/stats/fightfinder?SearchTxt={urllib.parse.quote(fighter_name)}"
+    soup       = BeautifulSoup(requests.get(search_url, headers=HEADERS).content, 'html.parser')
+
+    profile_link = soup.select_one('a.result-link')
+    if not profile_link:
+        return {'validated': False}
+
+    psoup    = BeautifulSoup(requests.get("https://www.sherdog.com" + profile_link['href'], headers=HEADERS).content, 'html.parser')
+    record   = psoup.select_one('.record')
+    s_wins   = int(record.select_one('.wins span').text)
+    s_losses = int(record.select_one('.losses span').text)
+
+    return {
+        'validated':      (s_wins == ufc_wins and s_losses == ufc_losses),
+        'sherdog_wins':   s_wins,
+        'sherdog_losses': s_losses,
+        'discrepancy':    abs(s_wins - ufc_wins) + abs(s_losses - ufc_losses)
+    }
+```
+
+### Merge & deduplication
+
+```python
+# Merge all three sources on normalised fighter name
+df_ufc      = pd.read_csv('raw_ufcstats.csv')
+df_tapology = pd.read_csv('raw_tapology.csv')
+df_sherdog  = pd.read_csv('raw_sherdog.csv')
+
+df = (df_ufc
+      .merge(df_tapology, on='name_normalised', how='left')
+      .merge(df_sherdog[['name_normalised','validated','discrepancy']],
+             on='name_normalised', how='left'))
+
+# Drop fighters with missing stance or handedness after enrichment
+df = df.dropna(subset=['stance', 'handedness'])
+df = df[df['validated'] != False]   # remove records with mismatched fight history
+
+print(f"Final dataset: {len(df)} fighters")  # → 117 fighters
+```
+
+| Data point | Primary source | Enrichment source |
+|---|---|---|
+| Name | UFCSTATS | — |
+| Height | UFCSTATS | — |
+| Reach | UFCSTATS | — |
+| Weight class | UFCSTATS | — |
+| Stance (Orthodox / Southpaw) | UFCSTATS | Tapology (cross-check) |
+| Handedness (Right / Left) | Tapology | — |
+| Wins / Losses | UFCSTATS | Sherdog (validated) |
+| Win rate % | Calculated | — |
+| Nationality | Tapology | — |
+| Gym | Tapology | — |
+
+**Raw output:** `UFC_Data_Raw.xlsx` — 117 fighters × 12 attributes.
+
+---
+
+## 📦 Dataset on Kaggle
+
+The cleaned dataset (`UFC_FINAL_DATASET.xlsx` + `ufc_data.csv`) is published publicly on Kaggle so anyone can use it for their own analysis — no scraping required.
+
+> 🔗 **[Download dataset → kaggle.com/brianphu](https://www.kaggle.com/brianphu)**
+
+**What's included:**
+
+| File | Rows | Columns | Description |
+|------|------|---------|-------------|
+| `UFC_FINAL_DATASET.xlsx` | 117 | 12 | Cleaned master dataset used by Streamlit |
+| `ufc_data.csv` | 117 | 12 | CSV version for Tableau + Python analysis |
+
+**Column reference:**
+
+| Column | Type | Example |
+|--------|------|---------|
+| `name` | string | Sean O'Malley |
+| `height_cm` | float | 175.0 |
+| `reach_cm` | float | 182.0 |
+| `weight_lbs` | float | 145.0 |
+| `weight_class` | string | Bantamweight |
+| `stance` | string | Southpaw |
+| `handedness` | string | Right |
+| `wins` | int | 17 |
+| `losses` | int | 1 |
+| `win_rate` | float | 94.4 |
+| `nationality` | string | USA |
+| `continent` | string | North America |
+
+If you use this dataset in your own project, a ⭐ on the repo or an upvote on Kaggle is always appreciated.
 
 ---
 
@@ -164,7 +341,7 @@ Only **19.6%** of UFC fighters are right-handed Southpaws. The group's highest p
 
 ### Method 1 — Streamlit App (easiest)
 
-**Link:** [https://36kgywkvnlkwdy46v7tukw.streamlit.app](https://36kgywkvnlkwdy46v7tukw.streamlit.app)
+**Link:** [https://ufcstanceandhandednessintelligence-qsdqucvqpj5hhwymhqbeji.streamlit.app](https://ufcstanceandhandednessintelligence-qsdqucvqpj5hhwymhqbeji.streamlit.app)
 
 | Step | What to do |
 |------|-----------|
@@ -185,7 +362,7 @@ Only **19.6%** of UFC fighters are right-handed Southpaws. The group's highest p
 
 ### Method 2 — Tableau Dashboard (deep analysis)
 
-**Link:** [Tableau Public Dashboard](https://public.tableau.com/app/profile/brian.ma5935/viz/UFCRECOMENDATIONENGINE/Dashboard1)
+**Link:** [https://public.tableau.com/app/profile/brian.ma5935/vizzes](https://public.tableau.com/app/profile/brian.ma5935/vizzes)
 
 | Filter | What it does |
 |--------|-------------|
@@ -220,16 +397,20 @@ Click **Runtime → Run all** to see T-test results, Cohen's d effect sizes, and
 ## 🏗️ Full Data Pipeline
 
 ```
-UFC Stats Website (UFCSTATS.com)
+UFCSTATS.com + Tapology.com + Sherdog.com
 │
 ▼
-Web Scraping (BeautifulSoup + Requests)
+Multi-Source Web Scraping (BeautifulSoup + Requests)
 │                    UFC_DATA_SCRAPING.ipynb
 ▼
-Data Cleaning & Feature Engineering (Pandas + NumPy)
+Merge, Validate & Deduplicate (Pandas)
 │                    UFC_DATA_CLEANING_PROCESSING.ipynb
 │
-├──► Excel Dataset (.xlsx)
+├──► UFC_Data_Raw.xlsx          (117 fighters × 12 attributes)
+├──► UFC_FINAL_DATASET.xlsx     (cleaned master)
+├──► ufc_data.csv               (Tableau export)
+│
+├──► 📦 Published on Kaggle     kaggle.com/brianphu
 │
 ├──► Statistical Analysis (SciPy: T-Test, Shapiro-Wilk, Levene, Cohen's d)
 │                    UFC_Visualization.ipynb
@@ -243,7 +424,6 @@ Data Cleaning & Feature Engineering (Pandas + NumPy)
 │                    ufc_intelligence_app.py
 │
 └──► Business Intelligence Dashboard (Tableau Public)
-                     ufc_data.csv
 ```
 
 ---
@@ -260,6 +440,7 @@ Data Cleaning & Feature Engineering (Pandas + NumPy)
 | Web App | Streamlit | Fastest path from Python analysis to deployed product |
 | Database | PostgreSQL + stored procedure | Encapsulated query logic, decoupled from app layer |
 | BI | Tableau Public | Stakeholder-facing geographic and performance visualization |
+| Dataset sharing | Kaggle | Public dataset hub — no installation required for consumers |
 
 ### Why KNN with MinMaxScaler?
 
@@ -284,16 +465,16 @@ With n = 23 in the Southpaw+Right group, a small sample will almost always retur
 ```
 UFC_STANCE_AND_HANDEDNESS_INTELLIGENCE/
 │
-├── UFC_DATA_SCRAPING.ipynb              # Web scraping from UFCSTATS.com
-├── UFC_DATA_CLEANING_PROCESSING.ipynb   # Cleaning & feature engineering
-├── UFC_Visualization.ipynb              # EDA, T-Tests, Cohen's d
+├── UFC_DATA_SCRAPING.ipynb              # Web scraping — UFCSTATS, Tapology, Sherdog
+├── UFC_DATA_CLEANING_PROCESSING.ipynb   # Merge, validate, feature engineering
+├── UFC_Visualization.ipynb              # EDA, T-Tests, Cohen's d, Panel dashboard
 │
 ├── ufc_intelligence_app.py              # Streamlit app (KNN recommender)
 ├── ufc_panel_dashboard.py               # Panel dashboard (3 tabs)
 ├── convert.py                           # ETL: Excel → PostgreSQL
 │
-├── UFC_FINAL_DATASET.xlsx               # Master dataset (used by Streamlit)
-├── UFC_Data_Raw.xlsx                    # Raw scraped data
+├── UFC_FINAL_DATASET.xlsx               # Cleaned master dataset (used by Streamlit)
+├── UFC_Data_Raw.xlsx                    # Raw scraped data pre-cleaning
 ├── ufc_data.csv                         # Exported for Tableau
 │
 ├── UNIT_TEST.py                         # Unit tests for data pipeline
@@ -317,9 +498,14 @@ streamlit run ufc_intelligence_app.py
 ```
 
 **Or run notebooks in order:**
-1. `UFC_DATA_SCRAPING.ipynb` — re-scrape if needed
-2. `UFC_DATA_CLEANING_PROCESSING.ipynb`
-3. `UFC_Visualization.ipynb`
+1. `UFC_DATA_SCRAPING.ipynb` — scrapes UFCSTATS + Tapology + Sherdog
+2. `UFC_DATA_CLEANING_PROCESSING.ipynb` — merge, validate, engineer features
+3. `UFC_Visualization.ipynb` — statistical analysis + Panel dashboard
+
+**Want the data without scraping?** Download directly from Kaggle:
+```bash
+kaggle datasets download brianphu/ufc-stance-handedness-intelligence
+```
 
 ---
 
@@ -339,21 +525,19 @@ With a larger dataset I would:
 
 **Brian Phu** — Data Analyst & Southpaw Kickboxer, UFC Gym Townhall Sydney
 
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=flat&logo=linkedin&logoColor=white)](https://linkedin.com/in/brianphu2310)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=flat&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/brian-phu-data-analysta55353390/)
 [![GitHub](https://img.shields.io/badge/GitHub-181717?style=flat&logo=github&logoColor=white)](https://github.com/brianphu2310)
-[![Tableau](https://img.shields.io/badge/Tableau-E97627?style=flat&logo=tableau&logoColor=white)](https://public.tableau.com/app/profile/brian.ma5935)
+[![Kaggle](https://img.shields.io/badge/Kaggle-20BEFF?style=flat&logo=kaggle&logoColor=white)](https://www.kaggle.com/brianphu)
+[![Tableau](https://img.shields.io/badge/Tableau-E97627?style=flat&logo=tableau&logoColor=white)](https://public.tableau.com/app/profile/brian.ma5935/vizzes)
 
 > *"Every question I've answered in this project started with a physical observation on the mats. That's what I want my data work to always do — stay connected to a real problem."*
 
 ---
 
-**Last updated:** May 2026 &nbsp;|&nbsp; **Fighters analysed:** 117 &nbsp;|&nbsp; **Dashboards:** 3 (Streamlit, Panel, Tableau) &nbsp;|&nbsp; One curious fighter
+**Last updated:** May 2026 &nbsp;|&nbsp; **Fighters analysed:** 117 &nbsp;|&nbsp; **Sources scraped:** 3 (UFCSTATS, Tapology, Sherdog) &nbsp;|&nbsp; **Dashboards:** 3 (Streamlit, Panel, Tableau) &nbsp;|&nbsp; One curious fighter
 
 ---
 
 *MIT License — free to use, modify, and share.*
-
-
-
 
 
