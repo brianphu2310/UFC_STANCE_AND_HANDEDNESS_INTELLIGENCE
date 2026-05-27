@@ -1,4 +1,4 @@
-<img width="1024" height="575" alt="image" src="https://github.com/user-attachments/assets/137926c9-6d9c-4582-9b02-6bb391bcdf59" />
+<img width="4096" height="2304" alt="image" src="https://github.com/user-attachments/assets/9ad930fb-2875-495f-8f32-672549ddfed4" />
 
 # UFC Stance & Handedness Intelligence
 ### *An end-to-end data project that started on the sparring mats at UFC Gym Townhall, Sydney*
