@@ -27,7 +27,7 @@ I stopped speculating and built a data pipeline to find out.
 
 ---
 
-## 🎯 What This Project Solves
+##  What This Project Solves
 
 ### Problem 1: Fighters don't know who to study
 
@@ -77,7 +77,9 @@ I stopped speculating and built a data pipeline to find out.
 
 ---
 
-## 🖼️ Live Demos
+##  Live Demos
+<img width="1505" height="938" alt="image" src="https://github.com/user-attachments/assets/4583a410-aaba-4274-aea2-8daac6f00f0e" />
+
 
 ### 1 — Streamlit App · Fighter Recommender
 
@@ -112,7 +114,7 @@ I stopped speculating and built a data pipeline to find out.
 
 ---
 
-## 🕸️ Data Collection — Multi-Source Scraping
+##  Data Collection — Multi-Source Scraping
 
 **File:** `UFC_DATA_SCRAPING.ipynb`
 
@@ -244,7 +246,7 @@ print(f"Final dataset: {len(df)} fighters")  # → 117 fighters
 **Raw output:** `UFC_Data_Raw.xlsx` — 117 fighters × 12 attributes.
 
 
-## 📊 Excel Dashboard — Pivot Tables + XLOOKUP for Fighter Analysis
+##  Excel Dashboard — Pivot Tables + XLOOKUP for Fighter Analysis
 
 **File:** `UFC_FINAL_DATASET.xlsx`
 <img width="753" height="666" alt="image" src="https://github.com/user-attachments/assets/bc193a7b-6f28-49c0-adfb-19b7fb3bf617" />
@@ -258,11 +260,11 @@ So I built an Excel dashboard for the dataset — because quick questions deserv
 
 | Sheet | Core Excel Feature | What It Does |
 |-------|-------------------|---------------|
-| 🏆 **Fighter Lookup** | XLOOKUP | Type a fighter name → stance, handedness, win rate, weight class |
-| 📊 **Stance Pivot** | Pivot Table | Average win rate by stance (Orthodox vs Southpaw) |
-| ✋ **Handedness Pivot** | Pivot Table | Average win rate by handedness (Right vs Left) |
-| 🔄 **Stance × Handedness** | Pivot Table | Interaction analysis — 4 groups (Orthodox+Right, Southpaw+Right, etc.) |
-| 🎯 **Weight Class Pivot** | Pivot Table + Slicer | Win rate by weight class — filter by stance or handedness |
+|  **Fighter Lookup** | XLOOKUP | Type a fighter name → stance, handedness, win rate, weight class |
+|  **Stance Pivot** | Pivot Table | Average win rate by stance (Orthodox vs Southpaw) |
+|  **Handedness Pivot** | Pivot Table | Average win rate by handedness (Right vs Left) |
+|  **Stance × Handedness** | Pivot Table | Interaction analysis — 4 groups (Orthodox+Right, Southpaw+Right, etc.) |
+|  **Weight Class Pivot** | Pivot Table + Slicer | Win rate by weight class — filter by stance or handedness |
 
 ### The XLOOKUP Setup (Fighter Lookup Sheet)
 
@@ -277,11 +279,11 @@ So I built an Excel dashboard for the dataset — because quick questions deserv
 
 ---
 
-## 📦 Dataset on Kaggle
+##  Dataset on Kaggle
 
 The cleaned dataset (`UFC_FINAL_DATASET.xlsx` + `ufc_data.csv`) is published publicly on Kaggle so anyone can use it for their own analysis — no scraping required.
 
-> 🔗 **[Download dataset → kaggle.com/brianphu](https://www.kaggle.com/brianphu)**
+>  **[Download dataset → kaggle.com/brianphu](https://www.kaggle.com/brianphu)**
 
 **What's included:**
 
@@ -311,7 +313,7 @@ If you use this dataset in your own project, a ⭐ on the repo or an upvote on K
 
 ---
 
-## 📊 Key Findings
+##  Key Findings
 
 ### Finding 1 — Stance alone doesn't predict winning
 
@@ -345,7 +347,7 @@ Only **19.6%** of UFC fighters are right-handed Southpaws. The group's highest p
 
 ---
 
-## 🥋 How to Find Your Fighter Twin
+##  How to Find Your Fighter Twin
 
 ### Method 1 — Streamlit App (easiest)
 
@@ -389,7 +391,7 @@ Click **Runtime → Run all** to see T-test results, Cohen's d effect sizes, and
 
 ---
 
-## 🏆 Who You Should Study (According to the Data)
+##  Who You Should Study (According to the Data)
 
 | Your Style | Fighter | Win Rate | Focus |
 |---|---|---|---|
@@ -402,7 +404,7 @@ Click **Runtime → Run all** to see T-test results, Cohen's d effect sizes, and
 
 ---
 
-## 🏗️ Full Data Pipeline
+##  Full Data Pipeline
 
 ```
 UFCSTATS.com + Tapology.com + Sherdog.com
@@ -418,7 +420,7 @@ Merge, Validate & Deduplicate (Pandas)
 ├──► UFC_FINAL_DATASET.xlsx     (cleaned master)
 ├──► ufc_data.csv               (Tableau export)
 │
-├──► 📦 Published on Kaggle     kaggle.com/brianphu
+├──►  Published on Kaggle     kaggle.com/brianphu
 │
 ├──► Statistical Analysis (SciPy: T-Test, Shapiro-Wilk, Levene, Cohen's d)
 │                    UFC_Visualization.ipynb
@@ -436,7 +438,7 @@ Merge, Validate & Deduplicate (Pandas)
 
 ---
 
-## ⚙️ Technical Stack
+##  Technical Stack
 
 | Layer | Tool | Why This Tool |
 |---|---|---|
@@ -468,7 +470,7 @@ With n = 23 in the Southpaw+Right group, a small sample will almost always retur
 
 ---
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 UFC_STANCE_AND_HANDEDNESS_INTELLIGENCE/
@@ -491,7 +493,7 @@ UFC_STANCE_AND_HANDEDNESS_INTELLIGENCE/
 
 ---
 
-## 🚀 How to Run Locally
+##  How to Run Locally
 
 ```bash
 # Clone
@@ -517,7 +519,7 @@ kaggle datasets download brianphu/ufc-stance-handedness-intelligence
 
 ---
 
-## ⚠️ Limitations & What I'd Do With More Data
+##  Limitations & What I'd Do With More Data
 
 The most honest limitation: n = 117 fighters is small for the interaction analysis. The Southpaw+Right group has only 23 observations, which is why p = 0.07 sits just outside significance.
 
@@ -529,7 +531,7 @@ With a larger dataset I would:
 
 ---
 
-## 📬 About
+##  About
 
 **Brian Phu** — Data Analyst & Southpaw Kickboxer, UFC Gym Townhall Sydney
 
