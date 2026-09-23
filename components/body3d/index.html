@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Body 3D</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #15151F; overflow: hidden;
+               font-family: "Source Sans Pro", system-ui, sans-serif; color: #E8E8EF; }
+  #wrap { position: relative; width: 100%; height: 100%; border-radius: 10px; overflow: hidden;
+          border: 1px solid #2A2A3A; box-sizing: border-box; }
+  canvas { display: block; }
+  .bar { position: absolute; left: 10px; right: 10px; bottom: 10px; display: flex; gap: 6px;
+         flex-wrap: wrap; align-items: center; }
+  button { background: #1C1C28; color: #B4B4C3; border: 1px solid #2A2A3A; border-radius: 999px;
+           padding: 5px 12px; font-size: 12px; cursor: pointer; font-family: inherit; }
+  button.on { color: #0E0E14; background: #2BC4B0; border-color: #2BC4B0; }
+  .legend { position: absolute; top: 10px; left: 12px; font-size: 12px; color: #B4B4C3;
+            line-height: 1.6; pointer-events: none; }
+  .legend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%;
+              margin-right: 6px; vertical-align: middle; }
+  .hint { position: absolute; top: 10px; right: 12px; font-size: 11px; color: #80808F;
+          pointer-events: none; }
+</style>
+<script type="importmap">
+  { "imports": { "three": "./three.module.min.js" } }
+</script>
+</head>
+<body>
+<div id="wrap">
+  <div class="legend" id="legend"></div>
+  <div class="hint">drag to rotate · scroll to zoom</div>
+  <div class="bar">
+    <button id="bGuard" class="on">Fighting stance</button>
+    <button id="bReach">Show reach</button>
+    <button id="bSpin" class="on">Auto-rotate</button>
+    <button id="bReset">Reset view</button>
+  </div>
+</div>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "./OrbitControls.js";
+
+// ---------------------------------------------------------------- Streamlit bridge
+const send = (type, data = {}) =>
+  window.parent.postMessage({ isStreamlitMessage: true, type, ...data }, "*");
+let frameHeight = 520;
+
+// ---------------------------------------------------------------- scene
+const wrap = document.getElementById("wrap");
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+wrap.prepend(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color("#15151F");
+const camera = new THREE.PerspectiveCamera(35, 1, 0.05, 50);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.autoRotate = true;
+controls.autoRotateSpeed = 1.6;
+controls.minDistance = 1.2;
+controls.maxDistance = 9;
+controls.maxPolarAngle = Math.PI * 0.53;
+
+scene.add(new THREE.HemisphereLight("#d8d8ff", "#202030", 1.4));
+const key = new THREE.DirectionalLight("#ffffff", 2.2);
+key.position.set(2.5, 4, 3);
+key.castShadow = true;
+key.shadow.mapSize.set(1024, 1024);
+scene.add(key);
+const rim = new THREE.DirectionalLight("#2BC4B0", 0.9);
+rim.position.set(-3, 2.5, -3);
+scene.add(rim);
+
+const floor = new THREE.Mesh(new THREE.CircleGeometry(3.2, 64),
+  new THREE.MeshStandardMaterial({ color: "#1C1C28", roughness: 1 }));
+floor.rotation.x = -Math.PI / 2;
+floor.receiveShadow = true;
+scene.add(floor);
+const grid = new THREE.PolarGridHelper(3.2, 8, 6, 64, "#2A2A3A", "#2A2A3A");
+grid.position.y = 0.001;
+scene.add(grid);
+
+const root = new THREE.Group();
+scene.add(root);
+
+// ---------------------------------------------------------------- helpers
+const V = (x, y, z) => new THREE.Vector3(x, y, z);
+const UP = V(0, 1, 0);
+
+function segment(a, b, r, mat) {
+  const len = a.distanceTo(b);
+  const g = new THREE.CapsuleGeometry(r, Math.max(len, 1e-3), 6, 16);
+  const m = new THREE.Mesh(g, mat);
+  m.position.copy(a).add(b).multiplyScalar(0.5);
+  m.quaternion.setFromUnitVectors(UP, b.clone().sub(a).normalize());
+  m.castShadow = true;
+  return m;
+}
+
+function ball(p, r, mat, sx = 1, sy = 1, sz = 1) {
+  const m = new THREE.Mesh(new THREE.SphereGeometry(r, 32, 24), mat);
+  m.position.copy(p);
+  m.scale.set(sx, sy, sz);
+  m.castShadow = true;
+  return m;
+}
+
+// two-bone IK: returns elbow/knee position
+function ik(root, target, l1, l2, pole) {
+  const d = target.clone().sub(root);
+  let dist = Math.min(d.length(), (l1 + l2) * 0.999);
+  const dir = d.normalize();
+  const end = root.clone().add(dir.clone().multiplyScalar(dist));
+  const x = (l1 * l1 - l2 * l2 + dist * dist) / (2 * dist);
+  const h = Math.sqrt(Math.max(l1 * l1 - x * x, 0));
+  const perp = pole.clone().sub(dir.clone().multiplyScalar(pole.dot(dir))).normalize();
+  return { joint: root.clone().add(dir.multiplyScalar(x)).add(perp.multiplyScalar(h)), end };
+}
+
+function textSprite(text, color = "#E8E8EF", size = 34) {
+  const c = document.createElement("canvas");
+  const ctx = c.getContext("2d");
+  ctx.font = `600 ${size}px Source Sans Pro, system-ui, sans-serif`;
+  const w = Math.ceil(ctx.measureText(text).width) + 24;
+  c.width = w; c.height = size + 18;
+  ctx.font = `600 ${size}px Source Sans Pro, system-ui, sans-serif`;
+  ctx.fillStyle = "rgba(21,21,31,0.85)";
+  ctx.beginPath(); ctx.roundRect(0, 0, w, c.height, 10); ctx.fill();
+  ctx.fillStyle = color; ctx.textBaseline = "middle";
+  ctx.fillText(text, 12, c.height / 2 + 1);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthTest: false }));
+  const k = 0.0022;
+  s.scale.set(w * k, c.height * k, 1);
+  s.renderOrder = 10;
+  return s;
+}
+
+function line(a, b, color) {
+  const g = new THREE.BufferGeometry().setFromPoints([a, b]);
+  return new THREE.Line(g, new THREE.LineBasicMaterial({ color, depthTest: false }));
+}
+
+// ---------------------------------------------------------------- body builder
+function buildFighter(f, pose) {
+  const H = f.height_cm / 100;
+  const R = (f.reach_cm || f.height_cm) / 100;
+  const bmi = f.weight_kg / (H * H);
+  const g = Math.min(Math.max(Math.sqrt(bmi / 23), 0.8), 1.45);   // girth factor
+  const accent = new THREE.Color(f.accent || "#2BC4B0");
+  const ghost = !!f.ghost;
+  const skin = new THREE.MeshStandardMaterial({
+    color: ghost ? "#6c6c84" : (f.color || "#9a98b4"), roughness: 0.6, metalness: 0.05,
+    transparent: ghost, opacity: ghost ? 0.35 : 1, depthWrite: !ghost });
+  const domMat = new THREE.MeshStandardMaterial({ color: accent, roughness: 0.4,
+    transparent: ghost, opacity: ghost ? 0.45 : 1, emissive: accent, emissiveIntensity: 0.15 });
+  const offMat = new THREE.MeshStandardMaterial({ color: ghost ? "#555566" : "#3a3a4c",
+    roughness: 0.5, transparent: ghost, opacity: ghost ? 0.4 : 1 });
+
+  const grp = new THREE.Group();
+  const guard = pose === "guard";
+  const southpaw = f.stance === "Southpaw";
+  const lead = southpaw ? -1 : 1;              // +x is the fighter's left side
+  const bend = guard ? 0.08 * H : 0;
+
+  const headR = 0.064 * H;
+  const shoulderY = 0.815 * H - bend;
+  const hipY = 0.525 * H - bend;
+  const sw = 0.118 * H * (0.9 + 0.1 * g);      // half shoulder width
+  const hw = 0.078 * H * Math.sqrt(g);         // half hip width
+  const armL = Math.max(R / 2 - sw, 0.25 * H); // shoulder -> fingertip
+  const upper = 0.44 * armL, fore = 0.40 * armL, handL = 0.16 * armL;
+  const thigh = 0.5 * (0.525 * H - 0.045 * H), shin = thigh;
+
+  // --- legs (not rotated)
+  const feet = guard
+    ? { L: V(lead === 1 ? 0.07 * H : 0.08 * H, 0.045 * H, lead === 1 ? 0.16 * H : -0.14 * H),
+        R: V(lead === -1 ? -0.07 * H : -0.08 * H, 0.045 * H, lead === -1 ? 0.16 * H : -0.14 * H) }
+    : { L: V(hw * 1.1, 0.045 * H, 0), R: V(-hw * 1.1, 0.045 * H, 0) };
+  const hips = { L: V(hw, hipY, 0), R: V(-hw, hipY, 0) };
+  for (const s of ["L", "R"]) {
+    const side = s === "L" ? "Left" : "Right";
+    const sign = s === "L" ? 1 : -1;
+    const { joint: knee, end } = ik(hips[s], feet[s], thigh, shin, V(0.25 * sign, 0, 1));
+    grp.add(segment(hips[s], knee, 0.036 * H * g, skin));
+    grp.add(segment(knee, end, 0.026 * H * g, skin));
+    const shoeMat = f.foot === side ? domMat : offMat;
+    const shoe = new THREE.Mesh(new THREE.BoxGeometry(0.055 * H, 0.04 * H, 0.14 * H), shoeMat);
+    shoe.position.set(end.x, 0.02 * H, end.z + 0.03 * H);
+    shoe.castShadow = true;
+    grp.add(shoe);
+  }
+
+  // --- upper body (rotated to blade the stance)
+  const up = new THREE.Group();
+  up.rotation.y = guard ? -lead * 0.45 : 0;
+  grp.add(up);
+  const pelvis = ball(V(0, hipY + 0.02 * H, 0), 0.1 * H, skin, 1.0 * Math.sqrt(g), 0.7, 0.75 * g);
+  grp.add(pelvis);
+  const abdomen = segment(V(0, hipY + 0.05 * H, 0), V(0, 0.66 * H - bend, 0), 0.085 * H * g, skin);
+  abdomen.scale.set(1, 1, 0.78);
+  up.add(abdomen);
+  const chest = ball(V(0, 0.73 * H - bend, 0), 0.12 * H, skin, (sw / (0.12 * H)) * 0.95, 0.9, 0.62 * g);
+  up.add(chest);
+  up.add(segment(V(0, shoulderY, 0), V(0, H - 2 * headR - bend, 0), 0.03 * H * g, skin));
+  const head = ball(V(0, H - headR - bend, guard ? 0.015 * H : 0), headR, skin, 0.88, 1, 0.95);
+  up.add(head);
+
+  const shoulders = { L: V(sw, shoulderY, 0), R: V(-sw, shoulderY, 0) };
+  const chinY = H - 2 * headR - bend;
+  const reachPts = [];
+  for (const s of ["L", "R"]) {
+    const sign = s === "L" ? 1 : -1;
+    const side = s === "L" ? "Left" : "Right";
+    const isLead = sign === lead;
+    let wrist;
+    if (guard) {
+      wrist = isLead ? V(sign * 0.05 * H, chinY - 0.01 * H, 0.2 * H + 0.12 * armL)
+                     : V(sign * 0.07 * H, chinY + 0.005 * H, 0.1 * H);
+    } else {
+      wrist = V(sign * (sw + upper + fore), shoulderY, 0);
+    }
+    const pole = guard ? V(sign * 0.6, -1, -0.2) : V(0, -1, -0.3);
+    const { joint: elbow, end } = ik(shoulders[s], wrist, upper, fore, pole);
+    up.add(ball(shoulders[s], 0.04 * H * g, skin));
+    up.add(segment(shoulders[s], elbow, 0.026 * H * g, skin));
+    up.add(segment(elbow, end, 0.021 * H * g, skin));
+    const gloveMat = f.hand === side ? domMat : offMat;
+    const dirOut = guard ? V(0, 0, 1) : V(sign, 0, 0);
+    const glove = ball(end.clone().add(dirOut.multiplyScalar(handL * 0.45)), 0.05 * H, gloveMat, 1, 1.05, 1.2);
+    up.add(glove);
+    if (!guard) reachPts.push(V(sign * (sw + armL), shoulderY, 0));
+  }
+
+  // --- annotations
+  if (!ghost) {
+    const hx = -0.34 * H;
+    const hl = new THREE.Group();
+    hl.add(line(V(hx, 0, -0.15), V(hx, H, -0.15), "#80808F"));
+    hl.add(line(V(hx - 0.03, H, -0.15), V(hx + 0.03, H, -0.15), "#80808F"));
+    const ht = textSprite(`${Math.round(f.height_cm)} cm`, "#B4B4C3", 30);
+    ht.position.set(hx, H + 0.08, -0.15);
+    hl.add(ht);
+    if (!guard) hl.position.x = -0.1;
+    grp.add(hl);
+  }
+  if (!guard && reachPts.length === 2) {
+    const y = shoulderY + 0.11 * H;
+    grp.add(line(V(reachPts[0].x, y, 0), V(reachPts[1].x, y, 0), "#2BC4B0"));
+    for (const p of reachPts) grp.add(line(V(p.x, y - 0.03, 0), V(p.x, y + 0.03, 0), "#2BC4B0"));
+    const rt = textSprite(`Reach ${Math.round(f.reach_cm)} cm`, "#2BC4B0", 30);
+    rt.position.set(0, y + 0.07, 0);
+    grp.add(rt);
+  }
+  if (f.label) {
+    const t = textSprite(f.label, ghost ? "#B4B4C3" : "#E8E8EF", 30);
+    t.position.set(0, H + (guard ? 0.12 : 0.22), 0);
+    grp.add(t);
+  }
+  return { grp, H, width: guard ? 0.6 * H : R };
+}
+
+// ---------------------------------------------------------------- state & render
+let state = { figures: [], pose: "guard" };
+let firstFit = true;
+
+function rebuild() {
+  root.clear();
+  const figs = state.figures || [];
+  const built = figs.map(f => buildFighter(f, state.pose));
+  const gap = 0.35;
+  const total = built.reduce((s, b) => s + b.width, 0) + gap * Math.max(built.length - 1, 0);
+  let x = -total / 2;
+  let maxH = 1.8;
+  built.forEach(b => {
+    b.grp.position.x = x + b.width / 2;
+    x += b.width + gap;
+    maxH = Math.max(maxH, b.H);
+    root.add(b.grp);
+  });
+  const leg = document.getElementById("legend");
+  const accent = (figs[0] && figs[0].accent) || "#2BC4B0";
+  leg.innerHTML = figs.length
+    ? `<div><i style="background:${accent}"></i>Dominant hand &amp; foot</div>
+       <div><i style="background:#3a3a4c"></i>Other side</div>` : "";
+  if (firstFit) { resize(); fit(total, maxH); firstFit = false; }
+}
+
+function fit(width, height) {
+  const target = V(0, height * 0.47, 0);
+  const narrow = Math.min(camera.aspect || 1, 1.3);
+  const dist = Math.max(height * 2.5, width * 1.7 / Math.max(narrow, 0.45));
+  camera.position.set(dist * 0.55, height * 0.75, dist * 0.85);
+  controls.target.copy(target);
+  controls.update();
+}
+
+function resize() {
+  const w = wrap.clientWidth, h = wrap.clientHeight;
+  renderer.setSize(w, h, false);
+  renderer.domElement.style.width = w + "px";
+  renderer.domElement.style.height = h + "px";
+  camera.aspect = w / Math.max(h, 1);
+  camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(wrap);
+
+renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, camera); });
+
+// ---------------------------------------------------------------- UI
+const bGuard = document.getElementById("bGuard"), bReach = document.getElementById("bReach");
+const bSpin = document.getElementById("bSpin");
+function setPose(p) {
+  state.pose = p;
+  firstFit = true;
+  bGuard.classList.toggle("on", p === "guard");
+  bReach.classList.toggle("on", p === "tpose");
+  rebuild();
+}
+bGuard.onclick = () => setPose("guard");
+bReach.onclick = () => setPose("tpose");
+bSpin.onclick = () => { controls.autoRotate = !controls.autoRotate; bSpin.classList.toggle("on", controls.autoRotate); };
+document.getElementById("bReset").onclick = () => { firstFit = true; rebuild(); };
+
+// ---------------------------------------------------------------- inputs
+window.addEventListener("message", (e) => {
+  const d = e.data;
+  if (!d || d.type !== "streamlit:render") return;
+  const args = d.args || {};
+  const h = args.height || 520;
+  if (h !== frameHeight) { frameHeight = h; }
+  wrap.style.height = frameHeight + "px";
+  send("streamlit:setFrameHeight", { height: frameHeight });
+  state.figures = args.figures || [];
+  if (args.pose && firstFit) state.pose = args.pose;
+  if (args.autorotate === false && firstFit) { controls.autoRotate = false; bSpin.classList.remove("on"); }
+  resize();
+  rebuild();
+});
+
+// Stand-alone preview: index.html#{"figures":[...]}
+if (window.parent === window) {
+  const demo = location.hash ? JSON.parse(decodeURIComponent(location.hash.slice(1))) : {
+    figures: [{ label: "You", height_cm: 179, weight_kg: 69, reach_cm: 181,
+                stance: "Southpaw", hand: "Right", foot: "Right" }] };
+  window.postMessage({ type: "streamlit:render", args: { height: window.innerHeight, ...demo } }, "*");
+} else {
+  send("streamlit:componentReady", { apiVersion: 1 });
+}
+</script>
+</body>
+</html>

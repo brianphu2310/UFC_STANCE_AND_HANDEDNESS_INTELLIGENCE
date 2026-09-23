@@ -1,0 +1,13 @@
+class,discipline,level,minutes,focus,styles
+Boxing Fundamentals,Boxing,Beginner,60,"Stance, guard, 1-2, footwork",Striker|All-rounder
+Southpaw & Open-Stance Lab,Boxing,Intermediate,60,"Outside-foot battle, lead-hand weapons",Striker|All-rounder
+Muay Thai Technique,Muay Thai,All levels,75,"Round kick, teep, knees, clinch",Striker|All-rounder
+Kickboxing Conditioning,Kickboxing,All levels,60,"Pad rounds, combinations, engine",Striker|All-rounder
+BJJ Fundamentals (Gi),BJJ,Beginner,75,"Positions, escapes, basic submissions",Grappler|All-rounder
+No-Gi Grappling,No-Gi,Intermediate,60,"Wrestle-ups, leg entanglements, pace",Grappler|All-rounder
+Wrestling for MMA,Wrestling,All levels,60,"Shots, sprawls, cage takedowns",Grappler|All-rounder
+MMA Integration,MMA,Intermediate,75,"Strike-to-shot, ground & pound, get-ups",All-rounder|Striker|Grappler
+Controlled Sparring,Sparring,Intermediate,60,"Technical rounds, 50% power",Striker|All-rounder|Grappler
+Competition Team,Fight team,Competition,90,"Hard rounds, camp-style drilling",Striker|All-rounder|Grappler
+Strength & Conditioning,S&C,All levels,45,"Power, anaerobic capacity",Striker|All-rounder|Grappler
+Mobility & Recovery,Recovery,All levels,45,"Hips, shoulders, breathing",Striker|All-rounder|Grappler

@@ -1,7 +1,7 @@
-streamlit
-pandas
-numpy
-plotly
-scikit-learn
-scipy
-openpyxl
+streamlit>=1.64
+pandas>=2.2
+numpy>=1.26
+plotly>=5.24
+scipy>=1.13
+openpyxl>=3.1  # only needed for scripts/build_clean_dataset.py
+pytest>=8      # tests only

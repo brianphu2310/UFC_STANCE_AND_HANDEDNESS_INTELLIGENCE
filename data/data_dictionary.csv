@@ -1,0 +1,16 @@
+column,meaning,source
+"fighter, country, continent",Name and nationality,scraped
+hand,Dominant hand (project dataset / Tapology),scraped
+"wins, losses, win_rate",Full pro MMA record; win rate = W / (W + L),scraped
+stance,"Official UFCSTATS stance: Orthodox, Southpaw or Switch",scraped
+stance_project,Stance in the project's original Excel file,scraped
+"height_cm, reach_cm, dob, age",UFCSTATS tale of the tape,scraped
+"slpm, sapm",Significant strikes landed / absorbed per minute (UFC),derived
+"str_acc, str_def",Significant strike accuracy / defence %,derived
+"td_avg, sub_avg, kd_avg","Takedowns, submission attempts, knockdowns per 15 min",derived
+ctrl_pct,Share of fight time in control,derived
+fighting_style,Striker / Grappler / All-rounder from striking vs grappling percentiles,derived
+popularity_index,0–100 from UFC main events + title fights (70%) and UFC wins (30%),derived
+weight_class,Primary division,curated
+champion,Held a UFC / PRIDE / Strikeforce / Bellator title (incl. interim),curated
+foot,Dominant foot — same side as hand with p = 0.8,estimated
