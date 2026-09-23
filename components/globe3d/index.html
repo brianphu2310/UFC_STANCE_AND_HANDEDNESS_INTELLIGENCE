@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Globe 3D</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #0E0E14; overflow: hidden;
+               font-family: "Source Sans Pro", system-ui, sans-serif; color: #E8E8EF; }
+  #wrap { position: relative; width: 100%; height: 100%; overflow: hidden; border-radius: 12px;
+          border: 1px solid #2A2A3A; box-sizing: border-box;
+          background: radial-gradient(ellipse at 50% 45%, #1a1a2a 0%, #0E0E14 70%); }
+  canvas { display: block; }
+  #labels { position: absolute; inset: 0; pointer-events: none; }
+  .lbl { position: absolute; transform: translate(-50%, calc(-100% - 10px)); white-space: nowrap;
+         background: rgba(14,14,20,0.82); border: 1px solid #2A2A3A; border-radius: 7px;
+         padding: 3px 7px 4px; font-size: 11px; line-height: 1.3; color: #B4B4C3;
+         pointer-events: auto; cursor: pointer; transition: opacity .15s; }
+  .lbl b { color: #E8E8EF; font-size: 11.5px; }
+  .lbl .n { color: #6FE3D2; font-weight: 600; margin-left: 4px; }
+  .lbl .more { color: #80808F; }
+  .lbl.sel { border-color: #2BC4B0; box-shadow: 0 0 0 1px #2BC4B0; }
+  .lbl.small { padding: 1px 6px; }
+  .hud { position: absolute; left: 12px; bottom: 10px; display: flex; gap: 6px; }
+  button { background: #1C1C28; color: #B4B4C3; border: 1px solid #2A2A3A; border-radius: 999px;
+           padding: 4px 11px; font-size: 11.5px; cursor: pointer; font-family: inherit; }
+  button.on { color: #0E0E14; background: #2BC4B0; border-color: #2BC4B0; }
+  .hint { position: absolute; right: 12px; top: 10px; font-size: 11px; color: #80808F; }
+  .legend { position: absolute; left: 12px; top: 10px; font-size: 11px; color: #80808F; }
+  .legend .bar { width: 120px; height: 7px; border-radius: 4px; margin: 3px 0 1px;
+                 background: linear-gradient(90deg, #1E4E4A, #1B8A7D, #6FE3D2); }
+  .legend .ends { display: flex; justify-content: space-between; width: 120px; }
+</style>
+<script src="./topojson-client.min.js"></script>
+<script type="importmap">{ "imports": { "three": "./three.module.min.js" } }</script>
+</head>
+<body>
+<div id="wrap">
+  <div id="labels"></div>
+  <div class="legend" id="legend"></div>
+  <div class="hud">
+    <button id="bSpin" class="on">Auto-rotate</button>
+    <button id="bNames" class="on">Names</button>
+    <button id="bReset">Reset</button>
+  </div>
+  <div class="hint">drag to spin · scroll to zoom · click a country</div>
+</div>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "./OrbitControls.js";
+
+const send = (type, data = {}) =>
+  window.parent.postMessage({ isStreamlitMessage: true, type, ...data }, "*");
+
+// ------------------------------------------------------------------ scene
+const wrap = document.getElementById("wrap");
+const labelsEl = document.getElementById("labels");
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+wrap.prepend(renderer.domElement);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 100);
+camera.position.set(0, 0.8, 3.7);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.enablePan = false;
+controls.minDistance = 2.0;
+controls.maxDistance = 6;
+controls.autoRotate = true;
+controls.autoRotateSpeed = 0.55;
+
+scene.add(new THREE.AmbientLight("#ffffff", 1.3));
+const sun = new THREE.DirectionalLight("#ffffff", 1.6);
+sun.position.set(-3, 2, 4);
+scene.add(sun);
+const rim = new THREE.DirectionalLight("#2BC4B0", 0.8);
+rim.position.set(3, -1, -3);
+scene.add(rim);
+
+const globe = new THREE.Group();
+scene.add(globe);
+
+// atmosphere glow
+const glow = new THREE.Mesh(new THREE.SphereGeometry(1.08, 64, 48), new THREE.ShaderMaterial({
+  transparent: true, side: THREE.BackSide, depthWrite: false,
+  uniforms: { c: { value: new THREE.Color("#2BC4B0") } },
+  vertexShader: `varying vec3 vN; void main(){ vN = normalize(normalMatrix*normal);
+    gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0);} `,
+  fragmentShader: `uniform vec3 c; varying vec3 vN; void main(){
+    float i = pow(0.62 - dot(vN, vec3(0.0,0.0,1.0)), 3.0);
+    gl_FragColor = vec4(c, clamp(i,0.0,1.0)*0.55); }`,
+}));
+scene.add(glow);
+
+// ------------------------------------------------------------------ geography
+const V = (x, y, z) => new THREE.Vector3(x, y, z);
+function ll2v(lat, lon, r = 1) {
+  const phi = (lon + 180) / 360 * Math.PI * 2;
+  const th = (90 - lat) / 180 * Math.PI;
+  return V(-Math.cos(phi) * Math.sin(th) * r, Math.cos(th) * r, Math.sin(phi) * Math.sin(th) * r);
+}
+
+let world = null, countries = [];
+const TEX_W = 4096, TEX_H = 2048;
+const texCanvas = document.createElement("canvas");
+texCanvas.width = TEX_W; texCanvas.height = TEX_H;
+const tex = new THREE.CanvasTexture(texCanvas);
+tex.colorSpace = THREE.SRGBColorSpace;
+tex.anisotropy = 8;
+const sphere = new THREE.Mesh(new THREE.SphereGeometry(1, 128, 96),
+  new THREE.MeshStandardMaterial({ map: tex, roughness: 0.95, metalness: 0.0 }));
+globe.add(sphere);
+const spikes = new THREE.Group();
+globe.add(spikes);
+
+function ramp(t) {  // #1E4E4A -> #1B8A7D -> #6FE3D2
+  const a = [0x1E, 0x4E, 0x4A], b = [0x1B, 0x8A, 0x7D], c = [0x6F, 0xE3, 0xD2];
+  const [p, q, k] = t < 0.5 ? [a, b, t * 2] : [b, c, (t - 0.5) * 2];
+  return `rgb(${p.map((v, i) => Math.round(v + (q[i] - v) * k)).join(",")})`;
+}
+
+function drawRing(ctx, ring) {
+  // split rings that cross the antimeridian
+  let prev = null;
+  ring.forEach(([lon, lat], i) => {
+    const x = (lon + 180) / 360 * TEX_W, y = (90 - lat) / 180 * TEX_H;
+    if (i === 0 || (prev && Math.abs(lon - prev) > 180)) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    prev = lon;
+  });
+  ctx.closePath();
+}
+
+function paint(data) {
+  const ctx = texCanvas.getContext("2d");
+  ctx.fillStyle = "#11111A";
+  ctx.fillRect(0, 0, TEX_W, TEX_H);
+  // graticule
+  ctx.strokeStyle = "#1B1B28"; ctx.lineWidth = 2;
+  for (let lon = -180; lon <= 180; lon += 30) {
+    const x = (lon + 180) / 360 * TEX_W; ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, TEX_H); ctx.stroke();
+  }
+  for (let lat = -60; lat <= 60; lat += 30) {
+    const y = (90 - lat) / 180 * TEX_H; ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(TEX_W, y); ctx.stroke();
+  }
+  const byIso = Object.fromEntries((data || []).map(d => [d.iso3, d]));
+  const max = Math.max(1, ...(data || []).map(d => d.value));
+  for (const f of countries) {
+    const d = byIso[f.id];
+    ctx.beginPath();
+    const polys = f.geometry.type === "Polygon" ? [f.geometry.coordinates] : f.geometry.coordinates;
+    for (const poly of polys) for (const ring of poly) drawRing(ctx, ring);
+    ctx.fillStyle = d ? ramp(Math.sqrt(d.value / max)) : "#252534";
+    ctx.fill("evenodd");
+    ctx.strokeStyle = d ? "#0E0E14" : "#34344A";
+    ctx.lineWidth = d ? 2.5 : 1.4;
+    ctx.stroke();
+  }
+  tex.needsUpdate = true;
+}
+
+// ------------------------------------------------------------------ data layer
+let state = { countries: [], selected: null, maxNames: 3, metricLabel: "fighters" };
+let labels = [];
+let showNames = true;
+
+function buildSpikes() {
+  spikes.clear();
+  const max = Math.max(1, ...state.countries.map(d => d.count));
+  for (const d of state.countries) {
+    const h = 0.025 + 0.11 * Math.sqrt(d.count / max);
+    const base = ll2v(d.lat, d.lon, 1.0), top = ll2v(d.lat, d.lon, 1.0 + h);
+    const geo = new THREE.CylinderGeometry(0.009, 0.009, h, 10);
+    const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
+      color: "#6FE3D2", emissive: "#2BC4B0", emissiveIntensity: 0.6 }));
+    m.position.copy(base).add(top).multiplyScalar(0.5);
+    m.quaternion.setFromUnitVectors(V(0, 1, 0), base.clone().normalize());
+    spikes.add(m);
+    const cap = new THREE.Mesh(new THREE.SphereGeometry(0.016, 12, 10),
+      new THREE.MeshBasicMaterial({ color: "#E8FFFB" }));
+    cap.position.copy(top);
+    spikes.add(cap);
+    d._anchor = ll2v(d.lat, d.lon, 1.005);
+  }
+}
+
+function buildLabels() {
+  labelsEl.innerHTML = "";
+  labels = state.countries
+    .slice().sort((a, b) => b.count - a.count)
+    .map(d => {
+      const el = document.createElement("div");
+      el.className = "lbl";
+      const names = d.fighters.slice(0, state.maxNames);
+      const more = d.fighters.length - names.length;
+      el.innerHTML = `<b>${d.name}</b><span class="n">${d.count}</span>` +
+        (showNames ? `<div>${names.join("<br>")}${more > 0 ? `<br><span class="more">+${more} more</span>` : ""}</div>` : "");
+      el.classList.toggle("small", !showNames);
+      el.onclick = () => select(d.iso3);
+      labelsEl.appendChild(el);
+      return { d, el };
+    });
+  markSelected();
+}
+
+function markSelected() {
+  for (const l of labels) l.el.classList.toggle("sel", l.d.iso3 === state.selected);
+}
+
+function select(iso) {
+  state.selected = state.selected === iso ? null : iso;
+  markSelected();
+  send("streamlit:setComponentValue", { value: state.selected, dataType: "json" });
+  if (state.selected) focusOn(iso);
+}
+
+function focusOn(iso) {
+  const d = state.countries.find(c => c.iso3 === iso);
+  if (!d) return;
+  const dist = camera.position.length();
+  const target = ll2v(d.lat, d.lon, dist).applyMatrix4(globe.matrixWorld);
+  flyFrom = camera.position.clone(); flyTo = target; flyT = 0;
+  controls.autoRotate = false; bSpin.classList.remove("on");
+}
+let flyFrom = null, flyTo = null, flyT = 1;
+
+// ------------------------------------------------------------------ label placement
+const tmp = new THREE.Vector3();
+function placeLabels() {
+  const w = wrap.clientWidth, h = wrap.clientHeight;
+  const camDir = camera.position.clone().normalize();
+  const placed = [];
+  for (const { d, el } of labels) {
+    if (!d._anchor) continue;
+    const world = d._anchor.clone().applyMatrix4(globe.matrixWorld);
+    const facing = world.clone().normalize().dot(camDir);
+    if (facing < 0.25) { el.style.opacity = 0; el.style.visibility = "hidden"; continue; }
+    tmp.copy(world).project(camera);
+    const x = (tmp.x + 1) / 2 * w, y = (1 - tmp.y) / 2 * h;
+    const bw = el.offsetWidth, bh = el.offsetHeight;
+    const r = { l: x - bw / 2, r: x + bw / 2, t: y - bh - 10, b: y - 10 };
+    const out = r.t < 34 || r.l < 4 || r.r > w - 4 || r.b > h - 44;
+    const hit = out || placed.some(p => !(r.r < p.l || r.l > p.r || r.b < p.t || r.t > p.b));
+    const isSel = d.iso3 === state.selected;
+    if (hit && !isSel) { el.style.opacity = 0; el.style.visibility = "hidden"; continue; }
+    placed.push(r);
+    el.style.visibility = "visible";
+    el.style.opacity = Math.min(1, (facing - 0.25) * 4);
+    el.style.left = x + "px"; el.style.top = y + "px";
+    el.style.zIndex = isSel ? 10 : Math.round(d.count);
+  }
+}
+
+// ------------------------------------------------------------------ loop & resize
+function fitDistance() {
+  // distance at which the globe (plus glow and spikes) just fits the narrower field of view
+  const half = THREE.MathUtils.degToRad(camera.fov / 2);
+  const halfH = Math.min(half, Math.atan(Math.tan(half) * camera.aspect));
+  return 1.13 / Math.sin(halfH);
+}
+function resize() {
+  const w = wrap.clientWidth, h = wrap.clientHeight;
+  renderer.setSize(w, h, false);
+  renderer.domElement.style.width = w + "px"; renderer.domElement.style.height = h + "px";
+  if (w < 10 || h < 10) return;
+  camera.aspect = w / h;
+  if (Number.isFinite(camera.position.x) && camera.position.lengthSq() > 0)
+    camera.position.setLength(fitDistance());
+  camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(wrap);
+
+renderer.setAnimationLoop(() => {
+  if (wrap.clientHeight < 10) return;           // iframe not sized yet
+  if (!Number.isFinite(camera.position.x)) {    // recover from a degenerate first frame
+    camera.position.set(0, 0.8, 3.7); controls.target.set(0, 0, 0); resize();
+  }
+  if (flyT < 1 && flyFrom) {
+    flyT = Math.min(1, flyT + 0.035);
+    const k = 1 - Math.pow(1 - flyT, 3);
+    camera.position.copy(flyFrom).lerp(flyTo, k).setLength(flyFrom.length());
+  }
+  controls.update();
+  renderer.render(scene, camera);
+  placeLabels();
+});
+
+// ------------------------------------------------------------------ UI
+const bSpin = document.getElementById("bSpin"), bNames = document.getElementById("bNames");
+bSpin.onclick = () => { controls.autoRotate = !controls.autoRotate; bSpin.classList.toggle("on", controls.autoRotate); };
+bNames.onclick = () => { showNames = !showNames; bNames.classList.toggle("on", showNames); buildLabels(); };
+document.getElementById("bReset").onclick = () => {
+  camera.position.set(0, 0.8, 3.7); resize(); controls.autoRotate = true; bSpin.classList.add("on");
+  if (state.selected) select(state.selected);
+};
+
+function legend() {
+  const vals = state.countries.map(d => d.count);
+  const max = vals.length ? Math.max(...vals) : 0;
+  document.getElementById("legend").innerHTML = vals.length
+    ? `Fighters per country<div class="bar"></div><div class="ends"><span>1</span><span>${max}</span></div>`
+    : "No fighters match these filters";
+}
+
+// ------------------------------------------------------------------ inputs
+let frameHeight = 0, pending = null;
+function apply(args) {
+  if (!world) { pending = args; return; }
+  const h = args.height || 560;
+  if (h !== frameHeight) { frameHeight = h; wrap.style.height = h + "px"; send("streamlit:setFrameHeight", { height: h }); resize(); }
+  state.countries = (args.countries || []).map(d => ({ ...d, value: d.count }));
+  state.maxNames = args.max_names ?? 3;
+  if (args.selected !== undefined && args.selected !== state.selected) state.selected = args.selected;
+  paint(state.countries);
+  buildSpikes();
+  buildLabels();
+  legend();
+}
+
+window.addEventListener("message", (e) => {
+  const d = e.data;
+  if (d && d.type === "streamlit:render") apply(d.args || {});
+});
+
+fetch("./world_110m.json").then(r => r.json()).then(topo => {
+  world = topo;
+  countries = topojson.feature(topo, topo.objects.countries).features;
+  // start facing the Atlantic so the Americas and Europe are both in view
+  globe.rotation.y = -0.35;
+  if (pending) { apply(pending); pending = null; } else paint([]);
+});
+
+if (window.parent === window) {
+  const demo = location.hash ? JSON.parse(decodeURIComponent(location.hash.slice(1))) : { countries: [] };
+  setTimeout(() => window.postMessage({ type: "streamlit:render", args: { height: window.innerHeight, ...demo } }, "*"), 50);
+} else {
+  send("streamlit:componentReady", { apiVersion: 1 });
+}
+</script>
+</body>
+</html>

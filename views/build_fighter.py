@@ -24,8 +24,7 @@ def _inputs():
     hand = c1.radio("Dominant hand", ["Right", "Left"], key="bf_hand")
     foot = c2.radio("Dominant foot", ["Right", "Left"], key="bf_foot",
                     help="The foot you'd kick a ball with.")
-    style = st.segmented_control("How you want to fight", core.STYLES, default="Striker",
-                                 key="bf_style") or "Striker"
+    style = st.selectbox("How you want to fight", core.STYLES, key="bf_style")
     freq = st.slider("Training sessions per week", 1, 7, 4, key="bf_freq")
     level = st.select_slider("Experience", core.LEVELS, value="Beginner", key="bf_lvl")
     goal = st.selectbox("Goal", list(core.GOALS), index=2, key="bf_goal")

@@ -152,6 +152,14 @@ def bootstrap_diff_ci(a, b, n_boot: int = 5000, seed: int = 7, level: float = 0.
     return float(lo), float(hi)
 
 
+def bootstrap_mean_ci(a, n_boot: int = 4000, seed: int = 7, level: float = 0.95):
+    rng = np.random.default_rng(seed)
+    a = np.asarray(a, float)
+    means = rng.choice(a, (n_boot, len(a))).mean(1)
+    lo, hi = np.percentile(means, [(1 - level) / 2 * 100, (1 + level) / 2 * 100])
+    return float(lo), float(hi)
+
+
 def effect_label(d: float) -> str:
     d = abs(d)
     return "negligible" if d < 0.2 else "small" if d < 0.5 else "medium" if d < 0.8 else "large"

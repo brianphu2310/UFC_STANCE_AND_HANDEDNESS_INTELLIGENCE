@@ -128,3 +128,13 @@ def test_catalogues_and_coaches():
 def test_matchup_notes_geometry():
     assert core.matchup_notes("Orthodox", "Right")["geometry"].startswith("Open")
     assert core.matchup_notes("Southpaw", "Left")["geometry"].startswith("Closed")
+
+
+def test_globe_payload(df):
+    import globe3d
+    rows = globe3d.country_payload(df)
+    assert sum(r["count"] for r in rows) == len(df)          # every fighter lands on the globe
+    assert all(-90 <= r["lat"] <= 90 and -180 <= r["lon"] <= 180 for r in rows)
+    usa = next(r for r in rows if r["iso3"] == "USA")
+    assert usa["fighters"][0] == df[df["country"] == "USA"].sort_values(
+        "popularity_index", ascending=False)["fighter"].iloc[0]
