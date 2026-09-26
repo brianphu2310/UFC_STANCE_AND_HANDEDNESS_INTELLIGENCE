@@ -11,7 +11,7 @@ import ufc_core as core
 import ui
 from views import brian, build_fighter, dashboard, data_notes, overview, stance_lab
 
-st.set_page_config(page_title="UFC Stance Intelligence", page_icon="🥊", layout="wide",
+st.set_page_config(page_title="UFC Stance Intelligence", layout="wide",
                    initial_sidebar_state="expanded")
 ui.inject_css()
 
@@ -38,13 +38,13 @@ def _page(render, footer=True):
 
 
 pages = [
-    st.Page(_page(overview.render, footer=False), title="Global overview", icon="🌍",
+    st.Page(_page(overview.render, footer=False), title="Overview",
             url_path="overview", default=True),
-    st.Page(_page(dashboard.render), title="Deep-dive charts", icon="📈", url_path="deep-dive"),
-    st.Page(_page(build_fighter.render), title="Build your fighter", icon="🥋",
+    st.Page(_page(dashboard.render), title="Deep dive", url_path="deep-dive"),
+    st.Page(_page(build_fighter.render), title="Build a fighter",
             url_path="build-your-fighter"),
-    st.Page(_page(stance_lab.render), title="Stance lab", icon="📊", url_path="stance-lab"),
-    st.Page(_page(brian.render), title="Spar vs Brian", icon="⚔️", url_path="spar-vs-brian"),
-    st.Page(_page(data_notes.render), title="Data & methods", icon="ℹ️", url_path="data-methods"),
+    st.Page(_page(stance_lab.render), title="Stance lab", url_path="stance-lab"),
+    st.Page(_page(brian.render), title="Spar vs Brian", url_path="spar-vs-brian"),
+    st.Page(_page(data_notes.render), title="Data", url_path="data-methods"),
 ]
-st.navigation(pages, position="sidebar").run()
+st.navigation(pages, position="top").run()

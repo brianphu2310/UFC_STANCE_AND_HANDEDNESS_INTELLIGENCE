@@ -211,5 +211,5 @@ def render(df: pd.DataFrame):
           <div class="t">{escape(r['coach'])}</div>
           <div class="s">{escape(r['discipline'])} · {r['years_coaching']} yrs · {escape(r['level'])}</div>
           <div style="margin-top:6px">{'' if r['stance'] == '—' else f'<span class="pill">{escape(r["stance"])}</span><span class="pill">{escape(r["hand"])}-handed</span>'}</div>
-          <div class="b">{escape(r['specialty'])}{'<br><span style="color:' + ui.ACCENT + '">✓ ' + escape(', '.join(why)) + '</span>' if why else ''}</div>
+          <div class="b">{escape(r['specialty'])}{'<br><span style="color:' + ui.ACCENT + '">Match: ' + escape(', '.join(why)) + '</span>' if why else ''}</div>
         </div>""", unsafe_allow_html=True)

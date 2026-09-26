@@ -117,7 +117,7 @@ def _map(v, metric_label):
     by["iso3"] = by["country"].map(ISO3)
     by["label"] = by[col].map(fmt.format)
     fig = go.Figure(go.Choropleth(
-        locations=by["iso3"], z=by[col], colorscale=ui.SEQ_TEAL,
+        locations=by["iso3"], z=by[col], colorscale=ui.SEQ_BLUE,
         marker_line_color=ui.SURFACE, marker_line_width=0.6,
         customdata=by[["country", "fighters", "label", "names"]],
         hovertemplate=(f"<b>%{{customdata[0]}}</b> · %{{customdata[1]}} fighters<br>"
@@ -126,7 +126,7 @@ def _map(v, metric_label):
         colorbar=dict(title=None, thickness=10, len=0.55, x=0.99, outlinewidth=0,
                       tickformat=".0%" if "share" in metric_label else None)))
     fig.update_geos(bgcolor=ui.SURFACE, showframe=False, showcoastlines=False, showland=True,
-                    landcolor="#22222E", showcountries=True, countrycolor=ui.BORDER,
+                    landcolor="#2A1F4A", showcountries=True, countrycolor=ui.BORDER,
                     showocean=True, oceancolor=ui.SURFACE, projection_type="natural earth",
                     lataxis_range=[-56, 84], projection_scale=1.12, center=dict(lat=16, lon=10))
     ui.chart(ui.layout(fig, height=440, margin=dict(l=0, r=0, t=0, b=0)), key="world_map")
@@ -214,7 +214,7 @@ def _foot_hand_heatmap(v):
              if counts.iloc[i, j] else "—" for j in range(2)] for i in range(2)]
     fig = go.Figure(go.Heatmap(
         z=counts.values, x=["Right hand", "Left hand"], y=["Right foot", "Left foot"],
-        colorscale=[[0, "#16302E"], [1, "#1B8A7D"]], showscale=False, text=text,
+        colorscale=[[0, "#1E1535"], [1, "#6A4FB8"]], showscale=False, text=text,
         texttemplate="%{text}",
         textfont=dict(color=ui.INK, size=13), xgap=3, ygap=3,
         hovertemplate="%{y} · %{x}<br>%{text}<extra></extra>"))

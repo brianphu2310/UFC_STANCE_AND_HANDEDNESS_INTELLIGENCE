@@ -4,31 +4,40 @@
 <meta charset="utf-8">
 <title>Globe 3D</title>
 <style>
-  html, body { margin: 0; height: 100%; background: #0E0E14; overflow: hidden;
-               font-family: "Source Sans Pro", system-ui, sans-serif; color: #E8E8EF; }
-  #wrap { position: relative; width: 100%; height: 100%; overflow: hidden; border-radius: 12px;
-          border: 1px solid #2A2A3A; box-sizing: border-box;
-          background: radial-gradient(ellipse at 50% 45%, #1a1a2a 0%, #0E0E14 70%); }
-  canvas { display: block; }
+  html, body { margin: 0; height: 100%; background: transparent; overflow: hidden;
+               font-family: Inter, "Segoe UI", system-ui, sans-serif; color: #F3EEFB; }
+  #wrap { position: relative; width: 100%; height: 100%; overflow: hidden; box-sizing: border-box;
+          background:
+            radial-gradient(circle closest-side at 50% 50%, rgba(90,84,216,.24) 0 70%, rgba(200,98,206,.12) 82%,
+                            rgba(200,98,206,.04) 92%, rgba(0,0,0,0) 100%); }
+  #wrap::before { content: ""; position: absolute; left: 50%; top: 50%; width: 94vmin; aspect-ratio: 1;
+          transform: translate(-50%, -50%); border-radius: 50%; pointer-events: none;
+          box-shadow: 0 0 0 1px rgba(200,98,206,.10), 0 0 80px rgba(90,84,216,.10); }
+  canvas { display: block; position: relative; }
   #labels { position: absolute; inset: 0; pointer-events: none; }
   .lbl { position: absolute; transform: translate(-50%, calc(-100% - 10px)); white-space: nowrap;
-         background: rgba(14,14,20,0.82); border: 1px solid #2A2A3A; border-radius: 7px;
-         padding: 3px 7px 4px; font-size: 11px; line-height: 1.3; color: #B4B4C3;
-         pointer-events: auto; cursor: pointer; transition: opacity .15s; }
-  .lbl b { color: #E8E8EF; font-size: 11.5px; }
-  .lbl .n { color: #6FE3D2; font-weight: 600; margin-left: 4px; }
-  .lbl .more { color: #80808F; }
-  .lbl.sel { border-color: #2BC4B0; box-shadow: 0 0 0 1px #2BC4B0; }
-  .lbl.small { padding: 1px 6px; }
-  .hud { position: absolute; left: 12px; bottom: 10px; display: flex; gap: 6px; }
-  button { background: #1C1C28; color: #B4B4C3; border: 1px solid #2A2A3A; border-radius: 999px;
-           padding: 4px 11px; font-size: 11.5px; cursor: pointer; font-family: inherit; }
-  button.on { color: #0E0E14; background: #2BC4B0; border-color: #2BC4B0; }
-  .hint { position: absolute; right: 12px; top: 10px; font-size: 11px; color: #80808F; }
-  .legend { position: absolute; left: 12px; top: 10px; font-size: 11px; color: #80808F; }
-  .legend .bar { width: 120px; height: 7px; border-radius: 4px; margin: 3px 0 1px;
-                 background: linear-gradient(90deg, #1E4E4A, #1B8A7D, #6FE3D2); }
-  .legend .ends { display: flex; justify-content: space-between; width: 120px; }
+         background: rgba(12,8,24,0.92); border: 1px solid #4A3670; border-radius: 9px;
+         box-shadow: 0 8px 22px rgba(0,0,0,.45); padding: 4px 8px 5px; font-size: 11px;
+         line-height: 1.32; color: #C9C0DD; pointer-events: auto; cursor: pointer;
+         transition: opacity .15s; }
+  .lbl::after { content: ""; position: absolute; left: 50%; bottom: -5px; width: 8px; height: 8px;
+         background: #0C0818; border-right: 1px solid #4A3670; border-bottom: 1px solid #4A3670;
+         transform: translateX(-50%) rotate(45deg); }
+  .lbl.below { transform: translate(-50%, 10px); }
+  .lbl.below::after { bottom: auto; top: -5px; transform: translateX(-50%) rotate(225deg); }
+  .lbl b { color: #F3EEFB; font-size: 11.5px; }
+  .lbl .n { color: #fff; background: linear-gradient(90deg,#5A54D8,#C862CE); border-radius: 999px; padding: 0 6px; font-weight: 700;
+            margin-left: 5px; font-size: 10.5px; }
+  .lbl .more { color: #8D84A6; }
+  .lbl.sel { border-color: #C862CE; box-shadow: 0 0 0 2px rgba(200,98,206,.45), 0 8px 22px rgba(0,0,0,.5); }
+  .lbl.small { padding: 2px 7px; }
+  .hud { position: absolute; right: 10px; bottom: 8px; display: flex; gap: 6px; }
+  button { background: rgba(26,18,48,.9); color: #C9C0DD; border: 1px solid #34264F; border-radius: 999px;
+           padding: 4px 11px; font-size: 11px; cursor: pointer; font-family: inherit;
+           box-shadow: 0 2px 8px rgba(0,0,0,.35); }
+  button.on { color: #fff; background: #C862CE; border-color: #C862CE; }
+  .hint { position: absolute; left: 50%; transform: translateX(-50%); top: 4px; font-size: 10.5px; color: #8D84A6; }
+  .legend { display: none; }
 </style>
 <script src="./topojson-client.min.js"></script>
 <script type="importmap">{ "imports": { "three": "./three.module.min.js" } }</script>
@@ -42,7 +51,7 @@
     <button id="bNames" class="on">Names</button>
     <button id="bReset">Reset</button>
   </div>
-  <div class="hint">drag to spin · scroll to zoom · click a country</div>
+  <div class="hint">drag · zoom · click a country</div>
 </div>
 <script type="module">
 import * as THREE from "three";
@@ -68,11 +77,11 @@ controls.maxDistance = 6;
 controls.autoRotate = true;
 controls.autoRotateSpeed = 0.55;
 
-scene.add(new THREE.AmbientLight("#ffffff", 1.3));
-const sun = new THREE.DirectionalLight("#ffffff", 1.6);
+scene.add(new THREE.AmbientLight("#ffffff", 1.6));
+const sun = new THREE.DirectionalLight("#ffffff", 1.1);
 sun.position.set(-3, 2, 4);
 scene.add(sun);
-const rim = new THREE.DirectionalLight("#2BC4B0", 0.8);
+const rim = new THREE.DirectionalLight("#C862CE", 0.9);
 rim.position.set(3, -1, -3);
 scene.add(rim);
 
@@ -82,12 +91,12 @@ scene.add(globe);
 // atmosphere glow
 const glow = new THREE.Mesh(new THREE.SphereGeometry(1.08, 64, 48), new THREE.ShaderMaterial({
   transparent: true, side: THREE.BackSide, depthWrite: false,
-  uniforms: { c: { value: new THREE.Color("#2BC4B0") } },
+  uniforms: { c: { value: new THREE.Color("#B06BE8") } },
   vertexShader: `varying vec3 vN; void main(){ vN = normalize(normalMatrix*normal);
     gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0);} `,
   fragmentShader: `uniform vec3 c; varying vec3 vN; void main(){
     float i = pow(0.62 - dot(vN, vec3(0.0,0.0,1.0)), 3.0);
-    gl_FragColor = vec4(c, clamp(i,0.0,1.0)*0.55); }`,
+    gl_FragColor = vec4(c, clamp(i,0.0,1.0)*0.6); }`,
 }));
 scene.add(glow);
 
@@ -112,9 +121,9 @@ globe.add(sphere);
 const spikes = new THREE.Group();
 globe.add(spikes);
 
-function ramp(t) {  // #1E4E4A -> #1B8A7D -> #6FE3D2
-  const a = [0x1E, 0x4E, 0x4A], b = [0x1B, 0x8A, 0x7D], c = [0x6F, 0xE3, 0xD2];
-  const [p, q, k] = t < 0.5 ? [a, b, t * 2] : [b, c, (t - 0.5) * 2];
+function ramp(t) {  // indigo -> magenta -> pink (matches the page legend)
+  const stops = [[0x5A, 0x54, 0xD8], [0xC8, 0x62, 0xCE], [0xF2, 0xA6, 0xF0]];
+  const [p, q, k] = t < 0.5 ? [stops[0], stops[1], t * 2] : [stops[1], stops[2], (t - 0.5) * 2];
   return `rgb(${p.map((v, i) => Math.round(v + (q[i] - v) * k)).join(",")})`;
 }
 
@@ -131,10 +140,10 @@ function drawRing(ctx, ring) {
 
 function paint(data) {
   const ctx = texCanvas.getContext("2d");
-  ctx.fillStyle = "#11111A";
+  ctx.fillStyle = "#171030";
   ctx.fillRect(0, 0, TEX_W, TEX_H);
   // graticule
-  ctx.strokeStyle = "#1B1B28"; ctx.lineWidth = 2;
+  ctx.strokeStyle = "#1F1640"; ctx.lineWidth = 2;
   for (let lon = -180; lon <= 180; lon += 30) {
     const x = (lon + 180) / 360 * TEX_W; ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, TEX_H); ctx.stroke();
   }
@@ -148,10 +157,10 @@ function paint(data) {
     ctx.beginPath();
     const polys = f.geometry.type === "Polygon" ? [f.geometry.coordinates] : f.geometry.coordinates;
     for (const poly of polys) for (const ring of poly) drawRing(ctx, ring);
-    ctx.fillStyle = d ? ramp(Math.sqrt(d.value / max)) : "#252534";
+    ctx.fillStyle = d ? ramp(Math.sqrt(d.value / max)) : "#3A2C62";
     ctx.fill("evenodd");
-    ctx.strokeStyle = d ? "#0E0E14" : "#34344A";
-    ctx.lineWidth = d ? 2.5 : 1.4;
+    ctx.strokeStyle = "#171030";
+    ctx.lineWidth = d ? 2.6 : 1.6;
     ctx.stroke();
   }
   tex.needsUpdate = true;
@@ -170,12 +179,12 @@ function buildSpikes() {
     const base = ll2v(d.lat, d.lon, 1.0), top = ll2v(d.lat, d.lon, 1.0 + h);
     const geo = new THREE.CylinderGeometry(0.009, 0.009, h, 10);
     const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
-      color: "#6FE3D2", emissive: "#2BC4B0", emissiveIntensity: 0.6 }));
+      color: "#E08BE6", emissive: "#C862CE", emissiveIntensity: 0.7 }));
     m.position.copy(base).add(top).multiplyScalar(0.5);
     m.quaternion.setFromUnitVectors(V(0, 1, 0), base.clone().normalize());
     spikes.add(m);
     const cap = new THREE.Mesh(new THREE.SphereGeometry(0.016, 12, 10),
-      new THREE.MeshBasicMaterial({ color: "#E8FFFB" }));
+      new THREE.MeshBasicMaterial({ color: "#FFFFFF" }));
     cap.position.copy(top);
     spikes.add(cap);
     d._anchor = ll2v(d.lat, d.lon, 1.005);
@@ -236,9 +245,12 @@ function placeLabels() {
     tmp.copy(world).project(camera);
     const x = (tmp.x + 1) / 2 * w, y = (1 - tmp.y) / 2 * h;
     const bw = el.offsetWidth, bh = el.offsetHeight;
-    const r = { l: x - bw / 2, r: x + bw / 2, t: y - bh - 10, b: y - 10 };
-    const out = r.t < 34 || r.l < 4 || r.r > w - 4 || r.b > h - 44;
+    let below = false;
+    let r = { l: x - bw / 2, r: x + bw / 2, t: y - bh - 10, b: y - 10 };
+    if (r.t < 24) { below = true; r = { l: r.l, r: r.r, t: y + 10, b: y + bh + 10 }; }
+    const out = r.t < 24 || r.l < 4 || r.r > w - 4 || r.b > h - 40;
     const hit = out || placed.some(p => !(r.r < p.l || r.l > p.r || r.b < p.t || r.t > p.b));
+    el.classList.toggle("below", below);
     const isSel = d.iso3 === state.selected;
     if (hit && !isSel) { el.style.opacity = 0; el.style.visibility = "hidden"; continue; }
     placed.push(r);

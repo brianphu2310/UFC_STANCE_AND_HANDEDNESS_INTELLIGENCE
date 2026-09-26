@@ -4,21 +4,21 @@
 <meta charset="utf-8">
 <title>Body 3D</title>
 <style>
-  html, body { margin: 0; height: 100%; background: #15151F; overflow: hidden;
-               font-family: "Source Sans Pro", system-ui, sans-serif; color: #E8E8EF; }
+  html, body { margin: 0; height: 100%; background: #0C0818; overflow: hidden;
+               font-family: "Source Sans Pro", system-ui, sans-serif; color: #F3EEFB; }
   #wrap { position: relative; width: 100%; height: 100%; border-radius: 10px; overflow: hidden;
-          border: 1px solid #2A2A3A; box-sizing: border-box; }
+          border: 1px solid #34264F; box-sizing: border-box; background: radial-gradient(ellipse at 50% 30%, #1E1535, #0C0818 70%); }
   canvas { display: block; }
   .bar { position: absolute; left: 10px; right: 10px; bottom: 10px; display: flex; gap: 6px;
          flex-wrap: wrap; align-items: center; }
-  button { background: #1C1C28; color: #B4B4C3; border: 1px solid #2A2A3A; border-radius: 999px;
+  button { background: #1A1230; color: #C9C0DD; border: 1px solid #34264F; border-radius: 999px;
            padding: 5px 12px; font-size: 12px; cursor: pointer; font-family: inherit; }
-  button.on { color: #0E0E14; background: #2BC4B0; border-color: #2BC4B0; }
-  .legend { position: absolute; top: 10px; left: 12px; font-size: 12px; color: #B4B4C3;
+  button.on { color: #FFFFFF; background: #C862CE; border-color: #C862CE; }
+  .legend { position: absolute; top: 10px; left: 12px; font-size: 12px; color: #C9C0DD;
             line-height: 1.6; pointer-events: none; }
   .legend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%;
               margin-right: 6px; vertical-align: middle; }
-  .hint { position: absolute; top: 10px; right: 12px; font-size: 11px; color: #80808F;
+  .hint { position: absolute; top: 10px; right: 12px; font-size: 11px; color: #8D84A6;
           pointer-events: none; }
 </style>
 <script type="importmap">
@@ -50,10 +50,11 @@ const wrap = document.getElementById("wrap");
 const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
+renderer.setClearColor("#0C0818", 1);
 wrap.prepend(renderer.domElement);
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color("#15151F");
+scene.background = null;
 const camera = new THREE.PerspectiveCamera(35, 1, 0.05, 50);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
@@ -63,22 +64,22 @@ controls.minDistance = 1.2;
 controls.maxDistance = 9;
 controls.maxPolarAngle = Math.PI * 0.53;
 
-scene.add(new THREE.HemisphereLight("#d8d8ff", "#202030", 1.4));
+scene.add(new THREE.HemisphereLight("#e9dcff", "#1a1230", 1.5));
 const key = new THREE.DirectionalLight("#ffffff", 2.2);
 key.position.set(2.5, 4, 3);
 key.castShadow = true;
 key.shadow.mapSize.set(1024, 1024);
 scene.add(key);
-const rim = new THREE.DirectionalLight("#2BC4B0", 0.9);
+const rim = new THREE.DirectionalLight("#C862CE", 0.9);
 rim.position.set(-3, 2.5, -3);
 scene.add(rim);
 
 const floor = new THREE.Mesh(new THREE.CircleGeometry(3.2, 64),
-  new THREE.MeshStandardMaterial({ color: "#1C1C28", roughness: 1 }));
+  new THREE.MeshStandardMaterial({ color: "#1A1230", roughness: 1 }));
 floor.rotation.x = -Math.PI / 2;
 floor.receiveShadow = true;
 scene.add(floor);
-const grid = new THREE.PolarGridHelper(3.2, 8, 6, 64, "#2A2A3A", "#2A2A3A");
+const grid = new THREE.PolarGridHelper(3.2, 8, 6, 64, "#34264F", "#34264F");
 grid.position.y = 0.001;
 scene.add(grid);
 
@@ -119,14 +120,14 @@ function ik(root, target, l1, l2, pole) {
   return { joint: root.clone().add(dir.multiplyScalar(x)).add(perp.multiplyScalar(h)), end };
 }
 
-function textSprite(text, color = "#E8E8EF", size = 34) {
+function textSprite(text, color = "#F3EEFB", size = 34) {
   const c = document.createElement("canvas");
   const ctx = c.getContext("2d");
   ctx.font = `600 ${size}px Source Sans Pro, system-ui, sans-serif`;
   const w = Math.ceil(ctx.measureText(text).width) + 24;
   c.width = w; c.height = size + 18;
   ctx.font = `600 ${size}px Source Sans Pro, system-ui, sans-serif`;
-  ctx.fillStyle = "rgba(21,21,31,0.85)";
+  ctx.fillStyle = "rgba(12,8,24,0.88)";
   ctx.beginPath(); ctx.roundRect(0, 0, w, c.height, 10); ctx.fill();
   ctx.fillStyle = color; ctx.textBaseline = "middle";
   ctx.fillText(text, 12, c.height / 2 + 1);
@@ -150,14 +151,14 @@ function buildFighter(f, pose) {
   const R = (f.reach_cm || f.height_cm) / 100;
   const bmi = f.weight_kg / (H * H);
   const g = Math.min(Math.max(Math.sqrt(bmi / 23), 0.8), 1.45);   // girth factor
-  const accent = new THREE.Color(f.accent || "#2BC4B0");
+  const accent = new THREE.Color(f.accent || "#C862CE");
   const ghost = !!f.ghost;
   const skin = new THREE.MeshStandardMaterial({
-    color: ghost ? "#6c6c84" : (f.color || "#9a98b4"), roughness: 0.6, metalness: 0.05,
+    color: ghost ? "#6E64A8" : (f.color || "#A69BD6"), roughness: 0.6, metalness: 0.05,
     transparent: ghost, opacity: ghost ? 0.35 : 1, depthWrite: !ghost });
   const domMat = new THREE.MeshStandardMaterial({ color: accent, roughness: 0.4,
     transparent: ghost, opacity: ghost ? 0.45 : 1, emissive: accent, emissiveIntensity: 0.15 });
-  const offMat = new THREE.MeshStandardMaterial({ color: ghost ? "#555566" : "#3a3a4c",
+  const offMat = new THREE.MeshStandardMaterial({ color: ghost ? "#4A4280" : "#5A54D8",
     roughness: 0.5, transparent: ghost, opacity: ghost ? 0.4 : 1 });
 
   const grp = new THREE.Group();
@@ -239,9 +240,9 @@ function buildFighter(f, pose) {
   if (!ghost) {
     const hx = -0.34 * H;
     const hl = new THREE.Group();
-    hl.add(line(V(hx, 0, -0.15), V(hx, H, -0.15), "#80808F"));
-    hl.add(line(V(hx - 0.03, H, -0.15), V(hx + 0.03, H, -0.15), "#80808F"));
-    const ht = textSprite(`${Math.round(f.height_cm)} cm`, "#B4B4C3", 30);
+    hl.add(line(V(hx, 0, -0.15), V(hx, H, -0.15), "#8D84A6"));
+    hl.add(line(V(hx - 0.03, H, -0.15), V(hx + 0.03, H, -0.15), "#8D84A6"));
+    const ht = textSprite(`${Math.round(f.height_cm)} cm`, "#C9C0DD", 30);
     ht.position.set(hx, H + 0.08, -0.15);
     hl.add(ht);
     if (!guard) hl.position.x = -0.1;
@@ -249,14 +250,14 @@ function buildFighter(f, pose) {
   }
   if (!guard && reachPts.length === 2) {
     const y = shoulderY + 0.11 * H;
-    grp.add(line(V(reachPts[0].x, y, 0), V(reachPts[1].x, y, 0), "#2BC4B0"));
-    for (const p of reachPts) grp.add(line(V(p.x, y - 0.03, 0), V(p.x, y + 0.03, 0), "#2BC4B0"));
-    const rt = textSprite(`Reach ${Math.round(f.reach_cm)} cm`, "#2BC4B0", 30);
+    grp.add(line(V(reachPts[0].x, y, 0), V(reachPts[1].x, y, 0), "#E4C49B"));
+    for (const p of reachPts) grp.add(line(V(p.x, y - 0.03, 0), V(p.x, y + 0.03, 0), "#E4C49B"));
+    const rt = textSprite(`Reach ${Math.round(f.reach_cm)} cm`, "#E4C49B", 30);
     rt.position.set(0, y + 0.07, 0);
     grp.add(rt);
   }
   if (f.label) {
-    const t = textSprite(f.label, ghost ? "#B4B4C3" : "#E8E8EF", 30);
+    const t = textSprite(f.label, ghost ? "#8D84A6" : "#F3EEFB", 30);
     t.position.set(0, H + (guard ? 0.12 : 0.22), 0);
     grp.add(t);
   }
@@ -282,10 +283,10 @@ function rebuild() {
     root.add(b.grp);
   });
   const leg = document.getElementById("legend");
-  const accent = (figs[0] && figs[0].accent) || "#2BC4B0";
+  const accent = (figs[0] && figs[0].accent) || "#C862CE";
   leg.innerHTML = figs.length
     ? `<div><i style="background:${accent}"></i>Dominant hand &amp; foot</div>
-       <div><i style="background:#3a3a4c"></i>Other side</div>` : "";
+       <div><i style="background:#5A54D8"></i>Other side</div>` : "";
   if (firstFit) { resize(); fit(total, maxH); firstFit = false; }
 }
 
