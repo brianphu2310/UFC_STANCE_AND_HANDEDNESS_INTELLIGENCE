@@ -1,0 +1,104 @@
+fighter_name,country,continent,stance,handedness,weight_class,wins,losses,total_fights,win_rate,learning_tip
+Stipe Miocic,USA,North America,Orthodox,Right-handed,Heavyweight,20,4,24,83.33,Study fundamentals and signature techniques
+Daniel Cormier,USA,North America,Orthodox,Right-handed,Light Heavyweight,22,3,25,88.0,Study fundamentals and signature techniques
+Nate Diaz,USA,North America,Southpaw,Left-handed,Lightweight,21,13,34,61.76,Study fundamentals and signature techniques
+Tony Ferguson,USA,North America,Orthodox,Right-handed,Lightweight,25,8,33,75.76,Study fundamentals and signature techniques
+Colby Covington,USA,North America,Orthodox,Right-handed,Welterweight,17,4,21,80.95,Study fundamentals and signature techniques
+Tyron Woodley,USA,North America,Orthodox,Right-handed,Lightweight,19,7,26,73.08,Study fundamentals and signature techniques
+Justin Gaethje,USA,North America,Orthodox,Right-handed,Lightweight,25,4,29,86.21,Study fundamentals and signature techniques
+Max Holloway,USA,North America,Orthodox,Right-handed,Featherweight,25,7,32,78.12,Study fundamentals and signature techniques
+Dustin Poirier,USA,North America,Southpaw,Right-handed,Lightweight,29,8,37,78.38,"Study boxing combinations, body punching"
+Sean O'Malley,USA,North America,Southpaw,Right-handed,Bantamweight,17,1,18,94.44,Study fundamentals and signature techniques
+Kamaru Usman,USA,North America,Orthodox,Right-handed,Welterweight,20,3,23,86.96,Study fundamentals and signature techniques
+Cody Garbrandt,USA,North America,Orthodox,Right-handed,Bantamweight,12,5,17,70.59,Study fundamentals and signature techniques
+TJ Dillashaw,USA,North America,Southpaw,Right-handed,Bantamweight,17,5,22,77.27,Study fundamentals and signature techniques
+Henry Cejudo,USA,North America,Orthodox,Right-handed,Flyweight,16,2,18,88.89,Study fundamentals and signature techniques
+Eddie Alvarez,USA,North America,Orthodox,Right-handed,Lightweight,29,10,39,74.36,Study fundamentals and signature techniques
+Donald Cerrone,USA,North America,Orthodox,Right-handed,Lightweight,36,16,52,69.23,Study fundamentals and signature techniques
+Frankie Edgar,USA,North America,Orthodox,Right-handed,Lightweight,24,9,33,72.73,Study fundamentals and signature techniques
+BJ Penn,USA,North America,Southpaw,Left-handed,Lightweight,16,14,30,53.33,Study fundamentals and signature techniques
+Nick Diaz,USA,North America,Southpaw,Left-handed,Welterweight,26,9,35,74.29,Study fundamentals and signature techniques
+Randy Couture,USA,North America,Orthodox,Right-handed,Lightweight,19,11,30,63.33,Study fundamentals and signature techniques
+Chuck Liddell,USA,North America,Orthodox,Right-handed,Light Heavyweight,21,9,30,70.0,Study fundamentals and signature techniques
+Jamahal Hill,USA,North America,Orthodox,Right-handed,Light Heavyweight,12,2,14,85.71,Study fundamentals and signature techniques
+Cory Sandhagen,USA,North America,Southpaw,Right-handed,Bantamweight,16,4,20,80.0,Study fundamentals and signature techniques
+Robbie Lawler,USA,North America,Orthodox,Right-handed,Welterweight,28,15,43,65.12,Study fundamentals and signature techniques
+Carlos Condit,USA,North America,Orthodox,Right-handed,Welterweight,30,14,44,68.18,Study fundamentals and signature techniques
+Dominick Cruz,USA,North America,Orthodox,Right-handed,Bantamweight,24,3,27,88.89,Study fundamentals and signature techniques
+Urijah Faber,USA,North America,Orthodox,Right-handed,Lightweight,35,11,46,76.09,Study fundamentals and signature techniques
+Jose Aldo,Brazil,South America,Orthodox,Right-handed,Bantamweight,31,8,39,79.49,Study fundamentals and signature techniques
+Benson Henderson,USA,North America,Orthodox,Right-handed,Lightweight,28,9,37,75.68,Study fundamentals and signature techniques
+Michael Chandler,USA,North America,Orthodox,Right-handed,Lightweight,23,8,31,74.19,Study fundamentals and signature techniques
+Sergio Pettis,USA,North America,Southpaw,Right-handed,Lightweight,21,5,26,80.77,Study fundamentals and signature techniques
+Uriah Hall,Jamaica,North America,Southpaw,Right-handed,Lightweight,17,9,26,65.38,Study fundamentals and signature techniques
+Diego Sanchez,USA,North America,Orthodox,Right-handed,Lightweight,30,14,44,68.18,Study fundamentals and signature techniques
+Jim Miller,USA,North America,Orthodox,Right-handed,Lightweight,36,17,53,67.92,Study fundamentals and signature techniques
+Clay Guida,USA,North America,Orthodox,Right-handed,Lightweight,36,22,58,62.07,Study fundamentals and signature techniques
+Derrick Lewis,USA,North America,Orthodox,Right-handed,Heavyweight,27,10,37,72.97,Study fundamentals and signature techniques
+Curtis Blaydes,USA,North America,Orthodox,Right-handed,Heavyweight,17,4,21,80.95,Study fundamentals and signature techniques
+Anthony Smith,USA,North America,Orthodox,Right-handed,Lightweight,36,16,52,69.23,Study fundamentals and signature techniques
+Anderson Silva,Brazil,South America,Orthodox,Right-handed,Middleweight,34,11,45,75.56,"Study head movement, timing"
+Charles Oliveira,Brazil,South America,Orthodox,Right-handed,Lightweight,34,9,43,79.07,"Study submission game, creativity"
+Wanderlei Silva,Brazil,South America,Southpaw,Left-handed,Lightweight,35,13,48,72.92,Study fundamentals and signature techniques
+Lyoto Machida,Brazil,South America,Southpaw,Left-handed,Lightweight,26,9,35,74.29,Study fundamentals and signature techniques
+Fabricio Werdum,Brazil,South America,Orthodox,Right-handed,Lightweight,24,10,34,70.59,Study fundamentals and signature techniques
+Junior Dos Santos,Brazil,South America,Orthodox,Right-handed,Lightweight,21,9,30,70.0,Study fundamentals and signature techniques
+Deiveson Figueiredo,Brazil,South America,Orthodox,Right-handed,Flyweight,22,4,26,84.62,Study fundamentals and signature techniques
+Alex Pereira,Brazil,South America,Orthodox,Right-handed,Middleweight,10,2,12,83.33,"Study left hook, striking power"
+Demian Maia,Brazil,South America,Orthodox,Right-handed,Lightweight,29,10,39,74.36,Study fundamentals and signature techniques
+Thiago Alves,Brazil,South America,Orthodox,Right-handed,Lightweight,22,12,34,64.71,Study fundamentals and signature techniques
+Glover Teixeira,Brazil,South America,Orthodox,Right-handed,Light Heavyweight,33,8,41,80.49,Study fundamentals and signature techniques
+Mauricio Rua,Brazil,South America,Orthodox,Right-handed,Light Heavyweight,27,13,40,67.5,Study fundamentals and signature techniques
+Rafael Dos Anjos,Brazil,South America,Orthodox,Right-handed,Lightweight,30,14,44,68.18,Study fundamentals and signature techniques
+Marlon Vera,Ecuador,South America,Orthodox,Right-handed,Bantamweight,22,8,30,73.33,Study fundamentals and signature techniques
+Brandon Moreno,Mexico,North America,Orthodox,Right-handed,Flyweight,22,6,28,78.57,Study fundamentals and signature techniques
+Yair Rodriguez,Mexico,North America,Southpaw,Right-handed,Featherweight,15,4,19,78.95,Study fundamentals and signature techniques
+Cain Velasquez,Mexico,North America,Orthodox,Right-handed,Lightweight,14,3,17,82.35,Study fundamentals and signature techniques
+Khabib Nurmagomedov,Russia,Europe,Orthodox,Right-handed,Lightweight,29,0,29,100.0,"Study wrestling, ground control, pressure"
+Islam Makhachev,Russia,Europe,Orthodox,Right-handed,Lightweight,25,1,26,96.15,"Study wrestling, ground game"
+Petr Yan,Russia,Europe,Orthodox,Right-handed,Bantamweight,16,4,20,80.0,Study fundamentals and signature techniques
+Magomed Ankalaev,Russia,Europe,Orthodox,Right-handed,Light Heavyweight,18,1,19,94.74,Study fundamentals and signature techniques
+Zabit Magomedsharipov,Russia,Europe,Southpaw,Left-handed,Lightweight,18,1,19,94.74,Study fundamentals and signature techniques
+Fedor Emelianenko,Russia,Europe,Southpaw,Left-handed,Lightweight,40,6,46,86.96,Study fundamentals and signature techniques
+Alexei Oleinik,Russia,Europe,Orthodox,Right-handed,Lightweight,59,16,75,78.67,Study fundamentals and signature techniques
+Jiri Prochazka,Czech Rep.,Europe,Southpaw,Left-handed,Light Heavyweight,29,4,33,87.88,Study fundamentals and signature techniques
+Jan Blachowicz,Poland,Europe,Orthodox,Right-handed,Light Heavyweight,28,10,38,73.68,Study fundamentals and signature techniques
+Mateusz Gamrot,Poland,Europe,Orthodox,Right-handed,Lightweight,22,1,23,95.65,Study fundamentals and signature techniques
+Andre Arlovski,Belarus,Europe,Orthodox,Right-handed,Lightweight,34,22,56,60.71,Study fundamentals and signature techniques
+Mirko Cro Cop,Croatia,Europe,Southpaw,Left-handed,Lightweight,38,13,51,74.51,Study fundamentals and signature techniques
+Nikita Krylov,Ukraine,Europe,Orthodox,Right-handed,Lightweight,30,10,40,75.0,Study fundamentals and signature techniques
+Conor McGregor,Ireland,Europe,Southpaw,Right-handed,Lightweight,22,6,28,78.57,"Study left cross, footwork, distance management"
+Paddy Pimblett,UK,Europe,Orthodox,Right-handed,Lightweight,20,3,23,86.96,Study fundamentals and signature techniques
+Tom Aspinall,UK,Europe,Orthodox,Right-handed,Heavyweight,15,3,18,83.33,Study fundamentals and signature techniques
+Michael Bisping,UK,Europe,Orthodox,Right-handed,Middleweight,30,9,39,76.92,Study fundamentals and signature techniques
+Dan Hardy,UK,Europe,Orthodox,Right-handed,Lightweight,25,10,35,71.43,Study fundamentals and signature techniques
+Darren Till,UK,Europe,Southpaw,Right-handed,Middleweight,18,5,23,78.26,Study fundamentals and signature techniques
+Paul Craig,UK,Europe,Southpaw,Left-handed,Lightweight,16,6,22,72.73,Study fundamentals and signature techniques
+Terry Etim,UK,Europe,Orthodox,Right-handed,Lightweight,15,5,20,75.0,Study fundamentals and signature techniques
+Alistair Overeem,Netherlands,Europe,Orthodox,Right-handed,Heavyweight,47,19,66,71.21,Study fundamentals and signature techniques
+Gegard Mousasi,Netherlands,Europe,Orthodox,Right-handed,Lightweight,47,10,57,82.46,Study fundamentals and signature techniques
+Bas Rutten,Netherlands,Europe,Southpaw,Left-handed,Lightweight,28,4,32,87.5,Study fundamentals and signature techniques
+Stefan Struve,Netherlands,Europe,Orthodox,Right-handed,Lightweight,28,13,41,68.29,Study fundamentals and signature techniques
+Melvin Manhoef,Netherlands,Europe,Orthodox,Right-handed,Lightweight,31,14,45,68.89,Study fundamentals and signature techniques
+Martin Kampmann,Denmark,Europe,Southpaw,Right-handed,Lightweight,20,8,28,71.43,Study fundamentals and signature techniques
+Dennis Siver,Germany,Europe,Southpaw,Right-handed,Lightweight,22,13,35,62.86,Study fundamentals and signature techniques
+Israel Adesanya,Nigeria,Africa,Southpaw,Right-handed,Middleweight,24,3,27,88.89,"Study calf kicks, feints, distance management"
+Francis Ngannou,Cameroon,Africa,Orthodox,Right-handed,Heavyweight,17,3,20,85.0,Study fundamentals and signature techniques
+Ciryl Gane,France,Europe,Orthodox,Right-handed,Heavyweight,11,2,13,84.62,Study fundamentals and signature techniques
+Benoit Saint Denis,France,Europe,Orthodox,Right-handed,Lightweight,13,3,16,81.25,Study fundamentals and signature techniques
+Nassourdine Imavov,France,Europe,Southpaw,Right-handed,Middleweight,14,4,18,77.78,Study fundamentals and signature techniques
+Ilia Topuria,Georgia,Europe,Orthodox,Right-handed,Featherweight,15,0,15,100.0,Study fundamentals and signature techniques
+Merab Dvalishvili,Georgia,Europe,Orthodox,Right-handed,Lightweight,16,4,20,80.0,Study fundamentals and signature techniques
+Alexander Volkanovski,Australia,Oceania,Orthodox,Right-handed,Featherweight,26,3,29,89.66,Study fundamentals and signature techniques
+Robert Whittaker,Australia,Oceania,Orthodox,Right-handed,Middleweight,24,6,30,80.0,Study fundamentals and signature techniques
+Mark Hunt,New Zealand,Oceania,Orthodox,Right-handed,Lightweight,13,14,27,48.15,Study fundamentals and signature techniques
+Tai Tuivasa,Australia,Oceania,Orthodox,Right-handed,Lightweight,15,5,20,75.0,Study fundamentals and signature techniques
+Georges St-Pierre,Canada,North America,Orthodox,Right-handed,Middleweight,26,2,28,92.86,"Study wrestling, fight IQ"
+Rory MacDonald,Canada,North America,Orthodox,Right-handed,Lightweight,22,6,28,78.57,Study fundamentals and signature techniques
+Chan Sung Jung,South Korea,Asia,Orthodox,Right-handed,Featherweight,17,7,24,70.83,Study fundamentals and signature techniques
+Yushin Okami,Japan,Asia,Orthodox,Right-handed,Lightweight,30,11,41,73.17,Study fundamentals and signature techniques
+Takanori Gomi,Japan,Asia,Southpaw,Left-handed,Lightweight,37,12,49,75.51,Study fundamentals and signature techniques
+Tatsuya Kawajiri,Japan,Asia,Orthodox,Right-handed,Lightweight,27,10,37,72.97,Study fundamentals and signature techniques
+Dong Hyun Kim,South Korea,Asia,Orthodox,Right-handed,Lightweight,21,4,25,84.0,Study fundamentals and signature techniques
+Leon Edwards,Jamaica,North America,Orthodox,Right-handed,Welterweight,21,3,24,87.5,Study fundamentals and signature techniques
+Tarec Saffiedine,Belgium,Europe,Orthodox,Right-handed,Lightweight,17,8,25,68.0,Study fundamentals and signature techniques
