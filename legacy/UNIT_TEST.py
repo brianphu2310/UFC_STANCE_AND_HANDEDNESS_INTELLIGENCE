@@ -13,7 +13,7 @@ from pathlib import Path
 # ============================================================
 # CONFIGURATION - Change this if your Excel file is elsewhere
 # ============================================================
-DATA_PATH = Path(__file__).parent / "UFC_FINAL_DATASET.xlsx"
+DATA_PATH = Path(__file__).parent / "../UFC_FINAL_DATASET.xlsx"
 # If the above doesn't work, uncomment and use full path:
 # DATA_PATH = Path(r"C:\Users\YourName\UFC\UFC_FINAL_DATASET.xlsx")
 
