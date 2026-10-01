@@ -116,7 +116,7 @@ I stopped speculating and built a data pipeline to find out.
 
 ##  Data Collection — Multi-Source Scraping
 
-**File:** `UFC_DATA_SCRAPING.ipynb`
+**File:** `notebooks/UFC_DATA_SCRAPING.ipynb`
 
 All data is sourced from publicly available websites. No synthetic data. No paid APIs. The pipeline pulls from **three complementary sources** to maximise coverage and cross-validate records.
 
@@ -475,20 +475,23 @@ With n = 23 in the Southpaw+Right group, a small sample will almost always retur
 ```
 UFC_STANCE_AND_HANDEDNESS_INTELLIGENCE/
 │
-├── UFC_DATA_SCRAPING.ipynb              # Web scraping — UFCSTATS, Tapology, Sherdog
-├── UFC_DATA_CLEANING_PROCESSING.ipynb   # Merge, validate, feature engineering
-├── UFC_Visualization.ipynb              # EDA, T-Tests, Cohen's d, Panel dashboard
+├── ufc_intelligence_app.py     # Streamlit entry point (multipage app)
+├── ufc_core.py                 # Data loading, KNN similarity, statistics
+├── ui.py                       # Shared styling and layout helpers
+├── globe3d.py, body3d.py       # 3D globe and body components (Three.js)
+├── views/                      # One module per app page
+├── components/, static/        # Front-end assets for the 3D components
 │
-├── ufc_intelligence_app.py              # Streamlit app (KNN recommender)
-├── ufc_panel_dashboard.py               # Panel dashboard (3 tabs)
-├── convert.py                           # ETL: Excel → PostgreSQL
+├── notebooks/                  # Scraping, cleaning and statistical analysis
+├── scripts/                    # Reproducible dataset build scripts
+├── data/                       # Clean and enriched CSVs, data dictionary, raw scrape
+├── UFC_FINAL_DATASET.xlsx      # Cleaned master dataset
+├── ufc_data.csv                # Export used by Tableau
 │
-├── UFC_FINAL_DATASET.xlsx               # Cleaned master dataset (used by Streamlit)
-├── UFC_Data_Raw.xlsx                    # Raw scraped data pre-cleaning
-├── ufc_data.csv                         # Exported for Tableau
-│
-├── UNIT_TEST.py                         # Unit tests for data pipeline
-└── requirements.txt                     # Pinned dependencies
+├── tests/                      # pytest suite (core logic and page smoke tests)
+├── legacy/                     # First-version scripts, kept for reference only
+├── .github/workflows/ci.yml    # Runs the tests on every push and PR
+└── requirements.txt, requirements-dev.txt
 ```
 
 ---
@@ -503,14 +506,17 @@ cd UFC_STANCE_AND_HANDEDNESS_INTELLIGENCE
 # Install dependencies
 pip install -r requirements.txt
 
+# Run the tests (optional)
+pip install -r requirements-dev.txt && python -m pytest -q
+
 # Run Streamlit app
 streamlit run ufc_intelligence_app.py
 ```
 
 **Or run notebooks in order:**
-1. `UFC_DATA_SCRAPING.ipynb` — scrapes UFCSTATS + Tapology + Sherdog
-2. `UFC_DATA_CLEANING_PROCESSING.ipynb` — merge, validate, engineer features
-3. `UFC_Visualization.ipynb` — statistical analysis + Panel dashboard
+1. `notebooks/UFC_DATA_SCRAPING.ipynb` — scrapes UFCSTATS + Tapology + Sherdog
+2. `notebooks/UFC_DATA_CLEANING_PROCESSING.ipynb` — merge, validate, engineer features
+3. `notebooks/UFC_Visualization.ipynb` — statistical analysis + Panel dashboard
 
 **Want the data without scraping?** Download directly from Kaggle:
 ```bash
