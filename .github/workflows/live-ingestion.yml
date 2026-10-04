@@ -13,6 +13,9 @@ on:
         description: "Fighter detail pages to fetch"
         default: "10"
 
+permissions:
+  contents: write
+
 jobs:
   ingest:
     runs-on: ubuntu-latest
@@ -28,19 +31,36 @@ jobs:
         run: |
           mkdir -p data/raw
           python -m ingestion.ufcstats --max-pages ${{ inputs.max_pages }} --max-details ${{ inputs.max_details }} -v 2>&1 | tee data/raw/run.log
-      - name: Summary
+      - name: Write docs/LIVE_RUN.md
         if: always()
         run: |
           {
-            echo "## Live UFCStats ingestion"
-            echo "- Run at: $(date -u +%FT%TZ)"
-            if [ -f data/raw/ufcstats_fighters.csv ]; then
-              echo "- Rows: $(($(wc -l < data/raw/ufcstats_fighters.csv) - 1))"
-              echo '```'; head -6 data/raw/ufcstats_fighters.csv; echo '```'
-            else
-              echo "- No CSV written (see run.log)"
-            fi
-          } >> "$GITHUB_STEP_SUMMARY"
+            echo "# Last live ingestion run (UFCStats)"
+            echo
+            echo "Written by the workflow \`live-ingestion.yml\` on a GitHub-hosted runner. Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            echo
+            echo "- Run at (UTC): $(date -u +%FT%TZ)"
+            for f in data/raw/ufcstats_fighters.csv; do
+              [ -f "$f" ] && echo "- \`$f\`: $(($(wc -l < "$f") - 1)) rows"
+            done
+            echo
+            echo "## First rows"
+            for f in data/raw/ufcstats_fighters.csv; do
+              [ -f "$f" ] && { echo; echo "\`$f\`"; echo '```'; head -6 "$f" | cut -c1-240; echo '```'; }
+            done
+            echo
+            echo "## Run log (tail)"
+            echo '```'; tail -25 data/raw/run.log | cut -c1-240; echo '```'
+          } > docs/LIVE_RUN.md
+          cat docs/LIVE_RUN.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Commit LIVE_RUN.md
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/LIVE_RUN.md
+          git commit -m "Record last live ingestion run" || exit 0
+          git pull --rebase -q && git push
       - uses: actions/upload-artifact@v4
         if: always()
         with:
