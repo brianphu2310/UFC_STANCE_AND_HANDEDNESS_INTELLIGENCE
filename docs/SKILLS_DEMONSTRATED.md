@@ -34,6 +34,8 @@ Each skill below points to files in this repository that you can open and run.
 | Skill | Where to see it |
 |---|---|
 | Automated tests (pytest): pipeline, SQL results cross-checked against pandas, docs in sync | `tests/test_pipeline.py`, `tests/test_sql_analysis.py`, `tests/test_docs.py`, `tests/test_core.py`, `tests/test_pages.py` |
+| Reusable, polite web ingestion: `robots.txt` check, identifying User-Agent, rate limiting, retries with backoff, on-disk HTML cache, pure parsers separated from fetching, CSV with timestamp and source URL. Parsers verified on hand-written fixtures; live run not verified in CI | `ingestion/fetch.py`, `ingestion/ufcstats.py`, `docs/INGESTION.md` |
+| Offline tests for network code (mocked HTTP, fake clock, fixtures) | `tests/test_ingestion_fetch.py`, `tests/test_ingestion_ufcstats.py`, `tests/fixtures/` |
 | Continuous integration | `.github/workflows/ci.yml` |
 | Dependency management | `requirements.txt`, `requirements-dev.txt` |
 | Version control hygiene (build artefacts git-ignored) | `.gitignore` (`warehouse.db`) |

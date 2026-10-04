@@ -25,6 +25,9 @@ random noise, **not real data** (dominant foot only).
   Sherdog, and it does not read `robots.txt` or set a User-Agent. Anyone re-running it should first
   check UFCStats' terms of use and `robots.txt` and keep the request rate low. The pipeline in this
   repo does not scrape anything: it only reads the CSVs committed under `data/`.
+  A reusable port of that notebook now lives in `ingestion/` (see `docs/INGESTION.md`): it adds a
+  `robots.txt` check, a User-Agent, rate limiting, retries and a cache, and writes raw CSVs to `data/raw/`.
+  Its parsers are tested on hand-written fixtures only; the live run is not verified in CI.
 - Curated or hand-entered columns (`champion`, `weight_class` corrections, the sample
   coaches and classes) are not scraped and should not be described as such.
 

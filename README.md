@@ -493,6 +493,27 @@ python -m pytest -q             # pipeline, SQL and docs tests
 
 ---
 
+## Ingestion
+
+Reusable ingestion module ported from the existing scraping notebook (`notebooks/UFC_DATA_SCRAPING.ipynb`). Only the sources and selectors the notebook already uses were ported.
+
+```bash
+pip install -r requirements-ingestion.txt
+python -m ingestion.ufcstats --out data/raw/ufcstats_fighters.csv
+python -m pytest -q tests/test_ingestion_*.py     # offline
+```
+
+Scope note: the notebook code only reads UFCStats (index pages 1-5 and the first 50 fighter pages). It does not contain Tapology or Sherdog scraping, so none is ported; the notebook's cleaning step (unit conversion, handedness, win rate) is left to the existing cleaning code and pipeline. Output: `data/raw/ufcstats_fighters.csv` (raw strings, not the cleaned dataset).
+
+What it does: checks `robots.txt` (`urllib.robotparser`) and aborts politely if disallowed, sends an identifying User-Agent, waits at least 1 second between requests (default 1.5-2 s), retries with exponential backoff, caches raw HTML under `data/raw_html/` (git-ignored), and writes CSV with `scraped_at` and `source_url` columns. Parsing is separate from fetching: the parsers are pure functions of HTML text. Details in [docs/INGESTION.md](docs/INGESTION.md).
+
+- **Parser verified on fixtures only.** The parser unit tests use small hand-written HTML fixtures (`tests/fixtures/`, labelled as not captured pages) that mimic the selectors the notebook uses.
+- **Live run not verified in CI.** CI has no network access to the target sites, and the live fetch has never been run from this module. The notebook's selectors may no longer match the live markup.
+- **Check the site's terms of use before running.** The fetcher reads `robots.txt` and stops if the URL is disallowed, but that is not a substitute for reading the terms.
+- **For personal / portfolio use only.** Do not redistribute scraped content.
+
+---
+
 ##  Project Structure
 
 ```
@@ -506,6 +527,7 @@ UFC_STANCE_AND_HANDEDNESS_INTELLIGENCE/
 ├── components/, static/        # Front-end assets for the 3D components
 │
 ├── notebooks/                  # Scraping, cleaning and statistical analysis
+├── ingestion/                  # Reusable UFCStats scraper (robots, rate limit, retries, cache) + fetch.py
 ├── scripts/                    # Reproducible dataset build scripts
 ├── pipeline/                   # ETL: extract, validate, transform, load to warehouse.db
 ├── sql/                        # Analysis queries (sql/analysis) and runner
