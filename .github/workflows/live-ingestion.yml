@@ -29,8 +29,11 @@ jobs:
       - run: pip install -r requirements-ingestion.txt
       - name: Probe source (status, redirects, first bytes)
         run: |
+          mkdir -p data/raw
+          {
           curl -sIL -m 20 -A 'ufc-stance-portfolio-ingest/0.1' http://ufcstats.com/statistics/fighters | head -20
-          curl -sL -m 20 -A 'ufc-stance-portfolio-ingest/0.1' 'http://ufcstats.com/statistics/fighters?char=a&page=all' | head -c 1200
+          curl -sL -m 20 -A 'ufc-stance-portfolio-ingest/0.1' 'http://ufcstats.com/statistics/fighters?char=a&page=all' | head -c 1500
+          } > data/raw/probe.txt 2>&1
       - name: Fetch (robots.txt checked, 1.5 s between requests)
         run: |
           mkdir -p data/raw
@@ -52,6 +55,8 @@ jobs:
             for f in data/raw/ufcstats_fighters.csv; do
               [ -f "$f" ] && { echo; echo "\`$f\`"; echo '```'; head -6 "$f" | cut -c1-240; echo '```'; }
             done
+            echo
+            echo "## Source probe"; echo '```'; cut -c1-200 data/raw/probe.txt | head -40; echo '```'
             echo
             echo "## Run log (tail)"
             echo '```'; tail -25 data/raw/run.log | cut -c1-240; echo '```'
