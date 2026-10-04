@@ -102,6 +102,25 @@ I stopped speculating and built a data pipeline to find out.
 
 ---
 
+### 2b — Power BI Dashboard · Who should you study?
+
+Same data, rebuilt in Power BI as a second dashboard (the Tableau one above is kept). It is written for readers with no data background: each page opens with a plain-English summary line, and chart titles are questions ("Do taller fighters have longer reach?").
+
+| Page | What it answers |
+|---|---|
+| Dashboard | Top 10 fighters to study, win rate vs fights, where fighters come from, ring filters for stance / handedness / weight class |
+| Fighters world | Reach vs height, win rate by stance and handedness, sortable fighter list with a study tip |
+| Skills lab | How fighters win (KO / submission / decision) by weight class, striker vs grappler map |
+| About | Definitions, source and limits |
+
+<img src="docs/powerbi/ufc-1.png" alt="Power BI dashboard page" width="900" />
+
+- File: [`powerbi/ufc_dashboard.pbix`](powerbi/ufc_dashboard.pbix) (open in Power BI Desktop). All four pages: [`docs/powerbi/`](docs/powerbi/).
+- Data: the 117-fighter flat table. The measures (win rate, insight line, KO/sub/decision mix) are DAX in the model.
+- Limits: the country map is bubbles at country centroids on a drawn outline, not a true basemap, because map visuals are disabled in the author's Power BI tenant. "Study focus" is a rule-based tip from fighting style, not coaching advice.
+
+---
+
 ### 3 — Google Colab · Full Statistical Analysis
 
 > 🔗 **[Open in Colab →](https://colab.research.google.com/drive/1zp4jVJM39wCb73EvXKWwPtgzM1n6mwWz)**

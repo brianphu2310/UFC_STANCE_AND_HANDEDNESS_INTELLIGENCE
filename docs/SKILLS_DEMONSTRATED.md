@@ -24,6 +24,7 @@ Each skill below points to files in this repository that you can open and run.
 | Analytical SQL: CTEs, window functions (`RANK`, `ROW_NUMBER`, `LAG`, running totals), joins, `CASE`, `HAVING` | `sql/analysis/` (10 queries), `sql/README.md` |
 | Reproducible query runner writing versioned outputs | `sql/run_queries.py`, `docs/query_results/` |
 | Statistics: t-tests, Cohen's d, bootstrap intervals, power / required sample size | `ufc_core.py` (`cohens_d`, `bootstrap_diff_ci`, `required_n_per_group`, `compare_groups`), `sql/analysis/03_southpaw_right_vs_orthodox_right.sql` |
+| BI dashboards: Tableau (linked in README) and Power BI with DAX measures, plain-English insight lines | `powerbi/ufc_dashboard.pbix`, previews in `docs/powerbi/` |
 | Exploratory analysis and visualisation notebooks | `notebooks/UFC_Visualization.ipynb`, `notebooks/UFC_DATA_CLEANING_PROCESSING.ipynb` |
 | Feature engineering (style indices, ape index, popularity index) | `scripts/build_clean_dataset.py`, `scripts/enrich_dataset.py` |
 | Interactive app: nearest-neighbour fighter matching, Streamlit pages | `ufc_intelligence_app.py`, `ufc_core.py`, `views/` |
