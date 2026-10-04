@@ -5,7 +5,8 @@ Reusable ingestion modules ported from `notebooks/UFC_DATA_SCRAPING.ipynb`. They
 ## Status (read first)
 
 - **Parser verified on fixtures only.** The parser unit tests use small hand-written HTML fixtures (`tests/fixtures/`, labelled as not captured pages) that mimic the selectors the notebook uses.
-- **Live run not verified in CI.** CI has no network access to the target sites, and the live fetch has never been run from this module. The notebook's selectors may no longer match the live markup.
+- **Live run attempted on a GitHub runner (4 Oct 2026): blocked by the site.** The manual workflow [`live-ingestion.yml`](../.github/workflows/live-ingestion.yml) fetched `ufcstats.com/statistics/fighters`; `robots.txt` returned 404 (allowed) and the page returned HTTP 200, but the body was a 2,994-character JavaScript "Checking your browser" challenge, not the fighter table, so 0 rows were written. The probe output is in [`LIVE_RUN.md`](LIVE_RUN.md). The module does not try to get around browser checks, so it cannot currently refresh data from this site. The committed dataset was collected earlier by the notebook (see `docs/DATA_DICTIONARY.md` for provenance).
+- **Not wired into the normal CI** (it would make CI depend on a third-party site); run it from the Actions tab.
 - **Check the site's terms of use before running.** The fetcher reads `robots.txt` and stops if the URL is disallowed, but that is not a substitute for reading the terms.
 - **For personal / portfolio use only.** Do not redistribute scraped content.
 - Not wired into CI as a live job, and not part of `python -m pipeline`.
