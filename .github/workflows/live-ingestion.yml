@@ -27,6 +27,10 @@ jobs:
           cache: pip
           cache-dependency-path: requirements*.txt
       - run: pip install -r requirements-ingestion.txt
+      - name: Probe source (status, redirects, first bytes)
+        run: |
+          curl -sIL -m 20 -A 'ufc-stance-portfolio-ingest/0.1' http://ufcstats.com/statistics/fighters | head -20
+          curl -sL -m 20 -A 'ufc-stance-portfolio-ingest/0.1' 'http://ufcstats.com/statistics/fighters?char=a&page=all' | head -c 1200
       - name: Fetch (robots.txt checked, 1.5 s between requests)
         run: |
           mkdir -p data/raw
