@@ -1,0 +1,16 @@
+continent,country,fighters,rank_in_continent,pct_of_continent_listed,southpaws,mean_win_rate
+Asia,Japan,3,1,42.9,2,73.88
+Asia,China,2,2,28.6,0,87.08
+Asia,South Korea,2,3,28.6,1,77.41
+Europe,Russia,7,1,25.9,1,90.18
+Europe,UK,7,2,25.9,1,77.8
+Europe,Netherlands,5,3,18.5,0,75.67
+Europe,France,3,4,11.1,1,81.22
+Europe,Poland,3,5,11.1,1,81.84
+Europe,Georgia,2,6,7.4,0,90.0
+North America,USA,43,1,84.3,10,76.39
+North America,Mexico,4,2,7.8,0,81.02
+North America,Canada,2,3,3.9,0,85.72
+North America,Jamaica,2,4,3.9,1,76.44
+Oceania,Australia,3,1,100.0,1,81.55
+South America,Brazil,16,1,100.0,4,76.17

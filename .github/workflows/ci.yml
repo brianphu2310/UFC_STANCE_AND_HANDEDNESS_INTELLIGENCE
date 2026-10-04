@@ -16,4 +16,10 @@ jobs:
           cache: pip
           cache-dependency-path: requirements*.txt
       - run: pip install -r requirements-dev.txt
+      - name: Run pipeline and SQL analysis
+        run: |
+          python -m pipeline.run
+          python sql/run_queries.py
+      - name: Committed reports and query results are up to date
+        run: git diff --exit-code -- docs/DATA_QUALITY.md docs/query_results
       - run: python -m pytest -q

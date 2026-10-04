@@ -1,0 +1,12 @@
+stance,experience_band,fighters,cumulative_fighters,mean_win_rate
+Orthodox,1: 10-19 fights,14,14,84.27
+Orthodox,2: 20-29 fights,31,45,80.52
+Orthodox,3: 30-39 fights,21,66,72.99
+Orthodox,4: 40+ fights,17,83,72.76
+Southpaw,1: 10-19 fights,3,3,88.99
+Southpaw,2: 20-29 fights,9,12,83.37
+Southpaw,3: 30-39 fights,6,18,73.13
+Southpaw,4: 40+ fights,8,26,71.02
+Switch,1: 10-19 fights,1,1,94.44
+Switch,2: 20-29 fights,6,7,82.05
+Switch,3: 30-39 fights,1,8,73.33

@@ -1,0 +1,6 @@
+stance,hand,fighters,avg_sig_strikes_landed_per_min,avg_strike_accuracy_pct,avg_sig_strikes_absorbed_per_min,avg_takedowns_per_15,avg_knockdowns_per_15,striking_differential
+Orthodox,Left,8,3.84,44.7,3.59,1.4,0.37,0.25
+Orthodox,Right,72,4.02,48.0,3.32,1.59,0.47,0.7
+Southpaw,Left,5,3.5,44.2,3.39,0.6,0.37,0.11
+Southpaw,Right,21,3.34,49.1,3.05,1.86,0.41,0.28
+Switch,Right,8,4.61,50.8,3.66,1.11,0.46,0.95

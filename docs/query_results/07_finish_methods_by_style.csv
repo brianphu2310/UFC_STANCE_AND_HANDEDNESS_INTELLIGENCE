@@ -1,0 +1,5 @@
+fighting_style,fighters,ufc_wins,ko_pct,sub_pct,decision_pct,other_pct,profile
+Striker,43,531,54.8,7.9,37.3,0.0,high finish rate (>=60%)
+Grappler,39,522,23.4,29.9,46.6,0.2,lower finish rate (<60%)
+All-rounder,32,337,40.1,17.2,42.7,0.0,lower finish rate (<60%)
+Not enough UFC data,1,2,50.0,0.0,50.0,0.0,lower finish rate (<60%)

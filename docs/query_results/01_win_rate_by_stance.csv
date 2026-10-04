@@ -1,0 +1,4 @@
+stance,fighters,pct_of_fighters,mean_win_rate,pooled_win_rate,avg_fights,sample_note
+Orthodox,83,70.9,77.66,76.3,31.0,larger sample
+Southpaw,26,22.2,77.85,75.68,32.4,moderate sample
+Switch,8,6.8,82.51,82.01,23.6,small sample (n<10)

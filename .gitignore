@@ -9,3 +9,6 @@ venv/
 .DS_Store
 Thumbs.db
 .streamlit/secrets.toml
+warehouse.db
+*.db
+*.sqlite
