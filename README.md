@@ -11,6 +11,18 @@
 
 ---
 
+## At a glance
+
+[![CI](https://github.com/brianphu2310/UFC_STANCE_AND_HANDEDNESS_INTELLIGENCE/actions/workflows/ci.yml/badge.svg)](https://github.com/brianphu2310/UFC_STANCE_AND_HANDEDNESS_INTELLIGENCE/actions)
+
+| | |
+|---|---|
+| **Question** | Does stance or handedness change UFC outcomes, and who should a fighter study? |
+| **What I built** | Cleaned fighter dataset of 117 fighters, hypothesis tests (t-test, Cohen's d), a KNN fighter-twin recommender, Streamlit app, Tableau and Power BI dashboards. |
+| **Key results** | Stance alone does not predict winning (p = 0.34). Right-handed southpaws (23 of 117) win 74.3% vs 70.2% for orthodox right-handers: p = 0.07, Cohen's d = 0.43, so a small-to-medium effect that is not significant at 0.05. |
+| **Proof** | CI green, 96 tests; the live run is logged in [docs/LIVE_RUN.md](docs/LIVE_RUN.md). |
+| **Honest limits** | Small sample. UFCStats now shows a browser-check challenge to scripts: the run log records 0 rows and the check is not bypassed, so the dataset is the earlier snapshot. |
+
 ## The Problem I Was Actually Trying to Solve
 
 I train Kickboxing and Muay Thai at UFC Gym Townhall in Sydney — not professionally, just because I can't stop. One sparring session, I stepped on my partner's foot mid-combination. Not clumsiness — we were in **mirror-image stances** and our footwork geometries simply collided.
@@ -527,7 +539,7 @@ Scope note: the notebook code only reads UFCStats (index pages 1-5 and the first
 What it does: checks `robots.txt` (`urllib.robotparser`) and aborts politely if disallowed, sends an identifying User-Agent, waits at least 1 second between requests (default 1.5-2 s), retries with exponential backoff, caches raw HTML under `data/raw_html/` (git-ignored), and writes CSV with `scraped_at` and `source_url` columns. Parsing is separate from fetching: the parsers are pure functions of HTML text. Details in [docs/INGESTION.md](docs/INGESTION.md).
 
 - **Parser verified on fixtures only.** The parser unit tests use small hand-written HTML fixtures (`tests/fixtures/`, labelled as not captured pages) that mimic the selectors the notebook uses.
-- **Live run not verified in CI.** CI has no network access to the target sites, and the live fetch has never been run from this module. The notebook's selectors may no longer match the live markup.
+- **Live run:** a manual GitHub Actions run tried UFCStats from a hosted runner and received a JavaScript browser-check page, so 0 rows were returned (see `docs/LIVE_RUN.md`). No bypass is attempted; the dataset in this repo is the earlier snapshot.
 - **Check the site's terms of use before running.** The fetcher reads `robots.txt` and stops if the URL is disallowed, but that is not a substitute for reading the terms.
 - **For personal / portfolio use only.** Do not redistribute scraped content.
 
