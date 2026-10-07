@@ -7,16 +7,15 @@ import ui
 
 
 def render(df: pd.DataFrame):
-    st.markdown('<div class="eyebrow">Data &amp; methods</div>'
-                '<div class="title">Where every number comes from</div>', unsafe_allow_html=True)
-    st.write("")
+    ui.page_header("Where every number comes from",
+                   "Sources for each column, the stance corrections, and what the data can't tell you.")
     dic = pd.read_csv(core.DATA_DIR / "data_dictionary.csv")
-    st.dataframe(dic, hide_index=True, width="stretch",
+    st.dataframe(dic, hide_index=True, width="stretch", height=38 + 35 * len(dic),
                  column_config={"source": st.column_config.TextColumn("Source")})
     ui.callout(
-        "<b>scraped</b> = UFCSTATS / Tapology / Sherdog · <b>derived</b> = computed from scraped "
-        "fight logs · <b>curated</b> = assigned from public knowledge · "
-        "<b>estimated</b> = generated, not real (dominant foot only). Coaches and classes on the "
+        "<b>Scraped</b> means taken from UFCSTATS, Tapology or Sherdog. <b>Derived</b> means computed "
+        "from scraped fight logs. <b>Curated</b> means assigned from public knowledge. "
+        "<b>Estimated</b> means generated, not real, and applies to dominant foot only. Coaches and classes on the "
         "Build-your-fighter page are a fictional sample catalogue.")
 
     mism = df[~df["stance_matches_project"]]
@@ -26,7 +25,7 @@ def render(df: pd.DataFrame):
     st.dataframe(mism[["fighter", "stance_project", "stance", "hand"]]
                  .rename(columns={"stance_project": "Project file", "stance": "UFCSTATS",
                                   "fighter": "Fighter", "hand": "Hand"}),
-                 hide_index=True, width="stretch", height=300)
+                 hide_index=True, width="stretch", height=38 + 35 * len(mism))
 
     st.markdown("""
 **Limitations**

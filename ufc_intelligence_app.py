@@ -9,7 +9,7 @@ import streamlit as st
 
 import ufc_core as core
 import ui
-from views import brian, build_fighter, dashboard, data_notes, overview, stance_lab
+from views import brian, build_fighter, data_notes, explorer, overview, stance_lab
 
 st.set_page_config(page_title="UFC Stance Intelligence", layout="wide",
                    initial_sidebar_state="expanded")
@@ -40,7 +40,7 @@ def _page(render, footer=True):
 pages = [
     st.Page(_page(overview.render, footer=False), title="Overview",
             url_path="overview", default=True),
-    st.Page(_page(dashboard.render), title="Deep dive", url_path="deep-dive"),
+    st.Page(_page(explorer.render), title="Explorer", url_path="explorer"),
     st.Page(_page(build_fighter.render), title="Build a fighter",
             url_path="build-your-fighter"),
     st.Page(_page(stance_lab.render), title="Stance lab", url_path="stance-lab"),

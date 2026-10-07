@@ -14,7 +14,6 @@ PHASE_COLORS = dict(zip([p for p, _ in core.PHASES], ui.PALETTE))
 
 
 def _inputs():
-    st.markdown('<div class="eyebrow">Your profile</div>', unsafe_allow_html=True)
     gender = st.segmented_control("Divisions", ["Men", "Women"], default="Men", key="bf_g") or "Men"
     h = st.slider("Height (cm)", 150, 210, 179, key="bf_h")
     w = st.slider("Weight (kg)", 45, 130, 69, key="bf_w")
@@ -67,7 +66,7 @@ def _stance_card(adv, stance_choice, df, hand):
     st.markdown(f"""
     <div class="card" style="margin-top:10px">
       <div class="t">Suggested stance: {escape(adv['recommended'])}</div>
-      <div class="s">Alternative: {escape(adv['alternative'])}{' · cross-dominant' if adv['cross_dominant'] else ''}</div>
+      <div class="s">Alternative: {escape(adv['alternative'])}{'. You are cross-dominant.' if adv['cross_dominant'] else ''}</div>
       <div class="b"><ul>{reasons}</ul><div style="margin-top:6px">{tail}</div></div>
     </div>""", unsafe_allow_html=True)
 
@@ -87,9 +86,9 @@ def _models(df, p, stance):
         <div class="card" style="height:100%">
           <div class="score">{f['match_score']:.0f}<small> / 100 match</small></div>
           <div class="t" style="margin-top:8px">{escape(f['fighter'])}</div>
-          <div class="s">{escape(f['weight_class'])} · {f['wins']}–{f['losses']}</div>
+          <div class="s">{escape(f['weight_class'])}, {f['wins']}–{f['losses']}</div>
           <div style="margin-top:6px"><span class="pill">{escape(f['stance'])}</span><span class="pill">{escape(f['hand'])}-handed</span><span class="pill">{escape(f['fighting_style'])}</span></div>
-          <div class="s" style="margin-top:6px">{f['height_cm']:.0f} cm · reach {f'{f["reach_cm"]:.0f} cm' if pd.notna(f['reach_cm']) else 'n/a'}</div>
+          <div class="s" style="margin-top:6px">{f['height_cm']:.0f} cm tall, reach {f'{f["reach_cm"]:.0f} cm' if pd.notna(f['reach_cm']) else 'n/a'}</div>
           <div class="b"><b>What to learn</b><ul>{''.join(items)}</ul></div>
         </div>""", unsafe_allow_html=True)
 
@@ -140,12 +139,11 @@ def _roadmap(p, stance):
 
 
 def render(df: pd.DataFrame):
-    st.markdown('<div class="eyebrow">Build your fighter</div>'
-                '<div class="title">Your body, your stance, your fighters to study, your plan</div>'
-                '<div class="sub">Set your frame and goals on the left — the model, matches and '
-                'roadmap update live.</div>', unsafe_allow_html=True)
-    st.write("")
-    left, mid, right = st.columns([1.05, 2.0, 1.2], gap="medium")
+    ui.page_header("Build your fighter",
+                   "Enter your frame and goals. You get a stance, fighters to study and a training "
+                   "plan you can download.")
+    with st.container(key="oct_build"):
+        left, mid, right = st.columns([1.05, 2.0, 1.2], gap="medium")
     with left:
         p = _inputs()
     adv = core.recommend_stance(p["hand"], p["foot"], p["style"])
@@ -177,7 +175,7 @@ def render(df: pd.DataFrame):
     ui.section("Fighters to model yourself on",
                "Ranked on body match (height, reach, weight), stance, dominant hand, style and "
                "proven quality. 'What to learn' comes from their real UFC stats.")
-    _models(df, p, stance)
+    models = _models(df, p, stance)
 
     ui.section("Your roadmap", "Length scales with your goal, sessions per week and experience.")
     rm = _roadmap(p, stance)
@@ -209,7 +207,15 @@ def render(df: pd.DataFrame):
         c.markdown(f"""
         <div class="card" style="height:100%">
           <div class="t">{escape(r['coach'])}</div>
-          <div class="s">{escape(r['discipline'])} · {r['years_coaching']} yrs · {escape(r['level'])}</div>
+          <div class="s">{escape(r['discipline'])}, {r['years_coaching']} years coaching, {escape(r['level'].lower())}</div>
           <div style="margin-top:6px">{'' if r['stance'] == '—' else f'<span class="pill">{escape(r["stance"])}</span><span class="pill">{escape(r["hand"])}-handed</span>'}</div>
           <div class="b">{escape(r['specialty'])}{'<br><span style="color:' + ui.ACCENT + '">Match: ' + escape(', '.join(why)) + '</span>' if why else ''}</div>
         </div>""", unsafe_allow_html=True)
+
+    st.write("")
+    learn = {f: ([df.loc[df["fighter"] == f, "study"].iloc[0]]
+                 if isinstance(df.loc[df["fighter"] == f, "study"].iloc[0], str) else [])
+             + core.strengths(df, f, top=3) for f in models["fighter"]}
+    plan = core.plan_markdown(p, stance, adv, models, rm, classes, coaches, learn)
+    st.download_button("Download my training plan (Markdown)", plan.encode(),
+                       "training_plan.md", "text/markdown", type="primary")

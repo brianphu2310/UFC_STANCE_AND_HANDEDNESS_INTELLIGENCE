@@ -6,7 +6,7 @@ print("UFC EXCEL TO POSTGRES CONVERTER")
 print("="*50)
 
 
-excel_file = '../UFC_FINAL_DATASET.xlsx'
+excel_file = 'UFC_FINAL_DATASET.xlsx'
 
 if not os.path.exists(excel_file):
     print(f"ERROR: {excel_file} not found!")

@@ -11,12 +11,11 @@ from body3d import body3d
 
 def render(df: pd.DataFrame):
     B = core.BRIAN
-    st.markdown('<div class="eyebrow">Spar vs Brian</div>'
-                '<div class="title">Planning a round against a right-handed southpaw</div>'
-                '<div class="sub">Coaching heuristics, not a win prediction — the data has no '
-                'head-to-head outcomes to predict from.</div>', unsafe_allow_html=True)
-    st.write("")
-    left, mid, right = st.columns([1, 1.8, 1.3], gap="medium")
+    ui.page_header("Sparring a right-handed southpaw",
+                   "A game plan against Brian's stance and reach. These are coaching heuristics: "
+                   "the data has no head-to-head results to predict from.")
+    with st.container(key="oct_brian"):
+        left, mid, right = st.columns([1, 1.8, 1.3], gap="medium")
     with left:
         stance = st.segmented_control("Your stance", ["Orthodox", "Southpaw", "Switch"],
                                       default="Orthodox", key="br_st") or "Orthodox"
@@ -33,9 +32,9 @@ def render(df: pd.DataFrame):
                      ghost=True)], height=500, key="brian_body")
     with right:
         m1, m2, m3 = st.columns(3)
-        m1.metric("Height", f"{h}", f"{h - B['height_cm']:+d} cm", delta_color="off")
-        m2.metric("Reach", f"{r}", f"{r - B['reach_cm']:+d} cm", delta_color="off")
-        m3.metric("Weight", f"{w}", f"{w - B['weight_kg']:+d} kg", delta_color="off")
+        m1.metric("Height", f"{h}", f"{h - B['height_cm']:+d} cm", delta_color="off", delta_arrow="off")
+        m2.metric("Reach", f"{r}", f"{r - B['reach_cm']:+d} cm", delta_color="off", delta_arrow="off")
+        m3.metric("Weight", f"{w}", f"{w - B['weight_kg']:+d} kg", delta_color="off", delta_arrow="off")
         notes = core.matchup_notes(stance, hand)
         keys = "".join(f"<li>{escape(k)}</li>" for k in notes["keys"])
         gap = r - B["reach_cm"]

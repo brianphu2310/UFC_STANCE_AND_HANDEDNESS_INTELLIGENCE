@@ -4,8 +4,11 @@
 <meta charset="utf-8">
 <title>Globe 3D</title>
 <style>
+  @font-face { font-family: "Instrument Sans"; src: url("/app/static/fonts/instrument-sans-latin-400-normal.woff2") format("woff2"); font-weight: 400; }
+  @font-face { font-family: "Instrument Sans"; src: url("/app/static/fonts/instrument-sans-latin-600-normal.woff2") format("woff2"); font-weight: 600; }
+  @font-face { font-family: "Big Shoulders Display"; src: url("/app/static/fonts/big-shoulders-display-latin-700-normal.woff2") format("woff2"); font-weight: 700; }
   html, body { margin: 0; height: 100%; background: transparent; overflow: hidden;
-               font-family: Inter, "Segoe UI", system-ui, sans-serif; color: #F3EEFB; }
+               font-family: "Instrument Sans", "Segoe UI", system-ui, sans-serif; color: #F3EEFB; }
   #wrap { position: relative; width: 100%; height: 100%; overflow: hidden; box-sizing: border-box;
           background:
             radial-gradient(circle closest-side at 50% 50%, rgba(90,84,216,.24) 0 70%, rgba(200,98,206,.12) 82%,
@@ -16,7 +19,7 @@
   canvas { display: block; position: relative; }
   #labels { position: absolute; inset: 0; pointer-events: none; }
   .lbl { position: absolute; transform: translate(-50%, calc(-100% - 10px)); white-space: nowrap;
-         background: rgba(12,8,24,0.92); border: 1px solid #4A3670; border-radius: 9px;
+         background: rgba(12,8,24,0.92); border: 1px solid #3A2D57; border-radius: 3px;
          box-shadow: 0 8px 22px rgba(0,0,0,.45); padding: 4px 8px 5px; font-size: 11px;
          line-height: 1.32; color: #C9C0DD; pointer-events: auto; cursor: pointer;
          transition: opacity .15s; }
@@ -25,14 +28,14 @@
          transform: translateX(-50%) rotate(45deg); }
   .lbl.below { transform: translate(-50%, 10px); }
   .lbl.below::after { bottom: auto; top: -5px; transform: translateX(-50%) rotate(225deg); }
-  .lbl b { color: #F3EEFB; font-size: 11.5px; }
-  .lbl .n { color: #fff; background: linear-gradient(90deg,#5A54D8,#C862CE); border-radius: 999px; padding: 0 6px; font-weight: 700;
+  .lbl b { color: #F3EEFB; font-family: "Big Shoulders Display", sans-serif; font-weight: 700; font-size: 14px; letter-spacing: .01em; }
+  .lbl .n { color: #fff; background: linear-gradient(90deg,#5A54D8,#C862CE); border-radius: 3px; padding: 0 6px; font-weight: 700;
             margin-left: 5px; font-size: 10.5px; }
   .lbl .more { color: #8D84A6; }
   .lbl.sel { border-color: #C862CE; box-shadow: 0 0 0 2px rgba(200,98,206,.45), 0 8px 22px rgba(0,0,0,.5); }
   .lbl.small { padding: 2px 7px; }
   .hud { position: absolute; right: 10px; bottom: 8px; display: flex; gap: 6px; }
-  button { background: rgba(26,18,48,.9); color: #C9C0DD; border: 1px solid #34264F; border-radius: 999px;
+  button { background: rgba(26,18,48,.9); color: #C9C0DD; border: 1px solid #34264F; border-radius: 3px;
            padding: 4px 11px; font-size: 11px; cursor: pointer; font-family: inherit;
            box-shadow: 0 2px 8px rgba(0,0,0,.35); }
   button.on { color: #fff; background: #C862CE; border-color: #C862CE; }

@@ -19,11 +19,9 @@ METRICS = {
 
 
 def render(df: pd.DataFrame):
-    st.markdown('<div class="eyebrow">Stance lab</div>'
-                '<div class="title">Is there a southpaw — or left-hander — advantage?</div>'
-                '<div class="sub">Welch t-test, Mann-Whitney, Cohen\'s d and bootstrap intervals '
-                'on the official UFCSTATS stance.</div>', unsafe_allow_html=True)
-    st.write("")
+    ui.page_header("Does stance decide fights?",
+                   "Test any outcome by stance, hand or foot, with intervals and corrections that "
+                   "show how sure the answer really is.")
     f1, f2, f3 = st.columns([1.4, 1, 1])
     metric_label = f1.selectbox("Outcome", list(METRICS))
     metric = METRICS[metric_label]
@@ -35,6 +33,7 @@ def render(df: pd.DataFrame):
         lab = lab[lab["gender"] == gender]
     lab = lab[lab[metric].notna()]
     st.caption(f"{len(lab)} fighters in this view.")
+    verdict = st.empty()          # filled once the tests have run
 
     dim = st.segmented_control("Compare groups by", list(core.GROUP_DIMS),
                                default="Stance × hand", key="lab_dim") or "Stance × hand"
@@ -75,6 +74,24 @@ def render(df: pd.DataFrame):
         st.info("Not enough fighters to compare groups.")
         return
 
+    holm = core.holm_adjust([r.welch_p for r in results])
+    sig = [r for r, p in zip(results, holm) if p < 0.05]
+    head = results[1] if len(results) > 1 else results[0]
+    if sig:
+        verdict_html = ("<b>Verdict:</b> after correcting for running "
+                        f"{len(results)} comparisons at once, "
+                        + ", ".join(escape(f"{r.label_a} vs {r.label_b}") for r in sig)
+                        + f" still differ{'s' if len(sig) == 1 else ''} on {escape(metric_label.lower())}.")
+    else:
+        verdict_html = (f"<b>Verdict: no stance, hand or foot group differs reliably on "
+                        f"{escape(metric_label.lower())}.</b> Every 95% interval below crosses zero "
+                        f"or fails the Holm correction for {len(results)} simultaneous tests. "
+                        "Right-handed southpaws are "
+                        f"{head.diff:+.1f} against orthodox right-handers, a gap too small to separate from "
+                        "chance with groups this size.")
+    verdict.markdown(f'<div class="callout" style="border-left-color:{ui.RULE}">{verdict_html}</div>',
+                     unsafe_allow_html=True)
+
     fig = go.Figure()
     ys = [f"{r.label_a} vs {r.label_b}" for r in results]
     fig.add_vline(x=0, line=dict(color=ui.INK_MUTED, width=1, dash="dot"))
@@ -96,21 +113,19 @@ def render(df: pd.DataFrame):
         "Comparison": f"{r.label_a} vs {r.label_b}", "n": f"{r.n_a} vs {r.n_b}",
         "Means": f"{r.mean_a:.2f} vs {r.mean_b:.2f}", "Gap": f"{r.diff:+.2f}",
         "95% CI": f"{r.ci_low:+.2f} to {r.ci_high:+.2f}", "Welch p": ui.fmt_p(r.welch_p),
+        "Holm-adjusted p": ui.fmt_p(hp),
         "Mann-Whitney p": ui.fmt_p(r.mwu_p),
         "Cohen's d": f"{r.d:+.2f} ({core.effect_label(r.d)})",
         "n/group for 80% power": f"{r.power_n_per_group:,}" if r.power_n_per_group < 10**5 else "—",
-    } for r in results]), hide_index=True, width="stretch")
+    } for r, hp in zip(results, holm)]), hide_index=True, width="stretch")
 
-    sig = [r for r in results if r.significant]
-    head = results[1] if len(results) > 1 else results[0]
     lines = [f"<b>Right-handed southpaws vs orthodox right-handers:</b> {head.mean_a:.2f} vs "
              f"{head.mean_b:.2f} ({metric_label.lower()}), Welch p = {ui.fmt_p(head.welch_p)}, "
              f"effect {core.effect_label(head.d)} (d = {head.d:+.2f}), "
              f"n = {head.n_a} vs {head.n_b}."]
-    lines.append("<b>Significant at 5%:</b> " + (", ".join(
-        escape(f"{r.label_a} vs {r.label_b}") for r in sig) if sig else "none of the comparisons")
-        + ". With five comparisons, expect about one false positive in four runs "
-          "— treat a lone p just under 0.05 with caution.")
+    lines.append("<b>How to read this:</b> the Holm-adjusted p keeps the chance of any false "
+                 f"alarm across all {len(results)} tests at 5%. The last column is how many fighters "
+                 "per group a study would need to detect the observed gap 80% of the time.")
     ui.callout("<br>".join(lines))
     try:
         an = core.anova(lab, col, metric)

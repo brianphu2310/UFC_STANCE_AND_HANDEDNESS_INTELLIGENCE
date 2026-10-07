@@ -1,5 +1,3 @@
 -r requirements.txt
--r requirements-ingestion.txt
 openpyxl>=3.1   # scripts/build_clean_dataset.py reads the Excel master
 pytest>=8
-# pipeline/ and sql/ use only pandas, numpy and the standard-library sqlite3 (no extra packages)

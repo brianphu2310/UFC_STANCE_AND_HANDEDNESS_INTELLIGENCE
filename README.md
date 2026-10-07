@@ -1,639 +1,130 @@
-<img width="4096" height="2304" alt="image" src="https://github.com/user-attachments/assets/9ad930fb-2875-495f-8f32-672549ddfed4" />
-
 # UFC Stance & Handedness Intelligence
-### *An end-to-end data project that started on the sparring mats at UFC Gym Townhall, Sydney*
+*An end-to-end data project that started on the sparring mats at UFC Gym Townhall, Sydney.*
 
-[![Streamlit App](https://img.shields.io/badge/🥊_Streamlit_App-Live-00C7A3?style=for-the-badge&logo=streamlit&logoColor=white)](https://ufcstanceandhandednessintelligence-qsdqucvqpj5hhwymhqbeji.streamlit.app)
-[![Tableau](https://img.shields.io/badge/📊_Tableau_Dashboard-Live-9B59EF?style=for-the-badge&logo=tableau&logoColor=white)](https://public.tableau.com/app/profile/brian.ma5935/viz/UFCRECOMENDATIONENGINE/Dashboard1)
-[![Power BI](https://img.shields.io/badge/Power_BI-Download_.pbix-F2C811?style=for-the-badge&logo=powerbi&logoColor=black)](https://github.com/brianphu2310/UFC_STANCE_AND_HANDEDNESS_INTELLIGENCE/raw/main/powerbi/ufc_dashboard.pbix)
-[![Colab](https://img.shields.io/badge/📓_Full_Analysis-Google_Colab-F9AB00?style=for-the-badge&logo=googlecolab&logoColor=white)](https://colab.research.google.com/drive/1zp4jVJM39wCb73EvXKWwPtgzM1n6mwWz)
-[![Kaggle Dataset](https://img.shields.io/badge/📦_Dataset-Kaggle-20BEFF?style=for-the-badge&logo=kaggle&logoColor=white)](https://www.kaggle.com/brianphu)
-[![License: MIT](https://img.shields.io/badge/License-MIT-gray?style=for-the-badge)](LICENSE)
+[![Streamlit App](https://img.shields.io/badge/Streamlit_App-Live-C862CE?style=for-the-badge&logo=streamlit&logoColor=white)](https://ufcstanceandhandednessintelligence-qsdqucvqpj5hhwymhqbeji.streamlit.app)
+[![Tableau](https://img.shields.io/badge/Tableau_Dashboard-Live-5A54D8?style=for-the-badge&logo=tableau&logoColor=white)](https://public.tableau.com/app/profile/brian.ma5935/viz/UFCRECOMENDATIONENGINE/Dashboard1)
+[![Kaggle Dataset](https://img.shields.io/badge/Dataset-Kaggle-20BEFF?style=for-the-badge&logo=kaggle&logoColor=white)](https://www.kaggle.com/brianphu)
+[![Tests](https://github.com/brianphu2310/UFC_STANCE_AND_HANDEDNESS_INTELLIGENCE/actions/workflows/tests.yml/badge.svg)](https://github.com/brianphu2310/UFC_STANCE_AND_HANDEDNESS_INTELLIGENCE/actions/workflows/tests.yml)
 
----
+![Global overview](docs/img/overview.png)
 
-## At a glance
+## The question
 
-[![CI](https://github.com/brianphu2310/UFC_STANCE_AND_HANDEDNESS_INTELLIGENCE/actions/workflows/ci.yml/badge.svg)](https://github.com/brianphu2310/UFC_STANCE_AND_HANDEDNESS_INTELLIGENCE/actions)
+I train kickboxing and Muay Thai. One session I stepped on my partner's foot mid-combination —
+we were in mirror-image stances and our footwork collided. I'm a **right-handed southpaw**: my
+dominant hand is my *lead* hand, so my jab is my best weapon, not the rear straight most
+southpaws are known for.
 
-| | |
+That raised a testable question: **does stance — or the hand behind it — change who wins at the
+top level?**
+
+## What the data says
+
+117 elite fighters from 28 countries, official UFCSTATS stance, pro record and UFC fight-log stats.
+
+| Comparison | n | Mean win rate | Gap (95% CI) | Welch p | Holm p | Cohen's d |
+|---|---|---|---|---|---|---|
+| Southpaw vs orthodox | 26 vs 83 | 77.9% vs 77.7% | +0.2 (−3.9 to +4.5) | 0.93 | 1.00 | 0.02 |
+| Right-handed southpaw vs orthodox right-hander | 21 vs 73 | 79.2% vs 77.4% | +1.8 (−2.7 to +6.7) | 0.45 | 1.00 | 0.19 |
+| Switch-stance vs single-stance | 8 vs 109 | 82.5% vs 77.7% | +4.8 (−1.2 to +10.6) | 0.18 | 0.71 | 0.50 |
+| Left-handed vs right-handed | 15 vs 102 | 77.1% vs 78.2% | −1.0 (−6.9 to +4.2) | 0.73 | 1.00 | −0.11 |
+
+**No stance or handedness group wins reliably more often.** Every interval crosses zero, and none
+survives a Holm correction for running several tests at once. Switch-hitters show the largest
+gap, but with 8 fighters a 5-point edge can't be told apart from chance — a real test would need
+about 60 fighters per group.
+
+Where stance *does* show up is in **how** people fight (Stance lab and Explorer pages): the skill
+profiles, reach distributions and striking-vs-grappling mix differ by stance, even though the
+win rates don't.
+
+> Earlier versions of this README reported a 74.3% vs 70.2% "right-handed southpaw advantage"
+> (d = 0.43). Re-checking against the official UFCSTATS stance showed that **43 of 117 fighters had
+> the wrong stance** in the original spreadsheet, and the corrected data shows no such advantage.
+> The app lists every correction on its Data page.
+
+## The app
+
+| Page | What it does |
 |---|---|
-| **Question** | Does stance or handedness change UFC outcomes, and who should a fighter study? |
-| **What I built** | Cleaned fighter dataset of 117 fighters, hypothesis tests (t-test, Cohen's d), a KNN fighter-twin recommender, Streamlit app, Tableau and Power BI dashboards. |
-| **Key results** | Stance alone does not predict winning (p = 0.34). Right-handed southpaws (23 of 117) win 74.3% vs 70.2% for orthodox right-handers: p = 0.07, Cohen's d = 0.43, so a small-to-medium effect that is not significant at 0.05. |
-| **Proof** | CI green, 96 tests; the live run is logged in [docs/LIVE_RUN.md](docs/LIVE_RUN.md). |
-| **Honest limits** | Small sample. UFCStats now shows a browser-check challenge to scripts: the run log records 0 rows and the check is not bypassed, so the dataset is the earlier snapshot. |
+| **Overview** | One-screen dashboard: rotatable 3D globe with fighter names on each country, continent picker, debut-year timeline with slider, and six different charts on stance, hand and foot |
+| **Explorer** | Pick any two fighters: tale of the tape, a 3D face-off in the octagon (jab range, height and reach overlays), skill-percentile butterfly chart, stance geometry, and the five fighters who fight most like them. Filterable table with CSV export |
+| **Build a fighter** | Enter height, weight, reach, dominant hand and foot, style, training frequency and goal → rotatable 3D body model, stance advice, fighters to study (with what to learn from their real stats), a phased roadmap, weekly schedule, classes and coaches. Downloadable plan |
+| **Stance lab** | Welch t-test, Mann-Whitney, Cohen's d, bootstrap intervals, Holm correction and power analysis for any outcome and grouping |
+| **Spar vs Brian** | Open vs closed stance game plan against a right-handed southpaw, with both bodies in 3D |
+| **Data** | Where every column comes from, the 43 stance corrections, and limitations |
 
-## The Problem I Was Actually Trying to Solve
+<table><tr>
+<td><img src="docs/img/explorer.png" alt="Explorer"></td>
+<td><img src="docs/img/build_fighter.png" alt="Build a fighter"></td>
+</tr><tr>
+<td><img src="docs/img/stance_lab.png" alt="Stance lab"></td>
+<td><img src="docs/img/spar_vs_brian.png" alt="Spar vs Brian"></td>
+</tr></table>
 
-I train Kickboxing and Muay Thai at UFC Gym Townhall in Sydney — not professionally, just because I can't stop. One sparring session, I stepped on my partner's foot mid-combination. Not clumsiness — we were in **mirror-image stances** and our footwork geometries simply collided.
+## Data
 
-That small collision surfaced a real question: **does stance actually change a fighter's win probability, or is it just a training inconvenience?**
-
-Then I noticed something stranger about myself. I'm Southpaw (right foot forward). Conventional wisdom says a Southpaw's nuclear weapon is the rear left cross — the weapon Conor McGregor, Alex Pereira, and Israel Adesanya all built their careers on. But my most dangerous punch is my **jab**. My lead-hand jab has stunned training partners and controls distance in ways my rear cross doesn't.
-
-This created a testable hypothesis:
-
-> *Right-handed fighters who adopt a Southpaw stance might fight differently — and possibly more effectively — than left-handed Southpaws, because their dominant hand is now the "unexpected" lead hand.*
-
-I stopped speculating and built a data pipeline to find out.
-
----
-
-##  What This Project Solves
-
-### Problem 1: Fighters don't know who to study
-
-| Before | After |
-|--------|-------|
-| Beginners watch random UFC fights with no direction | App recommends **top 5 similar fighters** based on your physical stats |
-| "Who fights like me?" takes months to figure out | **30 seconds** to get personalized recommendations |
-| No data on which fighters match your stance + handedness combo | KNN algorithm finds **statistically similar fighters** |
-
-**Solution:** Streamlit app with KNN + MinMaxScaler → finds your fighter twin.
-
----
-
-### Problem 2: Coaches can't prove stance advantages with data
-
-| Before | After |
-|--------|-------|
-| "Southpaw advantage" is just gym talk, no evidence | **Statistical tests** (T-Test, p-value, Cohen's d) show the real effect |
-| No one knows if the advantage is stance OR handedness | **Interaction analysis** (stance × handedness) isolates the real variable |
-| Decisions based on anecdotes, not data | **Evidence-based** coaching decisions |
-
-**Solution:** Statistical analysis in Python (SciPy) + Tableau dashboard.
-
----
-
-### Problem 3: Trainees waste time watching wrong fighters
-
-| Before | After |
-|--------|-------|
-| A right-handed Southpaw watches Orthodox fighters → wrong techniques | App recommends **right-handed Southpaw** fighters specifically |
-| No filter by weight class | **Weight class filter** in Tableau dashboard |
-| "What should I learn from this fighter?" → no guidance | **Specific tips** for each recommended fighter |
-
-**Solution:** Fighter recommender + training tips + geographic map.
-
----
-
-### Problem 4: No one knows if the "rare style" actually wins
-
-| Before | After |
-|--------|-------|
-| Everyone says Southpaw is rare, but does it help? | **Quantified:** 23/117 fighters (19.6%) are right-handed Southpaws |
-| "Right-handed Southpaw might be good" — no numbers | **74.3% mean win rate** vs 70.2% for Orthodox+Right |
-| Coaches can't decide which stance to teach | **Cohen's d = 0.43** (small-medium practical advantage) |
-
-**Solution:** Effect size measurement + win rate analysis by group.
-
----
-
-##  Live Demos
-<img width="1505" height="938" alt="image" src="https://github.com/user-attachments/assets/4583a410-aaba-4274-aea2-8daac6f00f0e" />
-
-
-### 1 — Streamlit App · Fighter Recommender
-
-> 🔗 **[Launch App →](https://ufcstanceandhandednessintelligence-qsdqucvqpj5hhwymhqbeji.streamlit.app)**
-
-<img width="1512" alt="Streamlit main interface" src="https://github.com/user-attachments/assets/d12d185e-c309-474f-a513-7427188b05a6" />
-<img width="1512" alt="Similar fighters results" src="https://github.com/user-attachments/assets/1cafe294-e9c9-451c-b872-aa469dae21ae" />
-<img width="1512" alt="Geographic map" src="https://github.com/user-attachments/assets/c1b2ec7b-6fa4-47c3-bb11-625cbbc11591" />
-<img width="1512" alt="App detail view" src="https://github.com/user-attachments/assets/4f2caf2f-3022-4ac7-b1bd-44820f742c66" />
-<img width="1512" alt="App results page" src="https://github.com/user-attachments/assets/0d14f465-8d83-4191-9134-e1e9a715a4c7" />
-
----
-
-### 2 — Tableau Dashboard
-
-> 🔗 **[View Dashboard →](https://public.tableau.com/app/profile/brian.ma5935/viz/UFCRECOMENDATIONENGINE/Dashboard1)**
-
-<img width="1058" alt="Tableau dashboard" src="https://github.com/user-attachments/assets/ad5b300a-2c37-4eb8-985f-2bbfbd37c498" />
-<img width="1037" alt="Tableau filter view" src="https://github.com/user-attachments/assets/a68c84c7-75ab-4d03-b4a0-80a0c31d0122" />
-
----
-
-### 2b — Power BI Dashboard · Who should you study?
-
-Same data, rebuilt in Power BI as a second dashboard (the Tableau one above is kept). It is written for readers with no data background: each page opens with a plain-English summary line, and chart titles are questions ("Do taller fighters have longer reach?").
-
-| Page | What it answers |
+| Source | Used for |
 |---|---|
-| Dashboard | Top 10 fighters to study, win rate vs fights, where fighters come from, ring filters for stance / handedness / weight class |
-| Fighters world | Reach vs height, win rate by stance and handedness, sortable fighter list with a study tip |
-| Skills lab | How fighters win (KO / submission / decision) by weight class, striker vs grappler map |
-| About | Definitions, source and limits |
-
-<img src="docs/powerbi/ufc-1.png" alt="Power BI dashboard page" width="900" />
-
-- File: [`powerbi/ufc_dashboard.pbix`](powerbi/ufc_dashboard.pbix) (open in Power BI Desktop). All four pages: [`docs/powerbi/`](docs/powerbi/).
-- Data: the 117-fighter flat table. The measures (win rate, insight line, KO/sub/decision mix) are DAX in the model.
-- Limits: the country map is bubbles at country centroids on a drawn outline, not a true basemap, because map visuals are disabled in the author's Power BI tenant. "Study focus" is a rule-based tip from fighting style, not coaching advice.
-
----
-
-### 3 — Google Colab · Full Statistical Analysis
-
-> 🔗 **[Open in Colab →](https://colab.research.google.com/drive/1zp4jVJM39wCb73EvXKWwPtgzM1n6mwWz)**
-
-<img width="1009" alt="Statistical test results" src="https://github.com/user-attachments/assets/b4222659-6bb1-4c16-8185-f1bdda12caad" />
-<img width="895" alt="Distribution plots" src="https://github.com/user-attachments/assets/3dcdc38c-ffc5-4aaf-93b9-670e4db2c331" />
-<img width="895" alt="Panel dashboard" src="https://github.com/user-attachments/assets/f121850f-7b4b-47af-81cf-77d6dccc61b8" />
-<img width="797" alt="Recommendations tab" src="https://github.com/user-attachments/assets/fa6c53a0-4083-437b-922e-9eb1c0632b14" />
-<img width="554" alt="Colab notebook view" src="https://github.com/user-attachments/assets/b864161b-f465-4ebf-96d7-16d525b3dbd6" />
-
----
-
-##  Data Collection — Multi-Source Scraping
-
-**File:** `notebooks/UFC_DATA_SCRAPING.ipynb`
-
-All data is sourced from publicly available websites. No synthetic data. No paid APIs. The pipeline pulls from **three complementary sources** to maximise coverage and cross-validate records.
-
-### Source 1 — UFCSTATS.com (primary)
-
-The official UFC statistics database. Used for: stance, handedness, physical attributes, career record, and win rate.
-
-```python
-BASE_URL = "http://www.ufcstats.com/statistics/fighters"
-
-# Paginate through A–Z fighter index
-for letter in string.ascii_lowercase:
-    index_url = f"{BASE_URL}?char={letter}&page=all"
-    response  = requests.get(index_url, headers=HEADERS)
-    soup      = BeautifulSoup(response.content, 'html.parser')
-
-    fighter_links = [
-        a['href'] for a in soup.select('td.b-statistics__table-col a')
-    ]
-
-    for url in fighter_links:
-        r    = requests.get(url, headers=HEADERS)
-        fsoup = BeautifulSoup(r.content, 'html.parser')
-
-        name       = fsoup.select_one('.b-content__title-highlight').text.strip()
-        stance     = extract_attr(fsoup, 'Stance')
-        reach      = extract_attr(fsoup, 'Reach')
-        height     = extract_attr(fsoup, 'Height')
-        wins       = int(fsoup.select_one('.b-content__info-item:nth-child(1)').text.split()[0])
-        losses     = int(fsoup.select_one('.b-content__info-item:nth-child(2)').text.split()[0])
-        win_rate   = round(wins / (wins + losses) * 100, 1) if (wins + losses) > 0 else None
-
-        fighters.append({
-            'name': name, 'stance': stance, 'reach': reach,
-            'height': height, 'wins': wins, 'losses': losses,
-            'win_rate': win_rate
-        })
-
-    time.sleep(1.2)  # polite crawl delay
-```
-
-### Source 2 — Tapology.com (handedness + nationality enrichment)
-
-UFCSTATS does not expose handedness directly. Tapology fighter profiles include dominant hand, nationality, and gym affiliation — used to enrich the primary dataset.
-
-```python
-BASE_TAPOLOGY = "https://www.tapology.com/search?term={name}&type=fighters"
-
-def get_tapology_data(fighter_name: str) -> dict:
-    search_url = BASE_TAPOLOGY.format(name=urllib.parse.quote(fighter_name))
-    soup       = BeautifulSoup(requests.get(search_url, headers=HEADERS).content, 'html.parser')
-
-    first_result = soup.select_one('a.name')
-    if not first_result:
-        return {}
-
-    profile_url  = "https://www.tapology.com" + first_result['href']
-    psoup        = BeautifulSoup(requests.get(profile_url, headers=HEADERS).content, 'html.parser')
-
-    handedness  = extract_detail(psoup, 'Stance')   # 'Orthodox' / 'Southpaw'
-    dominant    = extract_detail(psoup, 'Dominant Hand')  # 'Right' / 'Left'
-    nationality = extract_detail(psoup, 'Nationality')
-    gym         = extract_detail(psoup, 'Gym')
-
-    return {'handedness': dominant, 'nationality': nationality, 'gym': gym}
-```
-
-### Source 3 — Sherdog.com (career history validation)
-
-Sherdog provides independent fight records used to cross-validate win/loss counts from UFCSTATS and catch discrepancies (title changes, no-contests, DQ outcomes).
-
-```python
-def validate_record_sherdog(fighter_name: str, ufc_wins: int, ufc_losses: int) -> dict:
-    search_url = f"https://www.sherdog.com/stats/fightfinder?SearchTxt={urllib.parse.quote(fighter_name)}"
-    soup       = BeautifulSoup(requests.get(search_url, headers=HEADERS).content, 'html.parser')
-
-    profile_link = soup.select_one('a.result-link')
-    if not profile_link:
-        return {'validated': False}
-
-    psoup    = BeautifulSoup(requests.get("https://www.sherdog.com" + profile_link['href'], headers=HEADERS).content, 'html.parser')
-    record   = psoup.select_one('.record')
-    s_wins   = int(record.select_one('.wins span').text)
-    s_losses = int(record.select_one('.losses span').text)
-
-    return {
-        'validated':      (s_wins == ufc_wins and s_losses == ufc_losses),
-        'sherdog_wins':   s_wins,
-        'sherdog_losses': s_losses,
-        'discrepancy':    abs(s_wins - ufc_wins) + abs(s_losses - ufc_losses)
-    }
-```
-
-### Merge & deduplication
-
-```python
-# Merge all three sources on normalised fighter name
-df_ufc      = pd.read_csv('raw_ufcstats.csv')
-df_tapology = pd.read_csv('raw_tapology.csv')
-df_sherdog  = pd.read_csv('raw_sherdog.csv')
-
-df = (df_ufc
-      .merge(df_tapology, on='name_normalised', how='left')
-      .merge(df_sherdog[['name_normalised','validated','discrepancy']],
-             on='name_normalised', how='left'))
-
-# Drop fighters with missing stance or handedness after enrichment
-df = df.dropna(subset=['stance', 'handedness'])
-df = df[df['validated'] != False]   # remove records with mismatched fight history
-
-print(f"Final dataset: {len(df)} fighters")  # → 117 fighters
-```
-
-| Data point | Primary source | Enrichment source |
-|---|---|---|
-| Name | UFCSTATS | — |
-| Height | UFCSTATS | — |
-| Reach | UFCSTATS | — |
-| Weight class | UFCSTATS | — |
-| Stance (Orthodox / Southpaw) | UFCSTATS | Tapology (cross-check) |
-| Handedness (Right / Left) | Tapology | — |
-| Wins / Losses | UFCSTATS | Sherdog (validated) |
-| Win rate % | Calculated | — |
-| Nationality | Tapology | — |
-| Gym | Tapology | — |
-
-**Raw output:** `UFC_Data_Raw.xlsx` — 117 fighters × 12 attributes.
-
-
-##  Excel Dashboard — Pivot Tables + XLOOKUP for Fighter Analysis
-
-**File:** `UFC_FINAL_DATASET.xlsx`
-<img width="753" height="666" alt="image" src="https://github.com/user-attachments/assets/bc193a7b-6f28-49c0-adfb-19b7fb3bf617" />
-
-
-Not every fight fan wants to run Python code or navigate Tableau. Sometimes you just want to open Excel, type a name, and get answers.
-
-So I built an Excel dashboard for the dataset — because quick questions deserve quick answers.
-
-### What's Inside (5 Sheets)
-
-| Sheet | Core Excel Feature | What It Does |
-|-------|-------------------|---------------|
-|  **Fighter Lookup** | XLOOKUP | Type a fighter name → stance, handedness, win rate, weight class |
-|  **Stance Pivot** | Pivot Table | Average win rate by stance (Orthodox vs Southpaw) |
-|  **Handedness Pivot** | Pivot Table | Average win rate by handedness (Right vs Left) |
-|  **Stance × Handedness** | Pivot Table | Interaction analysis — 4 groups (Orthodox+Right, Southpaw+Right, etc.) |
-|  **Weight Class Pivot** | Pivot Table + Slicer | Win rate by weight class — filter by stance or handedness |
-
-### The XLOOKUP Setup (Fighter Lookup Sheet)
-
-```excel
-# User types fighter name in B2 → everything below appears automatically
-
-=XLOOKUP(B2, Fighters[Name], Fighters[Stance], "Not found")
-=XLOOKUP(B2, Fighters[Name], Fighters[Handedness], "Not found")
-=XLOOKUP(B2, Fighters[Name], Fighters[Win_Rate], "Not found")
-=XLOOKUP(B2, Fighters[Name], Fighters[Weight_Class], "Not found")
-=XLOOKUP(B2, Fighters[Name], Fighters[Nationality], "Not found")
-
----
-
-##  Dataset on Kaggle
-
-The cleaned dataset (`UFC_FINAL_DATASET.xlsx` + `ufc_data.csv`) is published publicly on Kaggle so anyone can use it for their own analysis — no scraping required.
-
->  **[Download dataset → kaggle.com/brianphu](https://www.kaggle.com/brianphu)**
-
-**What's included:**
-
-| File | Rows | Columns | Description |
-|------|------|---------|-------------|
-| `UFC_FINAL_DATASET.xlsx` | 117 | 12 | Cleaned master dataset used by Streamlit |
-| `ufc_data.csv` | 117 | 12 | CSV version for Tableau + Python analysis |
-
-**Column reference:**
-
-| Column | Type | Example |
-|--------|------|---------|
-| `name` | string | Sean O'Malley |
-| `height_cm` | float | 175.0 |
-| `reach_cm` | float | 182.0 |
-| `weight_lbs` | float | 145.0 |
-| `weight_class` | string | Bantamweight |
-| `stance` | string | Southpaw |
-| `handedness` | string | Right |
-| `wins` | int | 17 |
-| `losses` | int | 1 |
-| `win_rate` | float | 94.4 |
-| `nationality` | string | USA |
-| `continent` | string | North America |
-
-If you use this dataset in your own project, a ⭐ on the repo or an upvote on Kaggle is always appreciated.
-
----
-
-##  Key Findings
-
-### Finding 1 — Stance alone doesn't predict winning
-
-| Group | n | Mean Win Rate | T-stat | P-value |
-|-------|---|--------------|--------|---------|
-| Orthodox | 93 | 72.1% | 0.96 | 0.34 |
-| Southpaw | 24 | 73.8% | — | — |
-
-Southpaws win slightly more often, but the difference is **not statistically significant** (p = 0.34). Claiming "Southpaw advantage" from stance alone would be misleading.
-
----
-
-### Finding 2 — Stance × handedness tells a different story
-
-| Group | n | Mean Win Rate |
-|-------|---|--------------|
-| Orthodox + Right-handed | 78 | 70.2% |
-| **Southpaw + Right-handed** | **23** | **74.3%** |
-
-| Comparison | T-stat | P-value | Cohen's d | Interpretation |
-|---|---|---|---|---|
-| Southpaw+Right vs Orthodox+Right | 1.85 | 0.07 | **0.43** | Marginal significance, small-medium practical effect |
-
-> p = 0.07 is not significant at α = 0.05, but **Cohen's d = 0.43** represents a real-world performance gap a coach or betting analyst would care about. Statistical significance ≠ practical significance — both are surfaced explicitly here.
-
----
-
-### Finding 3 — The rare style is well-represented at the top
-
-Only **19.6%** of UFC fighters are right-handed Southpaws. The group's highest performer is **Sean O'Malley at 94.4% win rate** — a fighter explicitly known for using his lead hand as a weapon in unorthodox ways.
-
----
-
-##  How to Find Your Fighter Twin
-
-### Method 1 — Streamlit App (easiest)
-
-**Link:** [https://ufcstanceandhandednessintelligence-qsdqucvqpj5hhwymhqbeji.streamlit.app](https://ufcstanceandhandednessintelligence-qsdqucvqpj5hhwymhqbeji.streamlit.app)
-
-| Step | What to do |
-|------|-----------|
-| 1 | Enter your **Height** (cm) |
-| 2 | Enter your **Reach** (cm) |
-| 3 | Enter your **Weight** (lbs) |
-| 4 | Select your **Stance** (Orthodox / Southpaw) |
-| 5 | Select your **Handedness** (Right / Left) |
-| 6 | Click **"Find My Fighter Twin"** |
-
-**What you get:**
-- Top 5 most similar fighters (KNN, normalized physical attributes)
-- Match score (higher = more similar)
-- Specific technique tips for each twin
-- Interactive world map of where your twins come from
-
----
-
-### Method 2 — Tableau Dashboard (deep analysis)
-
-**Link:** [https://public.tableau.com/app/profile/brian.ma5935/vizzes](https://public.tableau.com/app/profile/brian.ma5935/vizzes)
-
-| Filter | What it does |
-|--------|-------------|
-| Stance | Show only Orthodox OR Southpaw fighters |
-| Handedness | Show only Right-handed OR Left-handed |
-| Weight Class | Focus on your division |
-| Continent | See geographic patterns |
-
----
-
-### Method 3 — Google Colab (statistical analysis)
-
-**Link:** [Open in Colab](https://colab.research.google.com/drive/1zp4jVJM39wCb73EvXKWwPtgzM1n6mwWz)
-
-Click **Runtime → Run all** to see T-test results, Cohen's d effect sizes, and distribution plots.
-
----
-
-##  Who You Should Study (According to the Data)
-
-| Your Style | Fighter | Win Rate | Focus |
-|---|---|---|---|
-| **Southpaw + Right-handed** | Sean O'Malley | 94.4% | Lead hand precision, distance control, unconventional angles |
-| **Southpaw + Right-handed** | Israel Adesanya | 88.9% | Feints, jab setups, counter striking |
-| **Southpaw + Right-handed** | Conor McGregor | 78.6% | Left hand timing, precision striking |
-| **Orthodox + Right-handed** | Khabib Nurmagomedov | 88.9% | Pressure, wrestling, fight IQ |
-| **Orthodox + Right-handed** | Alexander Volkanovski | 88.2% | Footwork, adaptability, cardio |
-| **Any + Left-handed** | Alex Pereira | 83.3% | Power striking, clinch setups |
-
----
-
-##  Full Data Pipeline
-
-```
-UFCSTATS.com + Tapology.com + Sherdog.com
-│
-▼
-Multi-Source Web Scraping (BeautifulSoup + Requests)
-│                    UFC_DATA_SCRAPING.ipynb
-▼
-Merge, Validate & Deduplicate (Pandas)
-│                    UFC_DATA_CLEANING_PROCESSING.ipynb
-│
-├──► UFC_Data_Raw.xlsx          (117 fighters × 12 attributes)
-├──► UFC_FINAL_DATASET.xlsx     (cleaned master)
-├──► ufc_data.csv               (Tableau export)
-│
-├──►  Published on Kaggle     kaggle.com/brianphu
-│
-├──► Statistical Analysis (SciPy: T-Test, Shapiro-Wilk, Levene, Cohen's d)
-│                    UFC_Visualization.ipynb
-│
-├──► PostgreSQL Database (convert.py + stored procedure match_fighters())
-│
-├──► Interactive Dashboard (Panel + HoloViews + Plotly)
-│                    ufc_panel_dashboard.py
-│
-├──► Fighter Recommender App (Streamlit + KNN via scikit-learn)
-│                    ufc_intelligence_app.py
-│
-└──► Business Intelligence Dashboard (Tableau Public)
-```
-
----
-
-##  Technical Stack
-
-| Layer | Tool | Why This Tool |
-|---|---|---|
-| Scraping | BeautifulSoup, Requests | Lightweight for static HTML; no Selenium overhead |
-| Processing | Pandas, NumPy | Industry standard; vectorized operations |
-| Statistics | SciPy | T-test, Levene's, Shapiro-Wilk — full assumption checking |
-| ML | scikit-learn (KNN + MinMaxScaler) | Simple, interpretable similarity at this scale |
-| Dashboard | Panel, HoloViews, Plotly | Reactive Python-native, no frontend framework needed |
-| Web App | Streamlit | Fastest path from Python analysis to deployed product |
-| Database | PostgreSQL + stored procedure | Encapsulated query logic, decoupled from app layer |
-| BI | Tableau Public | Stakeholder-facing geographic and performance visualization |
-| Dataset sharing | Kaggle | Public dataset hub — no installation required for consumers |
-
-### Why KNN with MinMaxScaler?
-
-Fighter attributes (height, reach, weight) are on different scales. Raw Euclidean distance would make weight dominate over reach, even though reach is more predictive of striking range. MinMaxScaler normalizes all features to [0, 1], making similarity physically meaningful.
-
-### Why PostgreSQL with a stored procedure?
-
-The `match_fighters()` stored procedure encapsulates matching logic server-side. Any application layer — Streamlit, an API, a future mobile app — calls one function and gets structured results, without reimplementing filtering logic client-side.
-
-### Why Excel as the Streamlit data source (not PostgreSQL directly)?
-
-Deliberate deployment decision. Streamlit Cloud has no persistent connection to a local PostgreSQL instance. The Excel file acts as a portable data mart — pre-cleaned, pre-validated — that deploys with zero infrastructure dependency.
-
-### Why report Cohen's d alongside p-values?
-
-With n = 23 in the Southpaw+Right group, a small sample will almost always return a non-significant p-value even when a real effect exists. Cohen's d measures effect size independent of sample size. Reporting only p-values here would be analytically dishonest — the kind of mistake that leads to bad decisions in sports analytics, clinical research, and A/B testing alike.
-
----
-
-##  Data Engineering
-
-A runnable, tested pipeline loads the project CSV into a SQLite star schema, and ten SQL queries analyse it. It reads only the committed CSVs; it does not scrape anything.
+| Project spreadsheet (`UFC_FINAL_DATASET.xlsx`) | Fighter list, full pro record, dominant hand, nationality |
+| [UFCSTATS](http://ufcstats.com) via the public [Greco1899/scrape_ufc_stats](https://github.com/Greco1899/scrape_ufc_stats) dump | Official stance, height, reach, date of birth, round-by-round fight stats |
+| Derived | Strike accuracy/defence, output, damage absorbed, takedowns, control time, fighting style, popularity index |
+| Estimated | **Dominant foot only** — no public source records it; clearly marked "≈" / "EST" everywhere |
+
+Every column's source is listed in `data/data_dictionary.csv`. Coaches and classes on the
+Build-a-fighter page are a fictional sample catalogue you can replace with a real gym's roster.
+
+## Run it
 
 ```bash
-python -m pipeline.run          # extract -> validate (38 checks) -> transform -> load warehouse.db
-python sql/run_queries.py       # runs sql/analysis/*.sql, writes docs/query_results/*.csv
-python -m pytest -q             # pipeline, SQL and docs tests
-```
-
-| What | Where |
-|---|---|
-| ETL stages | `pipeline/` (`extract.py`, `validate.py`, `transform.py`, `load.py`, `run.py`) |
-| Data-quality report | [docs/DATA_QUALITY.md](docs/DATA_QUALITY.md) |
-| Star schema, grain, keys, Mermaid ERD | [docs/DATA_MODEL.md](docs/DATA_MODEL.md), `pipeline/schema.sql` |
-| Column dictionary and provenance notes | [docs/DATA_DICTIONARY.md](docs/DATA_DICTIONARY.md) |
-| SQL analysis (CTEs, window functions, joins, CASE) | `sql/analysis/`, [sql/README.md](sql/README.md), results in `docs/query_results/` |
-| Skills mapped to files | [docs/SKILLS_DEMONSTRATED.md](docs/SKILLS_DEMONSTRATED.md) |
-
-`foot` (dominant foot) is generated by a seeded rule, not observed, so it is excluded from the warehouse. The Key Findings above come from an earlier analysis; the SQL queries run on the current CSV, where 43 of 117 stances differ between the project Excel and UFCSTATS (see [docs/DATA_DICTIONARY.md](docs/DATA_DICTIONARY.md)), and give different numbers, for example right-handed Southpaws (n = 21) vs right-handed Orthodox (n = 73): 79.2% vs 77.4% mean win rate, Cohen's d = 0.19 ([query 03](docs/query_results/03_southpaw_right_vs_orthodox_right.csv)).
-
----
-
-## Ingestion
-
-Reusable ingestion module ported from the existing scraping notebook (`notebooks/UFC_DATA_SCRAPING.ipynb`). Only the sources and selectors the notebook already uses were ported.
-
-```bash
-pip install -r requirements-ingestion.txt
-python -m ingestion.ufcstats --out data/raw/ufcstats_fighters.csv
-python -m pytest -q tests/test_ingestion_*.py     # offline
-```
-
-Scope note: the notebook code only reads UFCStats (index pages 1-5 and the first 50 fighter pages). It does not contain Tapology or Sherdog scraping, so none is ported; the notebook's cleaning step (unit conversion, handedness, win rate) is left to the existing cleaning code and pipeline. Output: `data/raw/ufcstats_fighters.csv` (raw strings, not the cleaned dataset).
-
-What it does: checks `robots.txt` (`urllib.robotparser`) and aborts politely if disallowed, sends an identifying User-Agent, waits at least 1 second between requests (default 1.5-2 s), retries with exponential backoff, caches raw HTML under `data/raw_html/` (git-ignored), and writes CSV with `scraped_at` and `source_url` columns. Parsing is separate from fetching: the parsers are pure functions of HTML text. Details in [docs/INGESTION.md](docs/INGESTION.md).
-
-- **Parser verified on fixtures only.** The parser unit tests use small hand-written HTML fixtures (`tests/fixtures/`, labelled as not captured pages) that mimic the selectors the notebook uses.
-- **Live run:** a manual GitHub Actions run tried UFCStats from a hosted runner and received a JavaScript browser-check page, so 0 rows were returned (see `docs/LIVE_RUN.md`). No bypass is attempted; the dataset in this repo is the earlier snapshot.
-- **Check the site's terms of use before running.** The fetcher reads `robots.txt` and stops if the URL is disallowed, but that is not a substitute for reading the terms.
-- **For personal / portfolio use only.** Do not redistribute scraped content.
-
----
-
-##  Project Structure
-
-```
-UFC_STANCE_AND_HANDEDNESS_INTELLIGENCE/
-│
-├── ufc_intelligence_app.py     # Streamlit entry point (multipage app)
-├── ufc_core.py                 # Data loading, KNN similarity, statistics
-├── ui.py                       # Shared styling and layout helpers
-├── globe3d.py, body3d.py       # 3D globe and body components (Three.js)
-├── views/                      # One module per app page
-├── components/, static/        # Front-end assets for the 3D components
-│
-├── notebooks/                  # Scraping, cleaning and statistical analysis
-├── ingestion/                  # Reusable UFCStats scraper (robots, rate limit, retries, cache) + fetch.py
-├── scripts/                    # Reproducible dataset build scripts
-├── pipeline/                   # ETL: extract, validate, transform, load to warehouse.db
-├── sql/                        # Analysis queries (sql/analysis) and runner
-├── docs/                       # Data model, quality report, dictionary, query results
-├── data/                       # Clean and enriched CSVs, data dictionary, raw scrape
-├── UFC_FINAL_DATASET.xlsx      # Cleaned master dataset
-├── ufc_data.csv                # Export used by Tableau
-│
-├── tests/                      # pytest suite (core logic and page smoke tests)
-├── legacy/                     # First-version scripts, kept for reference only
-├── .github/workflows/ci.yml    # Runs the tests on every push and PR
-└── requirements.txt, requirements-dev.txt
-```
-
----
-
-##  How to Run Locally
-
-```bash
-# Clone
-git clone https://github.com/brianphu2310/UFC_STANCE_AND_HANDEDNESS_INTELLIGENCE.git
-cd UFC_STANCE_AND_HANDEDNESS_INTELLIGENCE
-
-# Install dependencies
 pip install -r requirements.txt
-
-# Run the tests (optional)
-pip install -r requirements-dev.txt && python -m pytest -q
-
-# Run Streamlit app
 streamlit run ufc_intelligence_app.py
 ```
 
-**Or run notebooks in order:**
-1. `notebooks/UFC_DATA_SCRAPING.ipynb` — scrapes UFCSTATS + Tapology + Sherdog
-2. `notebooks/UFC_DATA_CLEANING_PROCESSING.ipynb` — merge, validate, engineer features
-3. `notebooks/UFC_Visualization.ipynb` — statistical analysis + Panel dashboard
+Rebuild the data (downloads the UFCSTATS dump on first run):
 
-**Want the data without scraping?** Download directly from Kaggle:
 ```bash
-kaggle datasets download brianphu/ufc-stance-handedness-intelligence
+pip install -r requirements-dev.txt
+python scripts/build_clean_dataset.py
+python scripts/enrich_dataset.py
 ```
 
----
+Tests (data quality, statistics, recommender, and a smoke test of every page):
 
-##  Limitations & What I'd Do With More Data
+```bash
+pytest -q
+```
 
-The most honest limitation: n = 117 fighters is small for the interaction analysis. The Southpaw+Right group has only 23 observations, which is why p = 0.07 sits just outside significance.
+## Project structure
 
-With a larger dataset I would:
+```
+ufc_intelligence_app.py     entry point, top-bar navigation
+ufc_core.py                 statistics, recommender, roadmap (no Streamlit — unit-tested)
+ui.py                       theme, chart defaults, shared HTML pieces
+views/                      one module per page
+components/globe3d/         three.js globe (bundled locally, no CDN)
+components/body3d/          three.js parametric body model
+scripts/                    build_clean_dataset.py → enrich_dataset.py
+data/                       cleaned + enriched dataset, data dictionary, sample catalogues
+tests/                      pytest suite incl. Streamlit AppTest page smoke tests
+notebooks (*.ipynb)         original scraping, cleaning and visualisation work
+legacy/                     first-version scripts kept for reference
+```
 
-- **Stratify by weight class** — the Southpaw advantage may be more pronounced in striking-heavy divisions (Bantamweight, Featherweight) than wrestling-dominant ones
-- **Add temporal analysis** — does the advantage erode as more coaches develop Southpaw-specific defence training?
-- **Include strike accuracy and significant strikes landed** — win rate is a blunt instrument; per-minute striking metrics would validate whether the lead-hand hypothesis holds at technique level
+## Limitations
 
----
+- **Sample:** 117 well-known fighters, mostly winners — win rates are compressed and small
+  groups (5–21 fighters) give wide intervals.
+- **Dominant hand** comes from the project spreadsheet and is not independently verified.
+- **UFC-only stats** — fighters with little UFC time (e.g. Fedor) have no fight-log stats.
+- The Tableau dashboard and Colab notebook predate the stance corrections.
 
-##  About
+## About
 
-**Brian Phu** — Data Analyst & Southpaw Kickboxer, UFC Gym Townhall Sydney
+**Brian Phu** — data analyst and southpaw kickboxer, Sydney.
+[LinkedIn](https://www.linkedin.com/in/brian-phu-data-analysta55353390/) ·
+[GitHub](https://github.com/brianphu2310) ·
+[Kaggle](https://www.kaggle.com/brianphu) ·
+[Tableau](https://public.tableau.com/app/profile/brian.ma5935/vizzes)
 
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=flat&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/brian-phu-data-analysta55353390/)
-[![GitHub](https://img.shields.io/badge/GitHub-181717?style=flat&logo=github&logoColor=white)](https://github.com/brianphu2310)
-[![Kaggle](https://img.shields.io/badge/Kaggle-20BEFF?style=flat&logo=kaggle&logoColor=white)](https://www.kaggle.com/brianphu)
-[![Tableau](https://img.shields.io/badge/Tableau-E97627?style=flat&logo=tableau&logoColor=white)](https://public.tableau.com/app/profile/brian.ma5935/vizzes)
-
-> *"Every question I've answered in this project started with a physical observation on the mats. That's what I want my data work to always do — stay connected to a real problem."*
-
----
-
-**Last updated:** May 2026 &nbsp;|&nbsp; **Fighters analysed:** 117 &nbsp;|&nbsp; **Sources scraped:** 3 (UFCSTATS, Tapology, Sherdog) &nbsp;|&nbsp; **Dashboards:** 3 (Streamlit, Panel, Tableau) &nbsp;|&nbsp; One curious fighter
-
----
-
-*MIT License — free to use, modify, and share.*
-
-
+MIT License.

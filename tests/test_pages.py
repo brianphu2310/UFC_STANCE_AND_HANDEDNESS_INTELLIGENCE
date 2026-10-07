@@ -4,7 +4,7 @@ import time
 import pytest
 from streamlit.testing.v1 import AppTest
 
-PAGES = ["overview", "dashboard", "build_fighter", "stance_lab", "brian", "data_notes"]
+PAGES = ["overview", "explorer", "build_fighter", "stance_lab", "brian", "data_notes"]
 
 SCRIPT = """
 import ui, ufc_core as core
