@@ -6,7 +6,7 @@
 [![Kaggle Dataset](https://img.shields.io/badge/Dataset-Kaggle-20BEFF?style=for-the-badge&logo=kaggle&logoColor=white)](https://www.kaggle.com/brianphu)
 [![Tests](https://github.com/brianphu2310/UFC_STANCE_AND_HANDEDNESS_INTELLIGENCE/actions/workflows/tests.yml/badge.svg)](https://github.com/brianphu2310/UFC_STANCE_AND_HANDEDNESS_INTELLIGENCE/actions/workflows/tests.yml)
 
-![Global overview](docs/img/overview.png)
+![App tour](docs/gif/app_tour.gif)
 
 ## The question
 
@@ -43,18 +43,32 @@ win rates don't.
 > the wrong stance** in the original spreadsheet, and the corrected data shows no such advantage.
 > The app lists every correction on its Data page.
 
+## See it move
+
+The 3D face-off sets the fighters at the distance where the longer jab just lands, then throws a
+jab, cross and rear roundhouse kick from that same spot. Every strike either stops on contact or
+fully extends and comes up short, so the table in the corner is a real measurement of each frame.
+
+| Face-off combo | Jones vs Cormier: 30 cm of reach |
+|---|---|
+| ![Face-off combo](docs/gif/faceoff_combo.gif) | ![Face-off, height and reach views](docs/gif/modes.gif) |
+
+**Build a fighter:** the body model reshapes as height, weight and reach change, and switches stance on the spot.
+
+![Body model morphing](docs/gif/morph.gif)
+
 ## The app
 
 | Page | What it does |
 |---|---|
 | **Overview** | One-screen dashboard: rotatable 3D globe with fighter names on each country, continent picker, debut-year timeline with slider, and six different charts on stance, hand and foot |
-| **Explorer** | Pick any two fighters: tale of the tape, a 3D face-off in the octagon (jab range, height and reach overlays), skill-percentile butterfly chart, stance geometry, and the five fighters who fight most like them. Filterable table with CSV export |
+| **Explorer** | Pick any two fighters: tale of the tape, a 3D face-off in the octagon (jab, cross and kick thrown from real range, plus height and reach overlays), skill-percentile butterfly chart, stance geometry, and the five fighters who fight most like them. Filterable table with CSV export |
 | **Build a fighter** | Enter height, weight, reach, dominant hand and foot, style, training frequency and goal → rotatable 3D body model, stance advice, fighters to study (with what to learn from their real stats), a phased roadmap, weekly schedule, classes and coaches. Downloadable plan |
 | **Stance lab** | Welch t-test, Mann-Whitney, Cohen's d, bootstrap intervals, Holm correction and power analysis for any outcome and grouping |
-| **Spar vs Brian** | Open vs closed stance game plan against a right-handed southpaw, with both bodies in 3D |
+| **Spar vs Brian** | Open vs closed stance game plan against a right-handed southpaw, with both fighters sparring in 3D |
 | **Data** | Where every column comes from, the 43 stance corrections, and limitations |
 
-<table><tr>
+<table><tr><td colspan="2"><img src="docs/img/overview.png" alt="Overview"></td></tr><tr>
 <td><img src="docs/img/explorer.png" alt="Explorer"></td>
 <td><img src="docs/img/build_fighter.png" alt="Build a fighter"></td>
 </tr><tr>

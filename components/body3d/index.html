@@ -27,7 +27,17 @@
           background:rgba(14,10,23,.88); border:1px solid currentColor; }
   .val { font-family:"Big Shoulders Display", sans-serif; font-weight:700; font-size:15px;
          text-shadow:0 1px 8px rgba(0,0,0,.8); }
-  .hud { position:absolute; top:12px; left:14px; right:14px; pointer-events:none; }
+  .hud { position:absolute; top:12px; left:14px; right:14px; pointer-events:none; display:flex;
+         justify-content:space-between; align-items:flex-start; gap:14px; }
+  .head { flex:1 1 auto; min-width:0; }
+  .rt { border-collapse:collapse; font-size:12px; background:rgba(14,10,23,.78); border:1px solid var(--line);
+        border-radius:4px; }
+  .rt th, .rt td { padding:4px 9px; text-align:left; white-space:nowrap; }
+  .rt th { font-family:"Big Shoulders Display", sans-serif; font-weight:700; font-size:14px; padding-top:6px; }
+  .rt td:first-child { color:var(--ink2); }
+  .rt tr.on td { background:rgba(228,196,155,.13); }
+  .rt td.ok { color:var(--rule); font-weight:600; }
+  .rt td.no { color:var(--mute); }
   .head { font-family:"Big Shoulders Display", sans-serif; font-weight:800; font-size:23px; line-height:1.05;
           max-width:560px; text-wrap:balance; }
   .head span { display:block; font-family:"Instrument Sans", sans-serif; font-weight:400; font-size:12.5px;
@@ -46,7 +56,9 @@
   .key { font-size:11.5px; color:var(--ink2); }
   .key i { display:inline-block; width:14px; height:4px; border-radius:2px; margin-right:6px;
            vertical-align:middle; background:var(--rule); box-shadow:0 0 6px var(--rule); }
-  @media (max-width: 520px) { .key { display:none; } .head { font-size:20px; } }
+  @media (max-width: 900px) { .key { display:none; } }
+  @media (max-width: 600px) { .head { font-size:19px; } .head span { display:none; } .rt { font-size:11px; }
+                              .seg button, .tool { padding:5px 8px; font-size:12px; } }
 </style>
 <script type="importmap">
   { "imports": { "three": "./three.module.min.js" } }
@@ -55,15 +67,21 @@
 <body>
 <div id="wrap">
   <div id="labels"></div>
-  <div class="hud"><div class="head" id="head"></div></div>
+  <div class="hud"><div class="head" id="head"></div><div id="range"></div></div>
   <div class="bar">
     <div class="seg" role="group" aria-label="View">
       <button id="mFace" class="on">Face-off</button>
       <button id="mTape">Height</button>
       <button id="mReach">Reach</button>
     </div>
+    <div class="seg" role="group" aria-label="Strike" id="strikes">
+      <button data-k="combo" class="on">Combo</button>
+      <button data-k="jab">Jab</button>
+      <button data-k="cross">Cross</button>
+      <button data-k="kick">Kick</button>
+    </div>
     <button class="tool on" id="bSpin">Rotate</button>
-    <button class="tool" id="bReset">Reset view</button>
+    <button class="tool" id="bReset">Reset</button>
     <span class="spacer"></span>
     <span class="key"><i></i>Gold band marks the dominant hand and foot</span>
   </div>
@@ -201,7 +219,7 @@ function dims(p) {
   const sj = .1 * H * (.93 + .07 * p.g);
   const arm = Math.max(p.R / 2 - sj, .3 * H);
   return { H, sj, arm, upper: .44 * arm, fore: .36 * arm, hand: .2 * arm,
-           thigh: .225 * H, shin: .235 * H, headR: .062 * H, rg: .04 * H * (.95 + .05 * p.g) };
+           thigh: .225 * H, shin: .235 * H, foot: .05 * H, headR: .062 * H, rg: .04 * H * (.95 + .05 * p.g) };
 }
 
 function ik(a, target, l1, l2, pole) {
@@ -218,32 +236,38 @@ function ik(a, target, l1, l2, pole) {
 }
 
 // Pose solver: returns joint positions in the fighter's local frame (faces +z).
+// o.ej / o.ec / o.ek: jab, cross and rear-kick amounts (0..1). o.face / o.ribs: targets (local).
 function solve(p, mode, o = {}) {
   const d = dims(p), H = d.H, s = p.lead;
-  const t = o.t || 0, jab = o.jab || 0;
-  const J = { d };
-  let drop, yaw, lean, feet;
-  if (mode === "guard") {
-    const bounce = REDUCE ? 0 : Math.sin(t * Math.PI * 2 * 1.5) * .007 * H;
-    drop = .055 * H + bounce + .012 * H * jab;
-    yaw = -s * (.52 + .2 * jab);
-    lean = .11 + .06 * jab;
-    feet = {
-      [LEFT]:  s === LEFT ? [V(.062 * H, 0, .17 * H), -.2] : [V(.088 * H, 0, -.15 * H), .8],
-      [RIGHT]: s === LEFT ? [V(-.088 * H, 0, -.15 * H), -.8] : [V(-.062 * H, 0, .17 * H), .2],
-    };
-    // continuous stance switch (s is lerped between -1 and +1)
-    const wl = (1 + s) / 2;
+  const t = o.t || 0;
+  const guard = mode === "guard";
+  const ej = guard ? (o.ej || 0) : 0, ec = guard ? (o.ec || 0) : 0, ek = guard ? (o.ek || 0) : 0;
+  const J = { d, footQ: {} };
+  const wl = (1 + s) / 2, S = 2 * wl - 1;            // +1 orthodox, -1 southpaw (continuous)
+  const rearX = -S;                                    // x sign of the rear side
+  const leadSide = S >= 0 ? LEFT : RIGHT, rearSide = -leadSide;
+  let drop, yaw, lean, roll = 0;
+  const shift = V();
+  const feet = {};
+  if (guard) {
+    const bounce = REDUCE ? 0 : Math.sin(t * Math.PI * 2 * 1.5) * .007 * H * (1 - ek);
+    drop = .055 * H + bounce + .012 * H * ej + .022 * H * ec - .03 * H * ek;
+    yaw = -S * (.52 + .2 * ej) + S * .9 * ec + S * 1.3 * ek;
+    lean = .11 + .06 * ej + .1 * ec - .34 * ek;
+    roll = -S * .28 * ek;
+    shift.set(S * .02 * H * ek, 0, .035 * H * ec + .1 * H * ek);
     feet[LEFT] = [V(.062 * H, 0, .17 * H).lerp(V(.088 * H, 0, -.15 * H), 1 - wl), -.2 * wl + .8 * (1 - wl)];
     feet[RIGHT] = [V(-.088 * H, 0, -.15 * H).lerp(V(-.062 * H, 0, .17 * H), 1 - wl), -.8 * wl + .2 * (1 - wl)];
-    yaw = -(2 * wl - 1) * (.52 + .2 * jab);
+    feet[rearSide][1] += S * .6 * ec;                 // rear heel turns out on the cross
+    feet[leadSide][1] += S * 1.35 * ek;               // support foot turns out to plant the kick
   } else {
     const breathe = REDUCE ? 0 : Math.sin(t * Math.PI * 2 * .25) * .002 * H;
     drop = .004 * H + breathe; yaw = 0; lean = .02;
-    feet = { [LEFT]: [V(.07 * H, 0, .01 * H), .14], [RIGHT]: [V(-.07 * H, 0, .01 * H), -.14] };
+    feet[LEFT] = [V(.07 * H, 0, .01 * H), .14]; feet[RIGHT] = [V(-.07 * H, 0, .01 * H), -.14];
   }
-  const Q = new THREE.Quaternion().setFromEuler(new THREE.Euler(lean, yaw, 0, "YXZ"));
-  const crotch = V(0, .47 * H - drop, .005 * H);
+  if (o.flinch) shift.x += o.flinch;
+  const Q = new THREE.Quaternion().setFromEuler(new THREE.Euler(lean, yaw, roll, "YXZ"));
+  const crotch = V(0, .47 * H - drop, .005 * H).add(shift);
   const T = (x, y, z) => V(x, y, z).applyQuaternion(Q).add(crotch);
   J.Q = Q; J.crotch = crotch;
   J.hip = { [LEFT]: T(.052 * Math.sqrt(p.g) * H, .035 * H, .005 * H),
@@ -251,19 +275,36 @@ function solve(p, mode, o = {}) {
   J.sh = { [LEFT]: T(d.sj, .345 * H, 0), [RIGHT]: T(-d.sj, .345 * H, 0) };
   J.neck = T(0, .356 * H, 0);
   const neckTop = T(0, .405 * H, .004 * H);
-  const headPitch = mode === "guard" ? -.02 : -.02;
-  J.QH = Q.clone().multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(headPitch - lean * .55, 0, 0)));
+  J.QH = Q.clone().multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(-.02 - lean * .55, 0, -roll * .6)));
   J.head = neckTop.clone().add(V(0, .058 * H, .01 * H).applyQuaternion(J.QH));
   if (o.recoil) J.head.z -= o.recoil;
 
-  // legs
-  J.ankle = {}; J.knee = {}; J.footYaw = {};
+  // legs (the rear leg throws the roundhouse: floor -> chamber -> contact)
+  J.ankle = {}; J.knee = {};
+  const legLen = d.thigh + d.shin;
   for (const side of [LEFT, RIGHT]) {
     const [f, fy] = feet[side];
-    const ankle = V(f.x, .045 * H, f.z);
-    const fdir = V(Math.sin(fy), 0, Math.cos(fy));
-    const { joint, end } = ik(J.hip[side], ankle, d.thigh, d.shin, fdir.clone().add(V(side * .15, 0, 0)));
-    J.knee[side] = joint; J.ankle[side] = end; J.footYaw[side] = fy;
+    let ankle = V(f.x, .045 * H, f.z);
+    let pole = V(Math.sin(fy), 0, Math.cos(fy)).add(V(side * .15, 0, 0));
+    const fq = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, fy, 0));
+    const kicking = ek > 0 && side === rearSide;
+    if (kicking) {
+      const hip = J.hip[side];
+      const tgt = o.ribs || hip.clone().add(V(-rearX * .06 * H, .16 * H, .45 * H));
+      const dir = tgt.clone().sub(hip); const dist = dir.length(); dir.normalize();
+      const hit = hip.clone().addScaledVector(dir, Math.min(legLen * .9995, dist - d.foot));
+      const chamber = hip.clone().add(V(rearX * .22 * H, -.05 * H, .12 * H));
+      const u = ek;
+      ankle = ankle.multiplyScalar((1 - u) * (1 - u)).addScaledVector(chamber, 2 * u * (1 - u)).addScaledVector(hit, u * u);
+      pole = V(0, .3, 1).lerp(V(rearX * .5, 1, .15), u);
+    }
+    const { joint, end } = ik(J.hip[side], ankle, d.thigh, d.shin, pole);
+    J.knee[side] = joint; J.ankle[side] = end;
+    if (kicking) {
+      const pq = new THREE.Quaternion().setFromUnitVectors(ZAX, end.clone().sub(joint).normalize());
+      fq.slerp(pq, clamp(ek * 1.6, 0, 1));
+    }
+    J.footQ[side] = fq;
   }
 
   // arms
@@ -272,15 +313,22 @@ function solve(p, mode, o = {}) {
   for (const side of [LEFT, RIGHT]) {
     const sh = J.sh[side];
     let wrist, pole;
-    if (mode === "guard") {
-      const wLead = clamp((1 + side * s) / 2, 0, 1);
+    if (guard) {
+      const wLead = clamp((1 + side * s) / 2, 0, 1), isLead = wLead > .5;
       const leadT = chin.clone().add(V(side * .028 * H, .012 * H, .17 * H));
       const rearT = chin.clone().add(V(side * .056 * H, -.004 * H, .05 * H));
       wrist = rearT.lerp(leadT, wLead);
-      if (jab > 0 && wLead > .5) {
-        const aim = (o.aim || sh.clone().add(V(0, -.02 * H, 1))).clone().sub(sh).normalize();
-        const full = sh.clone().addScaledVector(aim, (d.upper + d.fore) * .9995);
-        wrist.lerp(full, jab * (2 * wLead - 1));
+      const punch = isLead ? ej : ec, other = isLead ? ec : ej;
+      if (other > 0) wrist.lerp(chin.clone().add(V(side * .05 * H, 0, .06 * H)), other * .6);
+      if (punch > 0) {
+        const tgt = o.face || sh.clone().add(V(0, -.02 * H, 1));
+        const dir = tgt.clone().sub(sh); const dist = dir.length(); dir.normalize();
+        const reach = Math.min((d.upper + d.fore) * .9995, Math.max(dist - d.hand, .05));
+        wrist.lerp(sh.clone().addScaledVector(dir, reach), punch);
+      }
+      if (ek > 0) {
+        if (!isLead) wrist.lerp(sh.clone().add(V(side * .16 * H, -(d.upper + d.fore) * .75, -.22 * H)), ek);
+        else wrist.lerp(chin.clone().add(V(side * .04 * H, .012 * H, .07 * H)), ek * .7);
       }
       pole = V(side * .6, -1, -.25);
     } else if (mode === "stand") {
@@ -300,7 +348,7 @@ function solve(p, mode, o = {}) {
 function blendJ(A, B, k) {
   if (k >= 1) return B;
   if (k <= 0) return A;
-  const out = { d: B.d, footYaw: {} };
+  const out = { d: B.d, footQ: {} };
   for (const key of ["crotch", "neck", "head"]) out[key] = A[key].clone().lerp(B[key], k);
   out.Q = A.Q.clone().slerp(B.Q, k);
   out.QH = A.QH.clone().slerp(B.QH, k);
@@ -308,7 +356,7 @@ function blendJ(A, B, k) {
     out[key] = {};
     for (const s of [LEFT, RIGHT]) out[key][s] = A[key][s].clone().lerp(B[key][s], k);
   }
-  for (const s of [LEFT, RIGHT]) out.footYaw[s] = A.footYaw[s] + (B.footYaw[s] - A.footYaw[s]) * k;
+  for (const s of [LEFT, RIGHT]) out.footQ[s] = A.footQ[s].clone().slerp(B.footQ[s], k);
   return out;
 }
 
@@ -358,7 +406,7 @@ class Fighter {
       color: corner, transparent: true, opacity: .1, depthWrite: false, side: THREE.DoubleSide }));
     for (const a of [this.arc, this.arcFill]) { a.rotation.x = -Math.PI / 2; this.group.add(a); }
     this.arcR = -1; this.lastG = -1;
-    this.recoil = 0;
+    this.recoil = 0; this.flinch = 0; this.prevAmt = {};
   }
   setTarget(f) {
     this.info = f;
@@ -439,12 +487,11 @@ class Fighter {
       seg(L.sleeve, hp.clone().add(V(0, .015 * H, 0)), sl, .066 * H * gl);
       set(L.knee, kn, J.Q, .038 * H * gl, .038 * H * gl, .038 * H * gl);
       seg(L.shin, kn, an, .042 * H * gl);
-      const fy = J.footYaw[s];
-      tmpQ.setFromEuler(new THREE.Euler(0, fy, 0));
-      const fpos = V(an.x + Math.sin(fy) * .036 * H, .019 * H, an.z + Math.cos(fy) * .036 * H);
-      set(L.foot, fpos, tmpQ, .029 * H, .02 * H, .07 * H);
+      const fq = J.footQ[s];
+      set(L.foot, an.clone().add(V(0, -.026 * H, .036 * H).applyQuaternion(fq)), fq, .029 * H, .02 * H, .07 * H);
       L.band.visible = this.foot === s;
-      seg(L.band, V(an.x, .04 * H, an.z), V(an.x, .072 * H, an.z), .031 * H * gl);
+      const up = kn.clone().sub(an).normalize();
+      seg(L.band, an.clone().addScaledVector(up, -.004 * H), an.clone().addScaledVector(up, .028 * H), .031 * H * gl);
     }
   }
   dispose() {
@@ -517,7 +564,8 @@ let figs = [];                   // incoming dicts
 let firstRender = true;
 let camTween = null;
 const head = document.getElementById("head");
-let headHTML = "";
+const rangeEl = document.getElementById("range");
+let headHTML = "", tableHTML = "";
 
 function cornerOf(i, f) { return f.corner || (i === 0 ? COL.a : COL.b); }
 
@@ -534,34 +582,87 @@ function syncFighters() {
   });
 }
 
-// Face-off geometry: distance at which the longer jab just touches the other's face.
-function faceoff(t) {
-  const [A, B] = fighters;
-  const JA = solve(A.p, "guard", { jab: 1 }), JB = B ? solve(B.p, "guard", { jab: 1 }) : null;
-  const leadSh = (F, J) => J.sh[F.p.lead > 0 ? LEFT : RIGHT];
-  const reachTo = (F, J, Jo) => {
-    const sh = leadSh(F, J), arm = J.d.arm;
-    const tgt = Jo ? V(-Jo.head.x, Jo.head.y - .01 * Jo.d.H, 0) : V(sh.x, J.head.y - .05 * J.d.H, 0);
-    const dx = tgt.x - sh.x, dy = tgt.y - sh.y;
-    const dz = Math.sqrt(Math.max(arm * arm - dx * dx - dy * dy, .01));
-    return { sh, dz, tgtY: tgt.y, tgtX: tgt.x, face: Jo ? Jo.head.z + Jo.d.headR * .92 : 0 };
+// Face-off geometry. The distance is set where the longer jab just touches the other's face;
+// every other strike is then measured from that same spot. A lone fighter spars a mirror of itself.
+const leadOf = p => (p.lead > 0 ? LEFT : RIGHT);
+function faceoff() {
+  const A = fighters[0], B = fighters[1] || null;
+  const pp = [A.p, B ? B.p : A.p];
+  const stat = pp.map(p => solve(p, "guard", {}));
+  const jabJ = pp.map(p => solve(p, "guard", { ej: 1 }));
+  const faceL = i => stat[i].head.clone().add(V(0, -.012 * pp[i].H, stat[i].d.headR * .9));
+  // d at which fighter i's jab just reaches fighter j's face
+  const dFor = (i, j) => {
+    const sh = jabJ[i].sh[leadOf(pp[i])], f = faceL(j), arm = jabJ[i].d.arm;
+    const dx = -f.x - sh.x, dy = f.y - sh.y;
+    return sh.z + Math.sqrt(Math.max(arm * arm - dx * dx - dy * dy, .01)) + f.z;
   };
-  if (!B) {
-    const r = reachTo(A, JA, null);
-    return { single: true, ra: r };
-  }
-  const ra = reachTo(A, JA, JB), rb = reachTo(B, JB, JA);
-  const dA = ra.sh.z + ra.dz + ra.face, dB = rb.sh.z + rb.dz + rb.face;
+  const dA = dFor(0, 1), dB = dFor(1, 0);
   const d = Math.max(dA, dB, .75);
-  return { d, ra, rb, shortA: d - dA, shortB: d - dB };
+  const toOther = v => V(-v.x, v.y, d - v.z);
+  const res = [0, 1].map(i => {
+    const j = 1 - i, p = pp[i], rearX = p.lead > 0 ? RIGHT : LEFT;
+    const face = toOther(faceL(j));
+    const ribs = toOther(stat[j].crotch.clone().add(V(0, .19 * pp[j].H, .065 * pp[j].H).applyQuaternion(stat[j].Q)))
+      .add(V(rearX * .05 * pp[j].H, 0, 0));
+    const Jc = solve(p, "guard", { ec: 1 }), Jk = solve(p, "guard", { ek: 1, ribs });
+    const lead = leadOf(p), rear = -lead;
+    return {
+      face, ribs, rearX,
+      sh: jabJ[i].sh[lead], dz: Math.sqrt(Math.max(jabJ[i].d.arm ** 2 - (face.y - jabJ[i].sh[lead].y) ** 2, .01)),
+      gap: {
+        ej: face.distanceTo(jabJ[i].sh[lead]) - jabJ[i].d.arm,
+        ec: face.distanceTo(Jc.sh[rear]) - Jc.d.arm,
+        ek: ribs.distanceTo(Jk.hip[rear]) - (Jk.d.thigh + Jk.d.shin + Jk.d.foot),
+      },
+    };
+  });
+  return { d, res, single: !B };
 }
 
-function jabEnv(tt) {
-  if (tt < 0) return 0;
-  if (tt < .17) return easeOut(tt / .17);
-  if (tt < .45) return 1;
-  if (tt < .78) return 1 - ease((tt - .45) / .33);
-  return 0;
+const jabEnv = tt => tt < 0 ? 0 : tt < .17 ? easeOut(tt / .17) : tt < .45 ? 1 : tt < .78 ? 1 - ease((tt - .45) / .33) : 0;
+const kickEnv = tt => tt < 0 ? 0 : tt < .36 ? ease(tt / .36) : tt < .62 ? 1 : tt < 1.02 ? 1 - ease((tt - .62) / .4) : 0;
+const STRIKES = { ej: "Jab", ec: "Cross", ek: "Kick" };
+const SCHED = {
+  combo: { P: 7.8, offB: 3.9, seq: [["ej", .5], ["ec", 1.1], ["ek", 2.0]] },
+  jab:   { P: 4.4, offB: 2.2, seq: [["ej", .5]] },
+  cross: { P: 4.4, offB: 2.2, seq: [["ec", .5]] },
+  kick:  { P: 5.2, offB: 2.6, seq: [["ek", .5]] },
+};
+let strikeSel = "combo";
+function strikeAmounts(time, i, n) {
+  const out = { ej: 0, ec: 0, ek: 0 };
+  if (REDUCE_STRIKES()) return out;
+  const sc = SCHED[strikeSel];
+  const P = n > 1 ? sc.P : sc.offB + .2;
+  const ph = time % P - (i === 0 ? 0 : sc.offB);
+  for (const [k, t0] of sc.seq) out[k] = Math.max(out[k], (k === "ek" ? kickEnv : jabEnv)(ph - t0));
+  return out;
+}
+const REDUCE_STRIKES = () => false;
+
+// impact flash: two expanding rings that face the camera
+const flashes = [];
+const ringGeo = new THREE.RingGeometry(.82, 1, 48);
+function flash(pos) {
+  for (const delay of [0, .08]) {
+    const m = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color: COL.rule, transparent: true,
+      opacity: 0, depthTest: false, blending: THREE.AdditiveBlending }));
+    m.position.copy(pos); m.renderOrder = 20;
+    scene.add(m);
+    flashes.push({ m, age: -delay });
+  }
+}
+function stepFlashes(dt) {
+  for (let i = flashes.length - 1; i >= 0; i--) {
+    const f = flashes[i];
+    f.age += dt;
+    const t = clamp(f.age / .42, 0, 1);
+    f.m.quaternion.copy(camera.quaternion);
+    f.m.scale.setScalar(.025 + .15 * easeOut(t));
+    f.m.material.opacity = f.age < 0 ? 0 : 1 - t;
+    if (t >= 1) { scene.remove(f.m); f.m.material.dispose(); flashes.splice(i, 1); }
+  }
 }
 
 // ------------------------------------------------------------------ camera framing
@@ -574,7 +675,7 @@ function frameFor(m) {
   const tanH = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
   let W, y0, y1, az, el;
   if (m === "face") {
-    W = n > 1 ? 1.1 + .75 * maxH : .5 * maxH + 1.1; y0 = 0; y1 = maxH + .28;
+    W = n > 1 ? 1.1 + .75 * maxH : .5 * maxH + 1.1; y0 = 0; y1 = maxH + .46;
     az = n > 1 ? .34 : 1.05; el = .14;
   } else if (m === "tape") {
     W = n > 1 ? .7 * maxH + 1.2 : .7 * maxH; y0 = -.24; y1 = maxH + .06; az = .16; el = .1;
@@ -601,16 +702,16 @@ function flyTo(m, instant = false) {
 // ------------------------------------------------------------------ main loop
 const clock = new THREE.Clock();
 let time = 0;
-function frame() {
-  const dt = Math.min(clock.getDelta(), .1);
+const CAPTURE = new URLSearchParams(location.search).has("capture");
+function frame(dtFixed) {
+  const dt = typeof dtFixed === "number" ? dtFixed : Math.min(clock.getDelta(), .1);
   time += dt;
   modeT = Math.min(modeT + dt / .7, 1);
   const k = ease(modeT);
   const n = fighters.length;
   fighters.forEach(F => F.step(dt));
 
-  // placement per mode
-  const fo = n ? faceoff(time) : null;
+  const fo = n ? faceoff() : null;
   const maxH = n ? Math.max(...fighters.map(f => f.p.H)) : 1.8;
   const spacing = .34 * maxH + .12;
   const place = (m, i) => {
@@ -621,38 +722,40 @@ function frame() {
     if (m === "tape") return n < 2 ? { x: 0, z: 0, yaw: 0 } : { x: i === 0 ? -spacing : spacing, z: 0, yaw: 0 };
     return { x: 0, z: 0, yaw: 0 };
   };
-
-  // jab timing (face-off only)
-  const P = n > 1 ? 4.6 : 3.2;
-  const ph = time % P;
-  const env = [jabEnv(ph - .6), n > 1 ? jabEnv(ph - 2.9) : 0];
   const faceW = (prevMode === "face" ? 1 - k : 0) + (mode === "face" ? k : 0);
+  const amts = fighters.map((F, i) => strikeAmounts(time, i, n));
 
   fighters.forEach((F, i) => {
-    const o = n > 1 ? (i === 0 ? fo.rb : fo.ra) : null;
-    let aim = null;
-    if (n > 1) {
-      const me = i === 0 ? fo.ra : fo.rb;
-      aim = V(me.tgtX, me.tgtY, fo.d - me.face);
-    }
-    // recoil when the opponent's jab lands
-    const other = 1 - i;
-    const landed = n > 1 && (other === 0 ? fo.shortA : fo.shortB) < .015 && env[other] > .92;
-    F.recoil += ((landed ? .02 * F.p.H : 0) - F.recoil) * Math.min(dt * 18, 1);
-    const opts = { t: time + i * .37, jab: env[i] * faceW, aim, recoil: F.recoil };
+    const r = fo.res[i];
+    // reactions to the other fighter's landed strikes
+    const o = 1 - i, oa = amts[o] || { ej: 0, ec: 0, ek: 0 }, og = n > 1 ? fo.res[o].gap : null;
+    const hitHead = n > 1 && ((og.ej < .015 && oa.ej > .92) || (og.ec < .015 && oa.ec > .92));
+    const hitBody = n > 1 && og.ek < .015 && oa.ek > .92;
+    F.recoil += ((hitHead ? .022 * F.p.H : 0) - F.recoil) * Math.min(dt * 18, 1);
+    F.flinch += ((hitBody ? -fo.res[o].rearX * .03 * F.p.H : 0) - F.flinch) * Math.min(dt * 14, 1);
+    const a = amts[i];
+    const opts = { t: time + i * .37, ej: a.ej * faceW, ec: a.ec * faceW, ek: a.ek * faceW,
+                   face: r.face, ribs: r.ribs, recoil: F.recoil, flinch: F.flinch };
     const Jp = solve(F.p, MODES[prevMode], opts), Jc = solve(F.p, MODES[mode], opts);
-    F.place(blendJ(Jp, Jc, k));
-    const a = place(prevMode, i), b = place(mode, i);
-    F.group.position.set(a.x + (b.x - a.x) * k, 0, a.z + (b.z - a.z) * k);
-    F.group.rotation.y = a.yaw + (b.yaw - a.yaw) * k;
-    // overlay mode: corner B becomes a translucent ghost so both silhouettes read
+    F.J = blendJ(Jp, Jc, k);
+    F.place(F.J);
+    const pa = place(prevMode, i), pb = place(mode, i);
+    F.group.position.set(pa.x + (pb.x - pa.x) * k, 0, pa.z + (pb.z - pa.z) * k);
+    F.group.rotation.y = pa.yaw + (pb.yaw - pa.yaw) * k;
+    F.group.updateMatrixWorld();
     const op = (prevMode === "reach" && i === 1 ? 1 - k : 0) + (mode === "reach" && i === 1 ? k : 0);
     const target = 1 - .62 * op;
     if (Math.abs(target - F.opacity) > .004) F.setOpacity(target);
-    // range arcs
-    const r = n > 1 ? (i === 0 ? fo.ra : fo.rb) : fo.ra;
     F.setArc(mode === "face" && k > .6, r.sh, r.dz);
+    // impact flash on the frame a strike connects
+    for (const key of ["ej", "ec", "ek"]) {
+      const lands = r.gap[key] < .015;
+      if (mode === "face" && lands && a[key] > .95 && !(F.prevAmt[key] > .95))
+        flash((key === "ek" ? r.ribs : r.face).clone().applyMatrix4(F.group.matrixWorld));
+      F.prevAmt[key] = a[key];
+    }
   });
+  stepFlashes(dt);
 
   if (camTween) {
     camTween.t = Math.min(camTween.t + dt / .9, 1);
@@ -661,11 +764,25 @@ function frame() {
     controls.target.lerpVectors(camTween.t0, camTween.t1, e);
     if (camTween.t >= 1) camTween = null;
   }
-  controls.update();
+  controls.update(dt);
   renderer.render(scene, camera);
-  annotate(fo, env, k);
+  annotate(fo, amts, k);
 }
-renderer.setAnimationLoop(frame);
+if (CAPTURE) {
+  window.__step = (dt, steps = 1) => { for (let q = 0; q < steps; q++) frame(dt); return time; };
+  window.__set = (o) => {
+    if (o.strike) setStrike(o.strike);
+    if (o.mode) setMode(o.mode);
+    if (o.spin !== undefined) { controls.autoRotate = o.spin; syncSpin(); }
+    if (o.speed) controls.autoRotateSpeed = o.speed;
+    if (o.time !== undefined) time = o.time;
+    if (o.figures) window.postMessage({ type: "streamlit:render",
+      args: { height: window.innerHeight, figures: o.figures } }, "*");
+    if (o.clearFlashes) { for (const f of flashes) scene.remove(f.m); flashes.length = 0; }
+  };
+} else {
+  renderer.setAnimationLoop(() => frame());
+}
 
 function annotate(fo, env, k) {
   const n = fighters.length;
@@ -673,17 +790,29 @@ function annotate(fo, env, k) {
   const ready = k > .85;
   const name = F => esc(F.info.label || "Fighter");
   const H = F => F.p.H;
-  let html = "";
+  let html = "", table = "";
 
   if (mode === "face") {
+    const active = fighters.map((F, i) => {
+      const a = env[i] || {};
+      let best = null;
+      for (const key of ["ej", "ec", "ek"]) if (a[key] > .5 && (!best || a[key] > a[best])) best = key;
+      return best;
+    });
+    const lands = g => g < .015;
+    const cell = g => lands(g) ? `<td class="ok">Lands</td>` : `<td class="no">${cm(g)} cm short</td>`;
+    const rowOn = key => active.some(x => x === key) ? ` class="on"` : "";
     if (n > 1) {
       const [A, B] = fighters;
-      const longA = fo.shortB >= fo.shortA;
+      const gA = fo.res[0].gap, gB = fo.res[1].gap;
+      const longA = gB.ej >= gA.ej;
       const L = longA ? A : B, S = longA ? B : A;
-      const gap = cm(Math.max(fo.shortA, fo.shortB));
+      const gap = cm(Math.max(gA.ej, gB.ej, 0));
       html = gap < 2
-        ? `Even range<span>From jabbing distance both lead hands reach the other's face.</span>`
-        : `${who(L)} ${vb(L, "owns", "own")} the range<span>At the distance where ${poss(L)} jab just lands, ${isYou(S) ? "yours" : poss(S)} falls ${gap} cm short.</span>`;
+        ? `Even range<span>From jabbing distance both lead hands reach the other's face. The table measures every strike from that spot.</span>`
+        : `${who(L)} ${vb(L, "owns", "own")} the range<span>At the distance where ${poss(L)} jab just lands, ${isYou(S) ? "yours" : poss(S)} falls ${gap} cm short. The table measures every strike from that spot.</span>`;
+      table = `<table class="rt"><tr><th></th><th style="color:${A.corner}">${esc(first(A.info.label || "A"))}</th><th style="color:${B.corner}">${esc(first(B.info.label || "B"))}</th></tr>` +
+        ["ej", "ec", "ek"].map(key => `<tr${rowOn(key)}><td>${STRIKES[key]}</td>${cell(gA[key])}${cell(gB[key])}</tr>`).join("") + `</table>`;
       const tops = fighters.map(F => solve(F.p, "guard", {}).head.clone()
         .applyMatrix4(F.group.matrixWorld).add(V(0, .16, 0)));
       const sx = tops.map(t => t.clone().project(camera).x);
@@ -691,27 +820,31 @@ function annotate(fo, env, k) {
         const leftSide = sx[i] < sx[1 - i];
         putLabel("tag" + i, "tag", tops[i], `${name(F)}<small>${esc(F.info.stance || "")}, ${esc((F.info.hand || "").toLowerCase())}-handed</small>`,
           { color: F.corner, ax: leftSide ? -1 : 0, dx: leftSide ? 18 : -18, op: ready ? 1 : 0 });
-        const e = env[i];
-        if (e > .5) {
-          const short = i === 0 ? fo.shortA : fo.shortB;
-          const lead = F.p.lead > 0 ? LEFT : RIGHT;
-          const Jj = solve(F.p, "guard", { jab: 1, aim: V((i === 0 ? fo.ra : fo.rb).tgtX, (i === 0 ? fo.ra : fo.rb).tgtY, fo.d - (i === 0 ? fo.ra : fo.rb).face) });
-          const tip = Jj.wrist[lead].clone().addScaledVector(Jj.fdir[lead], Jj.d.hand).applyMatrix4(F.group.matrixWorld);
-          const txt = short < .015 ? "Lands" : `${cm(short)} cm short`;
-          putLabel("jab" + i, "chip", tip.add(V(0, .1, 0)), txt,
-            { color: short < .015 ? COL.rule : F.corner, op: clamp((e - .5) * 2.5, 0, 1) });
-        }
       });
     } else {
       const F = fighters[0];
-      const leadSide = F.p.lead > 0 ? LEFT : RIGHT;
+      const leadSide = leadOf(F.p);
       const power = F.hand === leadSide ? "Power hand leads, so the jab is the best weapon."
-                                         : "Power hand sits at the back for the straight and the hook.";
-      html = `${isYou(F) ? "Your" : possFull(F)} ${esc((F.info.stance || "orthodox").toLowerCase())} stance<span>${power} The arc on the mat is jab range: ${cm(fo.ra.dz)} cm from the lead shoulder.</span>`;
+                                         : "Power hand sits at the back for the cross and the hook.";
+      html = `${isYou(F) ? "Your" : possFull(F)} ${esc((F.info.stance || "orthodox").toLowerCase())} stance<span>${power} The arc on the mat is jab range.</span>`;
+      table = `<table class="rt"><tr><th></th><th style="color:${F.corner}">vs same size</th></tr>` +
+        ["ej", "ec", "ek"].map(key => `<tr${rowOn(key)}><td>${STRIKES[key]}</td>${cell(fo.res[0].gap[key])}</tr>`).join("") + `</table>`;
       const J = solve(F.p, "guard", {});
       putLabel("tag0", "tag", J.head.clone().applyMatrix4(F.group.matrixWorld).add(V(0, .16, 0)),
         `${name(F)}`, { color: F.corner, op: ready ? 1 : 0 });
     }
+    // strike chip at the fist or foot
+    fighters.forEach((F, i) => {
+      const key = active[i];
+      if (!key || !F.J) return;
+      const g = fo.res[i].gap[key], amt = env[i][key];
+      const lead = leadOf(F.p), side = key === "ej" ? lead : -lead;
+      const tip = key === "ek" ? F.J.ankle[side].clone()
+        : F.J.wrist[side].clone().addScaledVector(F.J.fdir[side], F.J.d.hand);
+      tip.applyMatrix4(F.group.matrixWorld).add(V(0, -.07, 0));
+      putLabel("hit" + i, "chip", tip, lands(g) ? `${STRIKES[key]} lands` : `${STRIKES[key]} ${cm(g)} cm short`,
+        { color: lands(g) ? COL.rule : F.corner, ay: 0, op: clamp((amt - .55) * 3, 0, 1) });
+    });
   }
 
   if (mode === "tape") {
@@ -772,6 +905,7 @@ function annotate(fo, env, k) {
     }
   }
   if (html !== headHTML) { head.innerHTML = html; headHTML = html; }
+  if (table !== tableHTML) { rangeEl.innerHTML = table; tableHTML = table; }
   endLabels(); endSegs();
 }
 const fmtSigned = v => (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v);
@@ -787,8 +921,14 @@ function setMode(m) {
   if (m === mode) return;
   prevMode = mode; mode = m; modeT = 0;
   for (const [key, b] of Object.entries(btn)) b.classList.toggle("on", key === m);
+  document.getElementById("strikes").style.display = m === "face" ? "" : "none";
   flyTo(m);
 }
+function setStrike(k) {
+  strikeSel = k;
+  for (const b of document.querySelectorAll("#strikes button")) b.classList.toggle("on", b.dataset.k === k);
+}
+for (const b of document.querySelectorAll("#strikes button")) b.onclick = () => { setStrike(b.dataset.k); time = 0; };
 btn.face.onclick = () => setMode("face");
 btn.tape.onclick = () => setMode("tape");
 btn.reach.onclick = () => setMode("reach");
@@ -826,6 +966,8 @@ window.addEventListener("message", (e) => {
     const m = p === "tpose" || p === "reach" ? "reach" : p === "stand" || p === "tape" ? "tape" : "face";
     mode = prevMode = m;
     for (const [key, b] of Object.entries(btn)) b.classList.toggle("on", key === m);
+    document.getElementById("strikes").style.display = m === "face" ? "" : "none";
+    if (args.strike && SCHED[args.strike]) setStrike(args.strike);
     if (args.autorotate === false || REDUCE) controls.autoRotate = false;
     syncSpin();
     flyTo(mode, true);

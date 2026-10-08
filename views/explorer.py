@@ -117,7 +117,7 @@ def render(df: pd.DataFrame):
     h = _h2h(df, a, b)
 
     with st.container(key="oct_tape"):
-        left, mid, right = st.columns([1, 1.5, 1], gap="medium")
+        left, mid, right = st.columns([1, 2.3, 1], gap="small")
     with left:
         st.markdown(_tape(fa, A_COLOR), unsafe_allow_html=True)
     with right:
@@ -131,7 +131,7 @@ def render(df: pd.DataFrame):
                      reach_cm=float(fb["reach_cm"] if pd.notna(fb["reach_cm"]) else fb["height_cm"]),
                      stance="Orthodox" if fb["stance"] == "Switch" else fb["stance"],
                      hand=fb["hand"], foot=fb["foot"], ghost=True)],
-               height=440, autorotate=False, key="ex_body")
+               height=480, autorotate=False, key="ex_body")
 
     reach = (f"{a} has {abs(h['reach_gap']):.0f} cm {'more' if h['reach_gap'] > 0 else 'less'} reach"
              if h["reach_gap"] not in (None, 0) else "Reach is even")
