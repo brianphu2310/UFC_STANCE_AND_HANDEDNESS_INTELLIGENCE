@@ -18,7 +18,7 @@ import ui
 from globe3d import ISO3, country_payload, globe3d
 
 STANCES = ["Orthodox", "Southpaw", "Switch"]
-SC = dict(zip(STANCES, ui.PALETTE))            # magenta, indigo, tan
+SC = dict(zip(STANCES, ui.PALETTE))            # red, steel, amber
 CONTINENTS = ["Africa", "Asia", "Europe", "North America", "Oceania", "South America"]
 ALL = "All"
 H_GLOBE = 372
@@ -70,7 +70,7 @@ def _mini(fig, title, sub, height=MINI_H, **kw):
 
 
 def _stance_words():
-    return ", ".join(f'<span style="color:{SC[s]};font-weight:600">{s.lower()}</span>'
+    return ", ".join(f'<span style="color:{ui.text_color(SC[s])};font-weight:600">{s.lower()}</span>'
                      for s in STANCES)
 
 
@@ -185,8 +185,8 @@ def reach_butterfly(v):
                       yaxis=dict(ticksuffix=" cm", dtick=10))
     fig.add_vline(x=0, line=dict(color=ui.RULE, width=1))
     ui.chart(_mini(fig, "Reach beyond height",
-                   f'Reach minus height: <span style="color:{SC["Orthodox"]};font-weight:600">'
-                   f'orthodox</span> left, <span style="color:{SC["Southpaw"]};font-weight:600">'
+                   f'Reach minus height: <span style="color:{ui.text_color(SC["Orthodox"])};font-weight:600">'
+                   f'orthodox</span> left, <span style="color:{ui.text_color(SC["Southpaw"])};font-weight:600">'
                    'southpaw</span> right'), key="p_fly")
 
 
@@ -217,7 +217,7 @@ def timeline(v_no_year, years):
     inside = (counts.index >= lo) & (counts.index <= hi)
     fig = go.Figure()
     fig.add_bar(x=counts.index, y=counts.values, marker=dict(
-        color=[ui.ACCENT if i else "#3A2D57" for i in inside], line=dict(width=0)),
+        color=[ui.ACCENT if i else ui.MUTED_FILL for i in inside], line=dict(width=0)),
         hovertemplate="%{x}: %{y} UFC debuts<extra></extra>")
     fig.update_layout(bargap=0.35, xaxis=dict(dtick=4, range=[1992.4, 2024.6], showgrid=False,
                                               tickfont=dict(size=10)),
@@ -244,7 +244,7 @@ CSS = f"""
 
   /* the one bold element: globe in an octagon-cut panel */
   .st-key-globepanel {{ position: relative; padding: 10px 18px 4px;
-      background: radial-gradient(600px 380px at 50% 42%, rgba(90,84,216,.18), transparent 70%), {ui.SURFACE};
+      background: radial-gradient(600px 380px at 50% 42%, rgba(240,74,62,.10), transparent 70%), {ui.SURFACE};
       clip-path: polygon(0 0, calc(100% - 34px) 0, 100% 34px, 100% 100%, 34px 100%, 0 calc(100% - 34px)); }}
   .st-key-globepanel [data-testid="stPlotlyChart"] {{ border: none; background: transparent; }}
   .st-key-globepanel [data-testid="stPills"] label {{ display: none; }}

@@ -4,6 +4,8 @@ UFC Stance & Handedness Intelligence — Streamlit app.
 Run locally:  streamlit run ufc_intelligence_app.py
 Data:         data/ufc_fighters_enriched.csv (scripts/build_clean_dataset.py → enrich_dataset.py)
 """
+from pathlib import Path
+
 import pandas as pd
 import streamlit as st
 
@@ -12,6 +14,7 @@ import ui
 from views import brian, build_fighter, data_notes, explorer, overview, stance_lab
 
 st.set_page_config(page_title="UFC Stance Intelligence", layout="wide",
+                   page_icon=str(Path(__file__).parent / "static" / "mark.png"),
                    initial_sidebar_state="expanded")
 ui.inject_css()
 

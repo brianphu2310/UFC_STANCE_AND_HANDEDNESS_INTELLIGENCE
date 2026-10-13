@@ -8,38 +8,40 @@
   @font-face { font-family: "Instrument Sans"; src: url("/app/static/fonts/instrument-sans-latin-600-normal.woff2") format("woff2"); font-weight: 600; }
   @font-face { font-family: "Big Shoulders Display"; src: url("/app/static/fonts/big-shoulders-display-latin-700-normal.woff2") format("woff2"); font-weight: 700; }
   html, body { margin: 0; height: 100%; background: transparent; overflow: hidden;
-               font-family: "Instrument Sans", "Segoe UI", system-ui, sans-serif; color: #F3EEFB; }
+               font-family: "Instrument Sans", "Segoe UI", system-ui, sans-serif; color: #F2F0ED; }
   #wrap { position: relative; width: 100%; height: 100%; overflow: hidden; box-sizing: border-box;
           background:
-            radial-gradient(circle closest-side at 50% 50%, rgba(90,84,216,.24) 0 70%, rgba(200,98,206,.12) 82%,
-                            rgba(200,98,206,.04) 92%, rgba(0,0,0,0) 100%); }
+            radial-gradient(circle closest-side at 50% 50%, rgba(167,173,184,.24) 0 70%, rgba(240,74,62,.12) 82%,
+                            rgba(240,74,62,.04) 92%, rgba(0,0,0,0) 100%); }
   #wrap::before { content: ""; position: absolute; left: 50%; top: 50%; width: 94vmin; aspect-ratio: 1;
           transform: translate(-50%, -50%); border-radius: 50%; pointer-events: none;
-          box-shadow: 0 0 0 1px rgba(200,98,206,.10), 0 0 80px rgba(90,84,216,.10); }
+          box-shadow: 0 0 0 1px rgba(240,74,62,.10), 0 0 80px rgba(167,173,184,.10); }
   canvas { display: block; position: relative; }
   #labels { position: absolute; inset: 0; pointer-events: none; }
   .lbl { position: absolute; transform: translate(-50%, calc(-100% - 10px)); white-space: nowrap;
-         background: rgba(12,8,24,0.92); border: 1px solid #3A2D57; border-radius: 3px;
+         background: rgba(12,12,14,0.92); border: 1px solid #34343A; border-radius: 3px;
          box-shadow: 0 8px 22px rgba(0,0,0,.45); padding: 4px 8px 5px; font-size: 11px;
-         line-height: 1.32; color: #C9C0DD; pointer-events: auto; cursor: pointer;
+         line-height: 1.32; color: #C4C1BC; pointer-events: auto; cursor: pointer;
          transition: opacity .15s; }
   .lbl::after { content: ""; position: absolute; left: 50%; bottom: -5px; width: 8px; height: 8px;
-         background: #0C0818; border-right: 1px solid #4A3670; border-bottom: 1px solid #4A3670;
+         background: #0C0C0E; border-right: 1px solid #3A3A42; border-bottom: 1px solid #3A3A42;
          transform: translateX(-50%) rotate(45deg); }
   .lbl.below { transform: translate(-50%, 10px); }
   .lbl.below::after { bottom: auto; top: -5px; transform: translateX(-50%) rotate(225deg); }
-  .lbl b { color: #F3EEFB; font-family: "Big Shoulders Display", sans-serif; font-weight: 700; font-size: 14px; letter-spacing: .01em; }
-  .lbl .n { color: #fff; background: linear-gradient(90deg,#5A54D8,#C862CE); border-radius: 3px; padding: 0 6px; font-weight: 700;
+  .lbl b { color: #F2F0ED; font-family: "Big Shoulders Display", sans-serif; font-weight: 700; font-size: 14px; letter-spacing: .01em; }
+  .lbl .n { color: #fff; background: #C42A20; border-radius: 3px; padding: 0 6px; font-weight: 700;
             margin-left: 5px; font-size: 10.5px; }
-  .lbl .more { color: #8D84A6; }
-  .lbl.sel { border-color: #C862CE; box-shadow: 0 0 0 2px rgba(200,98,206,.45), 0 8px 22px rgba(0,0,0,.5); }
+  .lbl .more { color: #8F8C88; }
+  .lbl.sel { border-color: #F04A3E; box-shadow: 0 0 0 2px rgba(240,74,62,.45), 0 8px 22px rgba(0,0,0,.5); }
   .lbl.small { padding: 2px 7px; }
   .hud { position: absolute; right: 10px; bottom: 8px; display: flex; gap: 6px; }
-  button { background: rgba(26,18,48,.9); color: #C9C0DD; border: 1px solid #34264F; border-radius: 3px;
+  button { background: rgba(24,24,27,.9); color: #C4C1BC; border: 1px solid #2A2A2F; border-radius: 3px;
            padding: 4px 11px; font-size: 11px; cursor: pointer; font-family: inherit;
            box-shadow: 0 2px 8px rgba(0,0,0,.35); }
-  button.on { color: #fff; background: #C862CE; border-color: #C862CE; }
-  .hint { position: absolute; left: 50%; transform: translateX(-50%); top: 4px; font-size: 10.5px; color: #8D84A6; }
+  button.on { color: #FFFFFF; background: #C42A20; border-color: #C42A20; font-weight: 600; }
+  button:focus-visible, canvas:focus-visible { outline: 2px solid #E9B44C; outline-offset: -2px; }
+  .sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+  .hint { position: absolute; left: 50%; transform: translateX(-50%); top: 4px; font-size: 10.5px; color: #8F8C88; }
   .legend { display: none; }
 </style>
 <script src="./topojson-client.min.js"></script>
@@ -50,11 +52,12 @@
   <div id="labels"></div>
   <div class="legend" id="legend"></div>
   <div class="hud">
-    <button id="bSpin" class="on">Auto-rotate</button>
-    <button id="bNames" class="on">Names</button>
+    <button id="bSpin" class="on" aria-pressed="true">Auto-rotate</button>
+    <button id="bNames" class="on" aria-pressed="true">Names</button>
     <button id="bReset">Reset</button>
   </div>
-  <div class="hint">drag · zoom · click a country</div>
+  <div class="hint" aria-hidden="true">Drag to turn, scroll to zoom, click a country to filter</div>
+  <p class="sr-only" id="kbd">Globe of fighters by country. Focus it and use the arrow keys to turn and plus or minus to zoom. The same countries can be filtered with the continent buttons and sidebar.</p>
 </div>
 <script type="module">
 import * as THREE from "three";
@@ -79,12 +82,36 @@ controls.minDistance = 2.0;
 controls.maxDistance = 6;
 controls.autoRotate = true;
 controls.autoRotateSpeed = 0.55;
+if (matchMedia("(prefers-reduced-motion: reduce)").matches) controls.autoRotate = false;
+// keyboard orbit for the canvas (WCAG 2.1.1): arrows turn, +/- zoom
+function keyOrbit(el, onKey) {
+  el.tabIndex = 0;
+  el.addEventListener("keydown", (e) => {
+    const sph = new THREE.Spherical().setFromVector3(camera.position.clone().sub(controls.target));
+    const step = 0.12;
+    if (e.key === "ArrowLeft") sph.theta -= step;
+    else if (e.key === "ArrowRight") sph.theta += step;
+    else if (e.key === "ArrowUp") sph.phi = Math.max(0.2, sph.phi - step);
+    else if (e.key === "ArrowDown") sph.phi = Math.min(controls.maxPolarAngle, sph.phi + step);
+    else if (e.key === "+" || e.key === "=") sph.radius = Math.max(controls.minDistance, sph.radius * 0.9);
+    else if (e.key === "-") sph.radius = Math.min(controls.maxDistance, sph.radius * 1.1);
+    else return;
+    e.preventDefault();
+    if (onKey) onKey();
+    camera.position.copy(controls.target).add(new THREE.Vector3().setFromSpherical(sph));
+    controls.update();
+  });
+}
+keyOrbit(renderer.domElement, () => { controls.autoRotate = false; bSpin.classList.remove("on"); bSpin.setAttribute("aria-pressed", "false"); });
+renderer.domElement.setAttribute("role", "img");
+renderer.domElement.setAttribute("aria-describedby", "kbd");
+renderer.domElement.setAttribute("aria-label", "Rotatable globe of fighters by country");
 
 scene.add(new THREE.AmbientLight("#ffffff", 1.6));
 const sun = new THREE.DirectionalLight("#ffffff", 1.1);
 sun.position.set(-3, 2, 4);
 scene.add(sun);
-const rim = new THREE.DirectionalLight("#C862CE", 0.9);
+const rim = new THREE.DirectionalLight("#F04A3E", 0.9);
 rim.position.set(3, -1, -3);
 scene.add(rim);
 
@@ -94,7 +121,7 @@ scene.add(globe);
 // atmosphere glow
 const glow = new THREE.Mesh(new THREE.SphereGeometry(1.08, 64, 48), new THREE.ShaderMaterial({
   transparent: true, side: THREE.BackSide, depthWrite: false,
-  uniforms: { c: { value: new THREE.Color("#B06BE8") } },
+  uniforms: { c: { value: new THREE.Color("#E0453A") } },
   vertexShader: `varying vec3 vN; void main(){ vN = normalize(normalMatrix*normal);
     gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0);} `,
   fragmentShader: `uniform vec3 c; varying vec3 vN; void main(){
@@ -124,8 +151,8 @@ globe.add(sphere);
 const spikes = new THREE.Group();
 globe.add(spikes);
 
-function ramp(t) {  // indigo -> magenta -> pink (matches the page legend)
-  const stops = [[0x5A, 0x54, 0xD8], [0xC8, 0x62, 0xCE], [0xF2, 0xA6, 0xF0]];
+function ramp(t) {  // ember -> red -> hot coral (matches the page legend)
+  const stops = [[0x6A, 0x22, 0x1C], [0xD8, 0x3A, 0x2E], [0xFF, 0x9A, 0x86]];
   const [p, q, k] = t < 0.5 ? [stops[0], stops[1], t * 2] : [stops[1], stops[2], (t - 0.5) * 2];
   return `rgb(${p.map((v, i) => Math.round(v + (q[i] - v) * k)).join(",")})`;
 }
@@ -143,10 +170,10 @@ function drawRing(ctx, ring) {
 
 function paint(data) {
   const ctx = texCanvas.getContext("2d");
-  ctx.fillStyle = "#171030";
+  ctx.fillStyle = "#151518";
   ctx.fillRect(0, 0, TEX_W, TEX_H);
   // graticule
-  ctx.strokeStyle = "#1F1640"; ctx.lineWidth = 2;
+  ctx.strokeStyle = "#222226"; ctx.lineWidth = 2;
   for (let lon = -180; lon <= 180; lon += 30) {
     const x = (lon + 180) / 360 * TEX_W; ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, TEX_H); ctx.stroke();
   }
@@ -160,9 +187,9 @@ function paint(data) {
     ctx.beginPath();
     const polys = f.geometry.type === "Polygon" ? [f.geometry.coordinates] : f.geometry.coordinates;
     for (const poly of polys) for (const ring of poly) drawRing(ctx, ring);
-    ctx.fillStyle = d ? ramp(Math.sqrt(d.value / max)) : "#3A2C62";
+    ctx.fillStyle = d ? ramp(Math.sqrt(d.value / max)) : "#2A2A30";
     ctx.fill("evenodd");
-    ctx.strokeStyle = "#171030";
+    ctx.strokeStyle = "#151518";
     ctx.lineWidth = d ? 2.6 : 1.6;
     ctx.stroke();
   }
@@ -182,7 +209,7 @@ function buildSpikes() {
     const base = ll2v(d.lat, d.lon, 1.0), top = ll2v(d.lat, d.lon, 1.0 + h);
     const geo = new THREE.CylinderGeometry(0.009, 0.009, h, 10);
     const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
-      color: "#E08BE6", emissive: "#C862CE", emissiveIntensity: 0.7 }));
+      color: "#FF7A6E", emissive: "#F04A3E", emissiveIntensity: 0.7 }));
     m.position.copy(base).add(top).multiplyScalar(0.5);
     m.quaternion.setFromUnitVectors(V(0, 1, 0), base.clone().normalize());
     spikes.add(m);
@@ -300,8 +327,8 @@ renderer.setAnimationLoop(() => {
 
 // ------------------------------------------------------------------ UI
 const bSpin = document.getElementById("bSpin"), bNames = document.getElementById("bNames");
-bSpin.onclick = () => { controls.autoRotate = !controls.autoRotate; bSpin.classList.toggle("on", controls.autoRotate); };
-bNames.onclick = () => { showNames = !showNames; bNames.classList.toggle("on", showNames); buildLabels(); };
+bSpin.onclick = () => { controls.autoRotate = !controls.autoRotate; bSpin.classList.toggle("on", controls.autoRotate); bSpin.setAttribute("aria-pressed", String(controls.autoRotate)); };
+bNames.onclick = () => { showNames = !showNames; bNames.classList.toggle("on", showNames); bNames.setAttribute("aria-pressed", String(showNames)); buildLabels(); };
 document.getElementById("bReset").onclick = () => {
   camera.position.set(0, 0.8, 3.7); resize(); controls.autoRotate = true; bSpin.classList.add("on");
   if (state.selected) select(state.selected);

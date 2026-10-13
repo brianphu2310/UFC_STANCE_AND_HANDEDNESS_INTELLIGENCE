@@ -14,16 +14,16 @@ PHASE_COLORS = dict(zip([p for p, _ in core.PHASES], ui.PALETTE))
 
 
 def _inputs():
-    gender = st.segmented_control("Divisions", ["Men", "Women"], default="Men", key="bf_g") or "Men"
+    gender = st.segmented_control("Division", ["Men", "Women"], default="Men", key="bf_g") or "Men"
     h = st.slider("Height (cm)", 150, 210, 179, key="bf_h")
     w = st.slider("Weight (kg)", 45, 130, 69, key="bf_w")
     r = st.slider("Reach / arm span (cm)", 145, 225, 181, key="bf_r",
-                  help="Fingertip to fingertip with arms straight out. Most people ≈ their height.")
+                  help="Fingertip to fingertip with your arms straight out. For most people it is close to their height.")
     c1, c2 = st.columns(2)
     hand = c1.radio("Dominant hand", ["Right", "Left"], key="bf_hand")
     foot = c2.radio("Dominant foot", ["Right", "Left"], key="bf_foot",
                     help="The foot you'd kick a ball with.")
-    style = st.selectbox("How you want to fight", core.STYLES, key="bf_style")
+    style = st.selectbox("Fighting style", core.STYLES, key="bf_style")
     freq = st.slider("Training sessions per week", 1, 7, 4, key="bf_freq")
     level = st.select_slider("Experience", core.LEVELS, value="Beginner", key="bf_lvl")
     goal = st.selectbox("Goal", list(core.GOALS), index=2, key="bf_goal")
@@ -117,7 +117,7 @@ def _roadmap(p, stance):
                     orientation="h", name=r["phase"],
                     marker=dict(color=PHASE_COLORS[r["phase"]], line=dict(color=ui.SURFACE, width=2)),
                     text=f"{r['start_month']:.0f}–{r['end_month']:.0f} mo", textposition="inside",
-                    insidetextanchor="middle", textfont=dict(color="#fff"),
+                    insidetextanchor="middle", textfont=dict(color=ui.on_color(PHASE_COLORS[r["phase"]])),
                     hovertemplate=f"<b>{r['phase']}</b><br>month {r['start_month']:.1f} → "
                                   f"{r['end_month']:.1f}<extra></extra>")
     fig.update_layout(showlegend=False, xaxis=dict(title="months from today", range=[0, total * 1.02]),

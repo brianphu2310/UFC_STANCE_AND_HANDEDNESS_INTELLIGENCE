@@ -8,34 +8,34 @@
   @font-face { font-family: "Instrument Sans"; src: url("/app/static/fonts/instrument-sans-latin-600-normal.woff2") format("woff2"); font-weight: 600; }
   @font-face { font-family: "Big Shoulders Display"; src: url("/app/static/fonts/big-shoulders-display-latin-700-normal.woff2") format("woff2"); font-weight: 700; }
   @font-face { font-family: "Big Shoulders Display"; src: url("/app/static/fonts/big-shoulders-display-latin-800-normal.woff2") format("woff2"); font-weight: 800; }
-  :root { --bg:#0E0A17; --ink:#EFEAF6; --ink2:#BDB4D2; --mute:#8A81A3; --line:#2B2242;
-          --a:#C862CE; --b:#5A54D8; --rule:#E4C49B; }
+  :root { --bg:#0C0C0E; --ink:#F2F0ED; --ink2:#C4C1BC; --mute:#8F8C88; --line:#2A2A2F;
+          --a:#F04A3E; --afill:#C42A20; --b:#A7ADB8; --rule:#E9B44C; }
   html, body { margin:0; height:100%; background:var(--bg); overflow:hidden; color:var(--ink);
                font-family:"Instrument Sans", "Segoe UI", system-ui, sans-serif; }
   #wrap { position:relative; width:100%; height:100%; overflow:hidden; box-sizing:border-box;
           border:1px solid var(--line); border-radius:6px;
-          background: radial-gradient(110% 75% at 50% 100%, #2A1D45 0%, #160F27 48%, #0E0A17 80%); }
+          background: radial-gradient(120% 85% at 50% 8%, #1C1C20 0%, #111113 52%, #0A0A0B 100%); }
   canvas { display:block; position:absolute; inset:0; }
   #labels { position:absolute; inset:0; pointer-events:none; overflow:hidden; }
   .lab { position:absolute; left:0; top:0; white-space:nowrap; will-change:transform; transition:opacity .2s; }
   .tag.l { text-align:right; }
   .tag { font-family:"Big Shoulders Display", sans-serif; font-weight:700; font-size:17px; line-height:1;
-         text-align:center; text-shadow:0 1px 10px rgba(0,0,0,.8); }
+         text-align:center; text-shadow:0 0 3px #000, 0 0 8px #000, 0 1px 12px rgba(0,0,0,.9); }
   .tag small { display:block; font-family:"Instrument Sans", sans-serif; font-weight:400; font-size:11.5px;
                color:var(--ink2); margin-top:3px; }
   .chip { font-size:12px; font-weight:600; padding:3px 8px; border-radius:3px; line-height:1.2;
-          background:rgba(14,10,23,.88); border:1px solid currentColor; }
+          background:rgba(12,12,14,.88); border:1px solid currentColor; }
   .val { font-family:"Big Shoulders Display", sans-serif; font-weight:700; font-size:15px;
-         text-shadow:0 1px 8px rgba(0,0,0,.8); }
+         text-shadow:0 0 3px #000, 0 0 8px #000; }
   .hud { position:absolute; top:12px; left:14px; right:14px; pointer-events:none; display:flex;
          justify-content:space-between; align-items:flex-start; gap:14px; }
   .head { flex:1 1 auto; min-width:0; }
-  .rt { border-collapse:collapse; font-size:12px; background:rgba(14,10,23,.78); border:1px solid var(--line);
+  .rt { border-collapse:collapse; font-size:12px; background:rgba(12,12,14,.78); border:1px solid var(--line);
         border-radius:4px; }
   .rt th, .rt td { padding:4px 9px; text-align:left; white-space:nowrap; }
   .rt th { font-family:"Big Shoulders Display", sans-serif; font-weight:700; font-size:14px; padding-top:6px; }
   .rt td:first-child { color:var(--ink2); }
-  .rt tr.on td { background:rgba(228,196,155,.13); }
+  .rt tr.on td { background:rgba(233,180,76,.13); }
   .rt td.ok { color:var(--rule); font-weight:600; }
   .rt td.no { color:var(--mute); }
   .head { font-family:"Big Shoulders Display", sans-serif; font-weight:800; font-size:23px; line-height:1.05;
@@ -43,20 +43,24 @@
   .head span { display:block; font-family:"Instrument Sans", sans-serif; font-weight:400; font-size:12.5px;
                line-height:1.4; color:var(--ink2); margin-top:5px; max-width:460px; }
   .bar { position:absolute; left:12px; right:12px; bottom:12px; display:flex; align-items:center;
-         gap:10px; flex-wrap:wrap; }
+         gap:6px; flex-wrap:wrap; }
   .seg { display:inline-flex; border:1px solid var(--line); border-radius:4px; overflow:hidden;
-         background:rgba(21,16,36,.9); }
-  .seg button, .tool { all:unset; cursor:pointer; font-size:12.5px; padding:6px 12px; color:var(--ink2); }
+         background:rgba(20,20,23,.9); }
+  .seg button, .tool { all:unset; cursor:pointer; font-size:12px; padding:6px 9px; color:var(--ink2); }
   .seg button + button { border-left:1px solid var(--line); }
-  .seg button.on { background:var(--a); color:#fff; }
-  .tool { padding:6px 10px; color:var(--ink2); background:rgba(21,16,36,.9); border:1px solid var(--line); border-radius:4px; }
-  .tool.on { color:var(--ink); border-color:#4A3B70; }
+  .seg button.on { background:var(--afill); color:#fff; font-weight:600; }
+  .seg button, .tool { min-height:28px; box-sizing:border-box; }
+  canvas:focus-visible { outline:2px solid var(--rule); outline-offset:-2px; }
+  .sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+  .tool { padding:6px 9px; color:var(--ink2); background:rgba(20,20,23,.9); border:1px solid var(--line); border-radius:4px; }
+  .tool.on { color:var(--ink); border-color:#4A4A52; }
   .seg button:focus-visible, .tool:focus-visible { outline:2px solid var(--rule); outline-offset:-2px; }
   .spacer { flex:1; }
   .key { font-size:11.5px; color:var(--ink2); }
   .key i { display:inline-block; width:14px; height:4px; border-radius:2px; margin-right:6px;
            vertical-align:middle; background:var(--rule); box-shadow:0 0 6px var(--rule); }
   @media (max-width: 900px) { .key { display:none; } }
+  @media (max-width: 640px) { .seg button, .tool { padding:5px 7px; font-size:11.5px; } .bar { gap:4px; left:8px; right:8px; } }
   @media (max-width: 600px) { .head { font-size:19px; } .head span { display:none; } .rt { font-size:11px; }
                               .seg button, .tool { padding:5px 8px; font-size:12px; } }
 </style>
@@ -66,36 +70,41 @@
 </head>
 <body>
 <div id="wrap">
+  <p class="sr-only" id="kbd">Focus the 3D view and use the arrow keys to turn it and plus or minus to zoom.</p>
   <div id="labels"></div>
   <div class="hud"><div class="head" id="head"></div><div id="range"></div></div>
   <div class="bar">
     <div class="seg" role="group" aria-label="View">
-      <button id="mFace" class="on">Face-off</button>
-      <button id="mTape">Height</button>
-      <button id="mReach">Reach</button>
+      <button id="mFace" class="on" aria-pressed="true">Face-off</button>
+      <button id="mTape" aria-pressed="false">Height</button>
+      <button id="mReach" aria-pressed="false">Reach</button>
     </div>
     <div class="seg" role="group" aria-label="Strike" id="strikes">
-      <button data-k="combo" class="on">Combo</button>
-      <button data-k="jab">Jab</button>
-      <button data-k="cross">Cross</button>
-      <button data-k="kick">Kick</button>
+      <button data-k="spar" class="on" aria-pressed="true">Spar</button>
+      <button data-k="jab" aria-pressed="false">Jab</button>
+      <button data-k="cross" aria-pressed="false">Cross</button>
+      <button data-k="kick" aria-pressed="false">Kick</button>
     </div>
-    <button class="tool on" id="bSpin">Rotate</button>
+    <button class="tool on" id="bPlay" aria-pressed="true">Pause</button>
+    <button class="tool on" id="bSpin" aria-pressed="true">Rotate</button>
     <button class="tool" id="bReset">Reset</button>
     <span class="spacer"></span>
-    <span class="key"><i></i>Gold band marks the dominant hand and foot</span>
+    <span class="key"><i></i>Gold strap patch and ankle band mark the dominant hand and foot</span>
   </div>
 </div>
 <script type="module">
 import * as THREE from "three";
 import { OrbitControls } from "./OrbitControls.js";
+import { GLTFLoader } from "./jsm/GLTFLoader.js";
+import * as SkeletonUtils from "./jsm/SkeletonUtils.js";
 
 // ------------------------------------------------------------------ bridge
 const send = (type, data = {}) =>
   window.parent.postMessage({ isStreamlitMessage: true, type, ...data }, "*");
 let frameHeight = 520;
 
-const COL = { a: "#C862CE", b: "#5A54D8", rule: "#E4C49B", skin: "#CDC4DC", ink: "#EFEAF6" };
+const COL = { a: "#F04A3E", b: "#A7ADB8", rule: "#E9B44C", skin: "#404047", ink: "#F2F0ED", hit: "#FF6A4D" };
+const KIT = { "#F04A3E": "#C8291C", "#A7ADB8": "#B4B9C2" };   // fight-kit fabric per corner
 const REDUCE = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const V = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
 const UP = V(0, 1, 0), ZAX = V(0, 0, 1);
@@ -103,6 +112,7 @@ const clamp = (x, a, b) => Math.min(Math.max(x, a), b);
 const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 const easeOut = t => 1 - Math.pow(1 - t, 3);
 const cm = m => Math.round(m * 100);
+const TXT = c => c;   // both corner colours pass 4.5:1 as text on the stage
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const first = s => String(s).split(" ").slice(-1)[0];
 const isYou = F => String(F.info.label || "").trim().toLowerCase() === "you";
@@ -126,6 +136,27 @@ wrap.prepend(renderer.domElement);
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(30, 1, 0.05, 60);
 const controls = new OrbitControls(camera, renderer.domElement);
+// keyboard orbit for the canvas (WCAG 2.1.1): arrows turn, +/- zoom
+function keyOrbit(el, onKey) {
+  el.tabIndex = 0;
+  el.addEventListener("keydown", (e) => {
+    const sph = new THREE.Spherical().setFromVector3(camera.position.clone().sub(controls.target));
+    const step = 0.12;
+    if (e.key === "ArrowLeft") sph.theta -= step;
+    else if (e.key === "ArrowRight") sph.theta += step;
+    else if (e.key === "ArrowUp") sph.phi = Math.max(0.2, sph.phi - step);
+    else if (e.key === "ArrowDown") sph.phi = Math.min(controls.maxPolarAngle, sph.phi + step);
+    else if (e.key === "+" || e.key === "=") sph.radius = Math.max(controls.minDistance, sph.radius * 0.9);
+    else if (e.key === "-") sph.radius = Math.min(controls.maxDistance, sph.radius * 1.1);
+    else return;
+    e.preventDefault();
+    if (onKey) onKey();
+    camera.position.copy(controls.target).add(new THREE.Vector3().setFromSpherical(sph));
+    controls.update();
+  });
+}keyOrbit(renderer.domElement, () => { camTween = null; });
+renderer.domElement.setAttribute("role", "img");
+renderer.domElement.setAttribute("aria-describedby", "kbd");
 controls.enableDamping = true;
 controls.autoRotateSpeed = 0.7;
 controls.minDistance = 1.4;
@@ -133,8 +164,9 @@ controls.maxDistance = 14;
 controls.maxPolarAngle = Math.PI * 0.52;
 controls.autoRotate = !REDUCE;
 
-scene.add(new THREE.HemisphereLight("#d8ccff", "#120c20", 0.7));
-const spot = new THREE.SpotLight("#fff3e6", 5.5, 0, 0.55, 0.85, 0);
+scene.fog = new THREE.Fog("#0C0C0E", 6.5, 17);
+scene.add(new THREE.HemisphereLight("#d6d8de", "#2a0d0b", 0.55));
+const spot = new THREE.SpotLight("#fff6ee", 6, 0, 0.55, 0.85, 0);
 spot.position.set(0.8, 7, 1.4);
 spot.target.position.set(0, 0.9, 0);
 spot.castShadow = true;
@@ -142,64 +174,114 @@ spot.shadow.mapSize.set(2048, 2048);
 spot.shadow.bias = -0.0004;
 spot.shadow.camera.near = 2; spot.shadow.camera.far = 14;
 scene.add(spot, spot.target);
-const rimA = new THREE.DirectionalLight(COL.a, 2.4); rimA.position.set(-3, 2.6, -4.5); scene.add(rimA);
-const rimB = new THREE.DirectionalLight(COL.b, 3.0); rimB.position.set(-3, 2.6, 4.5); scene.add(rimB);
-const fill = new THREE.DirectionalLight("#c8bcff", 0.45); fill.position.set(5, 2, 1); scene.add(fill);
+const rimA = new THREE.DirectionalLight("#FF3B2F", 3.4); rimA.position.set(-3, 2.4, -4.5); scene.add(rimA);
+const rimB = new THREE.DirectionalLight("#FF4A36", 2.6); rimB.position.set(-3, 2.4, 4.5); scene.add(rimB);
+const fill = new THREE.DirectionalLight("#b8c4d8", 0.85); fill.position.set(5, 2, 1); scene.add(fill);
+const glow = new THREE.PointLight("#FF2A1A", 0.8, 5, 1.8); glow.position.set(0, 0.25, 0); scene.add(glow);
 
-// ---- octagon mat
+// ---- stage: black floor with a red neon grid that fades into the dark
 const MAT_R = 3.0;
-const floor = new THREE.Mesh(new THREE.CircleGeometry(MAT_R, 8),
-  new THREE.MeshStandardMaterial({ color: "#1B1430", roughness: 0.95 }));
+// glowing grid drawn into a texture so the lines stay crisp at grazing angles
+function gridTexture() {
+  const c = document.createElement("canvas"); c.width = c.height = 256;
+  const g = c.getContext("2d");
+  g.fillStyle = "#000"; g.fillRect(0, 0, 256, 256);
+  for (const [w, a] of [[18, .10], [9, .22], [4, .55], [2, 1]]) {
+    g.strokeStyle = `rgba(255, 62, 44, ${a})`; g.lineWidth = w;
+    g.beginPath(); g.moveTo(0, 0); g.lineTo(256, 0); g.moveTo(0, 0); g.lineTo(0, 256);
+    g.moveTo(0, 256); g.lineTo(256, 256); g.moveTo(256, 0); g.lineTo(256, 256); g.stroke();
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(60 / 0.8, 60 / 0.8);                  // 80 cm cells
+  t.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(60, 60),
+  new THREE.MeshStandardMaterial({ color: "#0E0E10", roughness: 0.95, metalness: 0,
+    emissive: "#ffffff", emissiveMap: gridTexture(), emissiveIntensity: 0.9 }));
 floor.rotation.x = -Math.PI / 2;
-floor.rotation.z = Math.PI / 8;
 floor.receiveShadow = true;
 scene.add(floor);
 function octLoop(r, color, opacity = 1) {
   const pts = [];
   for (let k = 0; k <= 8; k++) {
     const a = Math.PI / 8 + k * Math.PI / 4;
-    pts.push(V(r * Math.cos(a), 0.003, r * Math.sin(a)));
+    pts.push(V(r * Math.cos(a), 0.004, r * Math.sin(a)));
   }
   return new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),
     new THREE.LineBasicMaterial({ color, transparent: true, opacity }));
 }
-scene.add(octLoop(MAT_R, "#4A3B70"), octLoop(MAT_R - 0.06, "#2B2242"), octLoop(1.25, "#2B2242", 0.7));
-const postGeo = new THREE.CylinderGeometry(0.06, 0.06, 0.26, 16);
+scene.add(octLoop(MAT_R, "#FF6A4D", 0.9));
+const postGeo = new THREE.CylinderGeometry(0.05, 0.05, 0.3, 16);
 for (let k = 0; k < 8; k++) {
   const a = Math.PI / 8 + k * Math.PI / 4;
   const isA = k === 5, isB = k === 1;
-  const c = isA ? COL.a : isB ? COL.b : "#2B2242";
+  const c = isA ? COL.a : isB ? COL.b : "#2A2A2F";
   const post = new THREE.Mesh(postGeo, new THREE.MeshStandardMaterial({
     color: c, roughness: 0.5, emissive: c, emissiveIntensity: isA || isB ? 0.9 : 0.05 }));
-  post.position.set(MAT_R * Math.cos(a), 0.13, MAT_R * Math.sin(a));
+  post.position.set(MAT_R * Math.cos(a), 0.15, MAT_R * Math.sin(a));
   scene.add(post);
 }
 
-// ------------------------------------------------------------------ geometry library
-function lathe(profile, seg = 32, n = 28) {
-  const curve = new THREE.SplineCurve(profile.map(([r, y]) => new THREE.Vector2(r, y)));
-  const pts = curve.getPoints(n).map(v => new THREE.Vector2(Math.max(v.x, 1e-3), v.y));
-  return new THREE.LatheGeometry(pts, seg);
-}
-const G = {
-  upper: lathe([[.82, 0], [.93, .12], [1, .38], [.95, .6], [.8, .84], [.7, 1]]),
-  fore:  lathe([[.76, 0], [.95, .14], [1, .3], [.84, .6], [.66, .88], [.6, 1]]),
-  thigh: lathe([[1, 0], [1, .16], [.96, .42], [.85, .7], [.7, .92], [.64, 1]]),
-  shin:  lathe([[.7, 0], [.9, .12], [1, .27], [.85, .52], [.6, .8], [.5, 1]]),
-  sleeve: lathe([[1.0, 0], [1.02, .5], [.98, 1]], 32, 8),
-  sphere: new THREE.SphereGeometry(1, 40, 28),
-  cyl: new THREE.CylinderGeometry(1, 1, 1, 28, 1).translate(0, 0.5, 0),
-};
-function torsoProfile(g) {
-  const s = Math.sqrt(g), w = Math.pow(g, 1.3), c = .86 + .14 * g;
-  return [[.02, 0], [.064 * s, .012], [.082 * s, .035], [.085 * s, .066], [.081 * w, .1],
-          [.079 * w, .14], [.081 * w, .17], [.093 * c, .21], [.11 * c, .25], [.118 * c, .285],
-          [.116 * c, .315], [.098 * c, .337], [.06, .356], [.034, .372]];
-}
-function shortsProfile(g) {
-  const s = Math.sqrt(g), w = Math.pow(g, 1.3), k = 1.07;
-  return [[.05 * s * k, -.004], [.072 * s * k, .012], [.087 * s * k, .035], [.09 * s * k, .066],
-          [.086 * w * k, .1], [.084 * w * k, .135]];
+// ------------------------------------------------------------------ body model
+// fighter.glb: MakeHuman CC0 base mesh shaped into an athletic male, built by
+// scripts/build_body_model.py. Proportions below are measured from its skeleton once it loads.
+const ANAT = { crotch: .47, crotchZ: .005, hipX: .052, hipUp: .035, hipZ: .005, sj: .1, shUp: .345, shZ: 0,
+               neckUp: .356, neckZ: 0, headBoneUp: .405, headBoneZ: .004, headUp: .058, headZ: .01,
+               ankle: .045, thigh: .225, shin: .235, upper: .176, fore: .144, hand: .08 };
+let MODEL = null;
+const nm = s => s.replace(/\./g, "");            // GLTFLoader strips dots from node names
+
+function buildModel(gltf) {
+  const root = gltf.scene, ext = gltf.parser.json.extras;
+  root.updateMatrixWorld(true);
+  const Hm = ext.height, y0 = ext.floor;
+  const bone = n => root.getObjectByName(nm(n));
+  const wp = n => V().setFromMatrixPosition(bone(n).matrixWorld);
+  const mid = (a, b) => wp(a).add(wp(b)).multiplyScalar(.5);
+  const hip = mid("upperleg01.L", "upperleg01.R"), sh = mid("upperarm01.L", "upperarm01.R");
+  const neck = wp("neck01"), headB = wp("head");
+  const eyes = V(...ext.eyes.L).add(V(...ext.eyes.R)).multiplyScalar(.5);
+  const headC = eyes.clone().add(V(0, .004, -.078));
+  ANAT.hipUp = .035;
+  ANAT.crotch = (hip.y - y0) / Hm - ANAT.hipUp;
+  ANAT.crotchZ = hip.z / Hm - .005;
+  ANAT.hipX = (wp("upperleg01.L").x - wp("upperleg01.R").x) / 2 / Hm;
+  const up = v => (v.y - y0) / Hm - ANAT.crotch, fz = v => v.z / Hm - ANAT.crotchZ;
+  ANAT.sj = (wp("upperarm01.L").x - wp("upperarm01.R").x) / 2 / Hm;
+  ANAT.shUp = up(sh); ANAT.shZ = fz(sh);
+  ANAT.neckUp = up(neck); ANAT.neckZ = fz(neck);
+  ANAT.headBoneUp = up(headB); ANAT.headBoneZ = fz(headB);
+  ANAT.headUp = (headC.y - headB.y) / Hm; ANAT.headZ = (headC.z - headB.z) / Hm;
+  ANAT.ankle = (wp("foot.L").y - y0) / Hm;
+  ANAT.thigh = wp("upperleg01.L").distanceTo(wp("lowerleg01.L")) / Hm;
+  ANAT.shin = wp("lowerleg01.L").distanceTo(wp("foot.L")) / Hm;
+  ANAT.upper = wp("upperarm01.L").distanceTo(wp("lowerarm01.L")) / Hm;
+  ANAT.fore = wp("lowerarm01.L").distanceTo(wp("wrist.L")) / Hm;
+  ANAT.hand = ext.fist.L / Hm;
+  const order = [], parentOf = {}, restLocal = {}, restWorld = {}, restPos = {};
+  root.traverse(o => {
+    if (!o.isBone) return;
+    order.push(o.name);
+    parentOf[o.name] = o.parent && o.parent.isBone ? o.parent.name : null;
+    restLocal[o.name] = o.quaternion.clone();
+    restPos[o.name] = o.position.clone();
+    restWorld[o.name] = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().extractRotation(o.matrixWorld));
+  });
+  const hand = {};
+  for (const s of ["L", "R"]) {
+    const w = bone("wrist." + s);
+    const f0 = V(0, 1, 0).applyQuaternion(restWorld[w.name]);
+    const b0 = V(...w.userData.palm).negate();
+    b0.addScaledVector(f0, -b0.dot(f0)).normalize();
+    hand[s] = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(b0.clone().cross(f0), b0, f0));
+  }
+  const headInv = new THREE.Matrix4().copy(bone("head").matrixWorld).invert();
+  return { scene: root, Hm, floor: y0, order, parentOf, restLocal, restWorld, restPos, hand,
+           restRoot: wp("root"), restHip: hip,
+           eyeLocal: ["L", "R"].map(s => V(...ext.eyes[s]).applyMatrix4(headInv)) };
 }
 
 // ------------------------------------------------------------------ fighter
@@ -215,11 +297,11 @@ function params(f) {
 }
 
 function dims(p) {
-  const H = p.H;
-  const sj = .1 * H * (.93 + .07 * p.g);
-  const arm = Math.max(p.R / 2 - sj, .3 * H);
-  return { H, sj, arm, upper: .44 * arm, fore: .36 * arm, hand: .2 * arm,
-           thigh: .225 * H, shin: .235 * H, foot: .05 * H, headR: .062 * H, rg: .04 * H * (.95 + .05 * p.g) };
+  const H = p.H, sj = ANAT.sj * H, hand = ANAT.hand * H;
+  const nat = (ANAT.upper + ANAT.fore) * H;                  // shoulder to wrist on the model
+  const sa = clamp((p.R / 2 - sj - hand) / nat, .85, 1.2);   // arm stretch that gives this reach
+  return { H, sj, sa, arm: nat * sa + hand, upper: ANAT.upper * H * sa, fore: ANAT.fore * H * sa, hand,
+           thigh: ANAT.thigh * H, shin: ANAT.shin * H, foot: .05 * H, headR: .062 * H };
 }
 
 function ik(a, target, l1, l2, pole) {
@@ -235,74 +317,128 @@ function ik(a, target, l1, l2, pole) {
   return { joint: a.clone().addScaledVector(dir, x).addScaledVector(perp, h), end };
 }
 
-// Pose solver: returns joint positions in the fighter's local frame (faces +z).
-// o.ej / o.ec / o.ek: jab, cross and rear-kick amounts (0..1). o.face / o.ribs: targets (local).
+// Pose solver: joint positions in the fighter's local frame (faces +z, +x = own left).
+// Strike amounts 0..1: ej jab, ec cross, eh lead hook, eu rear uppercut, ek rear body kick,
+// elk rear leg kick, et lead teep. Defence: slip (-1..1 sideways), cover, check, roll.
+// Targets (local): jabT, crossT, hookT, upperT, ribs, thigh, belly. o.step: footwork in progress.
 function solve(p, mode, o = {}) {
   const d = dims(p), H = d.H, s = p.lead;
   const t = o.t || 0;
-  const guard = mode === "guard";
-  const ej = guard ? (o.ej || 0) : 0, ec = guard ? (o.ec || 0) : 0, ek = guard ? (o.ek || 0) : 0;
+  const guard = mode === "guard", down = mode === "down", fight = guard || down;
+  const A = k => (guard ? clamp(o[k] || 0, 0, 1) : 0);
+  const ej = A("ej"), ec = A("ec"), eh = A("eh"), eu = A("eu"), ek = A("ek"), elk = A("elk"), et = A("et");
+  const cover = A("cover"), check = A("check"), rl = A("roll");
+  const slip = guard ? clamp(o.slip || 0, -1, 1) : 0;
+  const kickAmt = Math.max(ek, elk);
+  const busy = Math.min(1, ej + ec + eh + eu + ek + elk + et + cover + check + rl + Math.abs(slip));
   const J = { d, footQ: {} };
   const wl = (1 + s) / 2, S = 2 * wl - 1;            // +1 orthodox, -1 southpaw (continuous)
   const rearX = -S;                                    // x sign of the rear side
   const leadSide = S >= 0 ? LEFT : RIGHT, rearSide = -leadSide;
+  const live = REDUCE ? 0 : 1, calm = (1 - busy) * live;
+  const TAU = Math.PI * 2;
   let drop, yaw, lean, roll = 0;
   const shift = V();
   const feet = {};
-  if (guard) {
-    const bounce = REDUCE ? 0 : Math.sin(t * Math.PI * 2 * 1.5) * .007 * H * (1 - ek);
-    drop = .055 * H + bounce + .012 * H * ej + .022 * H * ec - .03 * H * ek;
-    yaw = -S * (.52 + .2 * ej) + S * .9 * ec + S * 1.3 * ek;
-    lean = .11 + .06 * ej + .1 * ec - .34 * ek;
-    roll = -S * .28 * ek;
-    shift.set(S * .02 * H * ek, 0, .035 * H * ec + .1 * H * ek);
+  if (fight) {
+    const bounce = Math.sin(t * TAU * 1.55) * .009 * H * calm;           // light bounce on the balls of the feet
+    const rock = Math.sin(t * TAU * .5) * .014 * H * calm;               // weight rocks front to back
+    const sway = Math.sin(t * TAU * .37 + 1) * .011 * H * calm;          // head and hips drift off the centre line
+    const dip = Math.sin(Math.PI * eu);                                   // uppercut: sink, then drive up
+    const bob = Math.sin(Math.PI * rl);
+    drop = .058 * H + bounce + .012 * H * ej + .024 * H * ec + .02 * H * eh + .05 * H * dip * (1 - eu * .5)
+         - .03 * H * ek - .015 * H * elk - .02 * H * et + .035 * H * cover + .09 * H * bob
+         + .025 * H * Math.abs(slip);
+    yaw = -S * (.52 + .2 * ej) + S * .9 * ec + S * 1.3 * ek + S * 1.05 * elk - S * .55 * eh + S * .55 * eu
+        + .05 * Math.sin(t * TAU * .3) * calm;
+    lean = .11 + .06 * ej + .1 * ec + .06 * eh - .03 * eu - .34 * ek - .2 * elk - .3 * et + .14 * cover + .3 * bob;
+    roll = -S * .28 * ek - S * .16 * elk + slip * .3 + bob * .2 * (o.rollDir || 1);
+    shift.set(S * .02 * H * ek + slip * .075 * H + sway + bob * .05 * H * (o.rollDir || 1), 0,
+              .035 * H * ec + .1 * H * ek + .05 * H * elk + .02 * H * eh + rock - .04 * H * et);
     feet[LEFT] = [V(.062 * H, 0, .17 * H).lerp(V(.088 * H, 0, -.15 * H), 1 - wl), -.2 * wl + .8 * (1 - wl)];
     feet[RIGHT] = [V(-.088 * H, 0, -.15 * H).lerp(V(-.062 * H, 0, .17 * H), 1 - wl), -.8 * wl + .2 * (1 - wl)];
-    feet[rearSide][1] += S * .6 * ec;                 // rear heel turns out on the cross
-    feet[leadSide][1] += S * 1.35 * ek;               // support foot turns out to plant the kick
+    feet[rearSide][1] += S * .6 * ec + S * .4 * eu;   // rear heel turns out on the cross and uppercut
+    feet[leadSide][1] += S * 1.35 * ek + S * 1.1 * elk - S * .5 * eh;   // lead foot turns to plant kicks, pivots on the hook
+    if (down) { drop = .21 * H; yaw = -S * .25; lean = .58; roll = 0; shift.set(0, 0, -.05 * H); }
   } else {
-    const breathe = REDUCE ? 0 : Math.sin(t * Math.PI * 2 * .25) * .002 * H;
+    const breathe = REDUCE ? 0 : Math.sin(t * TAU * .25) * .002 * H;
     drop = .004 * H + breathe; yaw = 0; lean = .02;
     feet[LEFT] = [V(.07 * H, 0, .01 * H), .14]; feet[RIGHT] = [V(-.07 * H, 0, .01 * H), -.14];
   }
+  // footwork: the moving foot leads, the other follows; feet stay planted while the body travels
+  const lift = {};
+  if (o.step && fight && !down) {
+    const u = clamp(o.step.u, 0, 1), c = ease(u);
+    for (const side of [LEFT, RIGHT]) {
+      const own = side === o.step.first ? clamp(u / .62, 0, 1) : clamp((u - .32) / .68, 0, 1);
+      feet[side][0] = feet[side][0].clone().addScaledVector(o.step.D, ease(own) - c);
+      lift[side] = .045 * H * Math.sin(Math.PI * own);
+    }
+    drop += .012 * H * Math.sin(Math.PI * u);
+  }
   if (o.flinch) shift.x += o.flinch;
   const Q = new THREE.Quaternion().setFromEuler(new THREE.Euler(lean, yaw, roll, "YXZ"));
-  const crotch = V(0, .47 * H - drop, .005 * H).add(shift);
+  const crotch = V(0, ANAT.crotch * H - drop, ANAT.crotchZ * H).add(shift);
   const T = (x, y, z) => V(x, y, z).applyQuaternion(Q).add(crotch);
   J.Q = Q; J.crotch = crotch;
-  J.hip = { [LEFT]: T(.052 * Math.sqrt(p.g) * H, .035 * H, .005 * H),
-            [RIGHT]: T(-.052 * Math.sqrt(p.g) * H, .035 * H, .005 * H) };
-  J.sh = { [LEFT]: T(d.sj, .345 * H, 0), [RIGHT]: T(-d.sj, .345 * H, 0) };
-  J.neck = T(0, .356 * H, 0);
-  const neckTop = T(0, .405 * H, .004 * H);
-  J.QH = Q.clone().multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(-.02 - lean * .55, 0, -roll * .6)));
-  J.head = neckTop.clone().add(V(0, .058 * H, .01 * H).applyQuaternion(J.QH));
+  J.hip = { [LEFT]: T(ANAT.hipX * H, ANAT.hipUp * H, .005 * H),
+            [RIGHT]: T(-ANAT.hipX * H, ANAT.hipUp * H, .005 * H) };
+  J.sh = { [LEFT]: T(d.sj, ANAT.shUp * H, ANAT.shZ * H), [RIGHT]: T(-d.sj, ANAT.shUp * H, ANAT.shZ * H) };
+  J.neck = T(0, ANAT.neckUp * H, ANAT.neckZ * H);
+  const neckTop = T(0, ANAT.headBoneUp * H, ANAT.headBoneZ * H);
+  const chinTuck = .12 * Math.max(ej, ec, eh, eu) + .15 * cover;
+  J.QH = Q.clone().multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(-.02 - lean * .55 + chinTuck, 0, -roll * .6)));
+  J.head = neckTop.clone().add(V(0, ANAT.headUp * H, ANAT.headZ * H).applyQuaternion(J.QH));
   if (o.recoil) J.head.z -= o.recoil;
 
-  // legs (the rear leg throws the roundhouse: floor -> chamber -> contact)
+  // legs: the rear leg throws body and leg kicks, the lead leg teeps and checks
   J.ankle = {}; J.knee = {};
   const legLen = d.thigh + d.shin;
+  const bez = (p0, p1, p2, u) => p0.clone().multiplyScalar((1 - u) * (1 - u)).addScaledVector(p1, 2 * u * (1 - u)).addScaledVector(p2, u * u);
   for (const side of [LEFT, RIGHT]) {
     const [f, fy] = feet[side];
-    let ankle = V(f.x, .045 * H, f.z);
+    let ankle = V(f.x, ANAT.ankle * H + (lift[side] || 0), f.z);
     let pole = V(Math.sin(fy), 0, Math.cos(fy)).add(V(side * .15, 0, 0));
     const fq = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, fy, 0));
-    const kicking = ek > 0 && side === rearSide;
+    const kicking = kickAmt > 0 && side === rearSide, teeping = et > 0 && side === leadSide;
+    if (down && side === rearSide) {                  // rear knee drops to the canvas
+      ankle = V(rearX * .1 * H, .05 * H, -.27 * H);
+      pole = V(0, -1, .55);
+    }
+    let footAim = null;
     if (kicking) {
-      const hip = J.hip[side];
-      const tgt = o.ribs || hip.clone().add(V(-rearX * .06 * H, .16 * H, .45 * H));
+      const low = elk > ek, hip = J.hip[side];
+      const tgt = (low ? o.thigh : o.ribs) || hip.clone().add(V(-rearX * .06 * H, low ? -.16 * H : .16 * H, .45 * H));
       const dir = tgt.clone().sub(hip); const dist = dir.length(); dir.normalize();
       const hit = hip.clone().addScaledVector(dir, Math.min(legLen * .9995, dist - d.foot));
-      const chamber = hip.clone().add(V(rearX * .22 * H, -.05 * H, .12 * H));
-      const u = ek;
-      ankle = ankle.multiplyScalar((1 - u) * (1 - u)).addScaledVector(chamber, 2 * u * (1 - u)).addScaledVector(hit, u * u);
-      pole = V(0, .3, 1).lerp(V(rearX * .5, 1, .15), u);
+      const chamber = hip.clone().add(low ? V(rearX * .2 * H, -.22 * H, .08 * H) : V(rearX * .22 * H, -.05 * H, .12 * H));
+      ankle = bez(ankle, chamber, hit, kickAmt);
+      pole = V(0, .3, 1).lerp(V(rearX * .5, 1, .15), kickAmt);
+      footAim = kickAmt;
+    }
+    if (teeping) {
+      const hip = J.hip[side];
+      const tgt = o.belly || hip.clone().add(V(0, .06 * H, .55 * H));
+      const dir = tgt.clone().sub(hip); const dist = dir.length(); dir.normalize();
+      const hit = hip.clone().addScaledVector(dir, Math.min(legLen * .9995, dist - d.foot * .5));
+      const chamber = hip.clone().add(V(0, -.1 * H, .24 * H));          // knee up in front, then push
+      ankle = bez(ankle, chamber, hit, et);
+      pole = V(side * .1, .6, 1);
+    }
+    if (check > 0 && side === leadSide) {              // lift the lead knee to check a leg kick
+      ankle.lerp(V(f.x * .9, .3 * H, f.z - .03 * H), check);
+      pole = pole.lerp(V(side * .8, .2, 1), check);
     }
     const { joint, end } = ik(J.hip[side], ankle, d.thigh, d.shin, pole);
+    if (joint.y < .035 * H) joint.y = .035 * H;
     J.knee[side] = joint; J.ankle[side] = end;
-    if (kicking) {
+    if (footAim) {
       const pq = new THREE.Quaternion().setFromUnitVectors(ZAX, end.clone().sub(joint).normalize());
-      fq.slerp(pq, clamp(ek * 1.6, 0, 1));
+      fq.slerp(pq, clamp(footAim * 1.6, 0, 1));
+    }
+    if (teeping) {                                      // sole of the foot pushes forward
+      const pq = new THREE.Quaternion().setFromUnitVectors(ZAX, V(0, 1, .25).normalize());
+      fq.slerp(pq, clamp(et * 1.3, 0, 1));
     }
     J.footQ[side] = fq;
   }
@@ -310,27 +446,53 @@ function solve(p, mode, o = {}) {
   // arms
   J.elbow = {}; J.wrist = {}; J.fdir = {};
   const chin = J.head.clone().add(V(0, -.056 * H, .03 * H));
+  const bent = Math.sqrt(d.upper * d.upper + d.fore * d.fore);    // shoulder to wrist with a 90 degree elbow
   for (const side of [LEFT, RIGHT]) {
     const sh = J.sh[side];
     let wrist, pole;
-    if (guard) {
+    if (fight) {
       const wLead = clamp((1 + side * s) / 2, 0, 1), isLead = wLead > .5;
       const leadT = chin.clone().add(V(side * .028 * H, .012 * H, .17 * H));
       const rearT = chin.clone().add(V(side * .056 * H, -.004 * H, .05 * H));
       wrist = rearT.lerp(leadT, wLead);
-      const punch = isLead ? ej : ec, other = isLead ? ec : ej;
+      if (isLead)                                       // the lead hand paws and measures
+        wrist.add(V(Math.sin(t * TAU * .9) * .012 * H, Math.sin(t * TAU * 1.3) * .01 * H,
+                    (Math.sin(t * TAU * .45) * .5 + .5) * .028 * H).multiplyScalar(calm));
+      pole = V(side * .6, -1, -.25);
+      const tight = Math.max(cover, rl * .8);
+      if (tight > 0) {                                  // high guard: gloves to the temples, elbows in
+        wrist.lerp(chin.clone().add(V(side * .07 * H, .075 * H, .045 * H)), tight);
+        pole.lerp(V(side * .25, -1, -.05), tight);
+      }
+      const straight = isLead ? ej : ec, tgtS = isLead ? o.jabT : o.crossT;
+      const other = isLead ? Math.max(ec, eu) : Math.max(ej, eh);
       if (other > 0) wrist.lerp(chin.clone().add(V(side * .05 * H, 0, .06 * H)), other * .6);
-      if (punch > 0) {
-        const tgt = o.face || sh.clone().add(V(0, -.02 * H, 1));
+      if (straight > 0) {
+        const tgt = tgtS || sh.clone().add(V(0, -.02 * H, 1));
         const dir = tgt.clone().sub(sh); const dist = dir.length(); dir.normalize();
         const reach = Math.min((d.upper + d.fore) * .9995, Math.max(dist - d.hand, .05));
-        wrist.lerp(sh.clone().addScaledVector(dir, reach), punch);
+        wrist.lerp(sh.clone().addScaledVector(dir, reach), straight);
       }
-      if (ek > 0) {
-        if (!isLead) wrist.lerp(sh.clone().add(V(side * .16 * H, -(d.upper + d.fore) * .75, -.22 * H)), ek);
-        else wrist.lerp(chin.clone().add(V(side * .04 * H, .012 * H, .07 * H)), ek * .7);
+      if (isLead && eh > 0) {                           // lead hook: wide arc, elbow up, fist level
+        const tgt = o.hookT || sh.clone().add(V(-side * .16 * H, .02 * H, .42 * H));
+        const dir = tgt.clone().sub(sh); const dist = dir.length(); dir.normalize();
+        const hit = sh.clone().addScaledVector(dir, Math.min(bent * 1.02, Math.max(dist - d.hand, .05)));
+        wrist = bez(wrist, sh.clone().add(V(side * .3 * H, -.02 * H, .14 * H)), hit, eh);
+        pole.lerp(V(side * .45, .9, -.35), Math.min(1, eh * 1.6));
       }
-      pole = V(side * .6, -1, -.25);
+      if (!isLead && eu > 0) {                          // rear uppercut: drop the hand, drive up the middle
+        const tgt = o.upperT || chin.clone().add(V(0, 0, .35 * H));
+        const dir = tgt.clone().sub(sh); const dist = dir.length(); dir.normalize();
+        const hit = sh.clone().addScaledVector(dir, Math.min(bent * .98, Math.max(dist - d.hand, .05)));
+        wrist = bez(wrist, sh.clone().add(V(side * .02 * H, -.25 * H, .15 * H)), hit, eu);
+        pole.lerp(V(side * .35, -1, -.2), Math.min(1, eu * 1.6));
+      }
+      if (kickAmt > 0) {
+        if (!isLead) wrist.lerp(sh.clone().add(V(side * .16 * H, -(d.upper + d.fore) * .75, -.22 * H)), kickAmt);
+        else wrist.lerp(chin.clone().add(V(side * .04 * H, .012 * H, .07 * H)), kickAmt * .7);
+      }
+      if (et > 0) wrist.lerp(chin.clone().add(V(side * .06 * H, -.02 * H, .1 * H)), et * .5);
+      if (down && isLead) { wrist = V(side * .17 * H, .07 * H, .2 * H); pole = V(side * .6, .2, -1); }   // posts a glove on the mat
     } else if (mode === "stand") {
       wrist = sh.clone().add(V(side * .045 * H, -(d.upper + d.fore) * .965, .03 * H));
       pole = V(side * .25, 0, -1);
@@ -360,53 +522,67 @@ function blendJ(A, B, k) {
   return out;
 }
 
+const Y1 = V(0, 1, 0);
 class Fighter {
   constructor(corner) {
     this.corner = corner;
     this.group = new THREE.Group();
     scene.add(this.group);
     this.opacity = 1;
-    const c = new THREE.Color(corner);
+    const kit = KIT[corner] || corner;
     this.mats = {
-      skin: new THREE.MeshPhysicalMaterial({ color: COL.skin, roughness: .52, sheen: 1,
-        sheenRoughness: .35, sheenColor: c, clearcoat: .2, clearcoatRoughness: .55 }),
-      kit: new THREE.MeshStandardMaterial({ color: c, roughness: .6, emissive: c, emissiveIntensity: .12 }),
-      dark: new THREE.MeshStandardMaterial({ color: "#1E1830", roughness: .7 }),
+      skin: new THREE.MeshPhysicalMaterial({ color: COL.skin, roughness: .46, metalness: 0, sheen: .5,
+        sheenRoughness: .45, sheenColor: new THREE.Color("#ff6a55"), clearcoat: .25, clearcoatRoughness: .5 }),
+      kit: new THREE.MeshStandardMaterial({ color: kit, roughness: .62, emissive: kit, emissiveIntensity: .05,
+        side: THREE.DoubleSide }),
+      pad: new THREE.MeshPhysicalMaterial({ color: "#121214", roughness: .34, clearcoat: .7, clearcoatRoughness: .28,
+        sheen: .4, sheenColor: new THREE.Color("#8a8a92"), side: THREE.DoubleSide }),     // black fight-glove leather
+      patch: new THREE.MeshStandardMaterial({ color: kit, roughness: .5, emissive: kit, emissiveIntensity: .08,
+        side: THREE.DoubleSide }),
+      band: new THREE.MeshStandardMaterial({ color: "#121214", roughness: .55, side: THREE.DoubleSide }),
       gold: new THREE.MeshStandardMaterial({ color: COL.rule, roughness: .35, emissive: COL.rule,
-        emissiveIntensity: .85 }),
+        emissiveIntensity: .6, side: THREE.DoubleSide }),
+      eye: new THREE.MeshStandardMaterial({ color: "#0b0b0c", roughness: .15 }),
+      leather: new THREE.MeshPhysicalMaterial({ color: "#141416", roughness: .42, clearcoat: .35,
+        clearcoatRoughness: .4, side: THREE.DoubleSide }),
     };
     this.meshes = [];
-    const m = (geo, mat) => {
-      const mesh = new THREE.Mesh(geo, mat);
-      mesh.matrixAutoUpdate = false;
-      mesh.castShadow = true;
-      this.group.add(mesh); this.meshes.push(mesh);
-      return mesh;
-    };
-    this.torso = m(new THREE.BufferGeometry(), this.mats.skin);
-    this.shorts = m(new THREE.BufferGeometry(), this.mats.kit);
-    this.neck = m(G.cyl, this.mats.skin);
-    this.head = m(G.sphere, this.mats.skin);
-    this.jaw = m(G.sphere, this.mats.skin);
-    this.L = {};
-    for (const s of [LEFT, RIGHT]) {
-      this.L[s] = {
-        delt: m(G.sphere, this.mats.skin), upper: m(G.upper, this.mats.skin),
-        elbow: m(G.sphere, this.mats.skin), fore: m(G.fore, this.mats.skin),
-        cuff: m(G.cyl, this.mats.dark), glove: m(G.sphere, this.mats.kit),
-        thigh: m(G.thigh, this.mats.skin), sleeve: m(G.sleeve, this.mats.kit),
-        knee: m(G.sphere, this.mats.skin), shin: m(G.shin, this.mats.skin),
-        foot: m(G.sphere, this.mats.skin), band: m(G.cyl, this.mats.gold),
-      };
-    }
+    this.rig = null;
     // floor range arc (face-off)
     this.arc = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshBasicMaterial({
       color: corner, transparent: true, opacity: .95, depthWrite: false, side: THREE.DoubleSide }));
     this.arcFill = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshBasicMaterial({
       color: corner, transparent: true, opacity: .1, depthWrite: false, side: THREE.DoubleSide }));
     for (const a of [this.arc, this.arcFill]) { a.rotation.x = -Math.PI / 2; this.group.add(a); }
-    this.arcR = -1; this.lastG = -1;
-    this.recoil = 0; this.flinch = 0; this.prevAmt = {};
+    this.arcR = -1;
+    this.recoil = 0; this.flinch = 0; this.prevAmt = {}; this.kdT = -1; this.kd = 0;
+    if (MODEL) this.attach();
+  }
+  attach() {
+    if (this.rig || !MODEL) return;
+    const rig = SkeletonUtils.clone(MODEL.scene);
+    const pick = { body: "skin", shorts: "kit", waist: "band", gloveL: "pad", gloveR: "pad",
+                   glovePalmL: "leather", glovePalmR: "leather",
+                   strapL: "leather", strapR: "leather", strapPatchL: "patch", strapPatchR: "patch",
+                   ankleL: "gold", ankleR: "gold" };
+    this.parts = {};
+    rig.traverse(o => {
+      if (!o.isMesh) return;
+      o.material = this.mats[pick[o.name] || "skin"];
+      o.frustumCulled = false; o.castShadow = true;
+      this.parts[o.name] = o; this.meshes.push(o);
+    });
+    this.bones = {};
+    rig.traverse(o => { if (o.isBone) this.bones[o.name] = o; });
+    const eyeGeo = new THREE.SphereGeometry(.0125, 16, 12);
+    for (const p of MODEL.eyeLocal) {
+      const e = new THREE.Mesh(eyeGeo, this.mats.eye);
+      e.position.copy(p).add(V(0, 0, -.006));
+      this.bones.head.add(e);
+    }
+    this.rig = rig;
+    this.group.add(rig);
+    this.setOpacity(this.opacity);
   }
   setTarget(f) {
     this.info = f;
@@ -418,22 +594,15 @@ class Fighter {
   step(dt) {
     const k = 1 - Math.exp(-dt * 7);
     for (const key of ["H", "R", "W", "g", "lead"]) this.p[key] += (this.target[key] - this.p[key]) * k;
-    if (Math.abs(this.p.g - this.lastG) > .004) {
-      this.lastG = this.p.g;
-      this.torso.geometry.dispose();
-      this.torso.geometry = lathe(torsoProfile(this.p.g), 40, 40);
-      this.shorts.geometry.dispose();
-      this.shorts.geometry = lathe(shortsProfile(this.p.g), 40, 16);
-    }
   }
   setOpacity(o) {
     this.opacity = o;
     for (const mat of Object.values(this.mats)) {
       mat.transparent = o < .995;
       mat.opacity = o;
-      mat.depthWrite = o > .9;
+      mat.depthWrite = true;          // ghost shows only its outer surface
     }
-    for (const mesh of this.meshes) mesh.castShadow = o > .9;
+    for (const mesh of this.meshes) { mesh.castShadow = o > .9; mesh.renderOrder = o < .995 ? 2 : 0; }
   }
   setArc(show, center, r) {
     this.arc.visible = this.arcFill.visible = show;
@@ -449,49 +618,69 @@ class Fighter {
     this.arc.position.set(center.x, .006, center.z);
     this.arcFill.position.set(center.x, .005, center.z);
   }
+  // Drive the skeleton so every joint sits on the solver's joint positions.
   place(J) {
-    const d = J.d, H = d.H, g = this.p.g, gl = Math.pow(g, .6);
-    const tmpQ = new THREE.Quaternion(), tmpS = V();
-    const set = (mesh, pos, q, sx, sy, sz) => { mesh.matrix.compose(pos, q, tmpS.set(sx, sy, sz)); };
-    const seg = (mesh, a, b, r) => {
-      const dir = b.clone().sub(a); const len = dir.length();
-      tmpQ.setFromUnitVectors(UP, dir.normalize());
-      set(mesh, a, tmpQ, r, len, r);
-    };
-    set(this.torso, J.crotch, J.Q, H, H, H * .64);
-    set(this.shorts, J.crotch, J.Q, H, H, H * .67);
-    const headBase = J.head.clone().add(V(0, -.05 * H, -.008 * H).applyQuaternion(J.QH));
-    seg(this.neck, J.neck, headBase, .03 * H * Math.sqrt(g));
-    set(this.head, J.head, J.QH, d.headR * .86, d.headR, d.headR * .94);
-    const jaw = J.head.clone().add(V(0, -.04 * H, .006 * H).applyQuaternion(J.QH));
-    set(this.jaw, jaw, J.QH, d.headR * .6, d.headR * .5, d.headR * .66);
+    if (!this.rig) return;
+    const M = MODEL, d = J.d, k = d.H / M.Hm;
+    this.rig.scale.setScalar(k);
+    this.rig.position.set(0, -M.floor * k, 0);
+    const toRig = p => p.clone().sub(this.rig.position).divideScalar(k);
+    // body shape follows weight-for-height
+    const heavy = clamp((this.p.g - 1) / .3, 0, 1), lean = clamp((1 - this.p.g) / .16, 0, 1);
+    for (const m of this.meshes) if (m.morphTargetInfluences) {
+      m.morphTargetInfluences[0] = heavy; m.morphTargetInfluences[1] = lean;
+    }
+    // dominant-side markers
+    this.parts.strapPatchL.material = this.hand === LEFT ? this.mats.gold : this.mats.patch;
+    this.parts.strapPatchR.material = this.hand === RIGHT ? this.mats.gold : this.mats.patch;
+    this.parts.ankleL.visible = this.foot === LEFT;
+    this.parts.ankleR.visible = this.foot === RIGHT;
+    // arm length for this fighter's reach
+    for (const s of ["L", "R"]) for (const n of ["upperarm02", "lowerarm01", "lowerarm02", "wrist"])
+      this.bones[n + s].position.copy(M.restPos[n + s]).multiplyScalar(n === "upperarm02" || n === "lowerarm01" ? d.sa : 1);
 
-    for (const s of [LEFT, RIGHT]) {
-      const L = this.L[s];
-      const sh = J.sh[s], el = J.elbow[s], wr = J.wrist[s], fd = J.fdir[s];
-      const dr = .043 * H * Math.sqrt(g);
-      set(L.delt, sh, J.Q, dr * 1.05, dr, dr);
-      seg(L.upper, sh, el, .033 * H * gl);
-      set(L.elbow, el, J.Q, .024 * H * gl, .024 * H * gl, .024 * H * gl);
-      seg(L.fore, el, wr, .028 * H * gl);
-      // glove: tip lands exactly at the fingertip point (wrist + hand)
-      tmpQ.setFromUnitVectors(ZAX, fd);
-      const gc = wr.clone().addScaledVector(fd, d.hand - d.rg * 1.15);
-      set(L.glove, gc, tmpQ, d.rg * .92, d.rg * .86, d.rg * 1.15);
-      seg(L.cuff, wr.clone().addScaledVector(fd, -.022 * H), wr.clone().addScaledVector(fd, .012 * H), d.rg * .74);
-      L.cuff.material = this.hand === s ? this.mats.gold : this.mats.dark;
-      // legs
-      const hp = J.hip[s], kn = J.knee[s], an = J.ankle[s];
-      seg(L.thigh, hp, kn, .06 * H * gl);
-      const sl = hp.clone().lerp(kn, .4);
-      seg(L.sleeve, hp.clone().add(V(0, .015 * H, 0)), sl, .066 * H * gl);
-      set(L.knee, kn, J.Q, .038 * H * gl, .038 * H * gl, .038 * H * gl);
-      seg(L.shin, kn, an, .042 * H * gl);
-      const fq = J.footQ[s];
-      set(L.foot, an.clone().add(V(0, -.026 * H, .036 * H).applyQuaternion(fq)), fq, .029 * H, .02 * H, .07 * H);
-      L.band.visible = this.foot === s;
-      const up = kn.clone().sub(an).normalize();
-      seg(L.band, an.clone().addScaledVector(up, -.004 * H), an.clone().addScaledVector(up, .028 * H), .031 * H * gl);
+    const sideKey = { L: LEFT, R: RIGHT };
+    const wq = {};
+    const aimTo = (inh, dir) => {
+      const cur = Y1.clone().applyQuaternion(inh);
+      return new THREE.Quaternion().setFromUnitVectors(cur, dir.clone().normalize()).multiply(inh);
+    };
+    const hipMid = J.hip[LEFT].clone().add(J.hip[RIGHT]).multiplyScalar(.5);
+    const neck1 = J.Q.clone().slerp(J.QH, .35), neck2 = J.Q.clone().slerp(J.QH, .7);
+    const wristT = {};
+    for (const s of ["L", "R"]) {
+      const sd = sideKey[s], f1 = J.fdir[sd].clone().normalize();
+      const b1 = V(sd * .7, 1, 0); b1.addScaledVector(f1, -b1.dot(f1));
+      if (b1.lengthSq() < 1e-6) b1.set(sd, 0, 0);
+      b1.normalize();
+      const q1 = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(b1.clone().cross(f1), b1, f1));
+      wristT[s] = q1.multiply(M.hand[s].clone().invert()).multiply(M.restWorld["wrist" + s]);
+    }
+    for (const n of M.order) {
+      const b = this.bones[n], par = M.parentOf[n];
+      const pq = par ? wq[par] : new THREE.Quaternion();
+      const inh = pq.clone().multiply(M.restLocal[n]);
+      const s = n.endsWith("L") ? "L" : n.endsWith("R") ? "R" : null, sd = s ? sideKey[s] : 0;
+      const base = s ? n.slice(0, -1) : n;
+      let w;
+      if (n === "root" || n.startsWith("spine")) w = J.Q.clone().multiply(M.restWorld[n]);
+      else if (n === "neck01") w = neck1.clone().multiply(M.restWorld[n]);
+      else if (n === "neck02" || n === "neck03") w = neck2.clone().multiply(M.restWorld[n]);
+      else if (n === "head") w = J.QH.clone().multiply(M.restWorld[n]);
+      else if (base === "upperleg01") w = aimTo(inh, J.knee[sd].clone().sub(J.hip[sd]));
+      else if (base === "lowerleg01") w = aimTo(inh, J.ankle[sd].clone().sub(J.knee[sd]));
+      else if (base === "foot") w = J.footQ[sd].clone().multiply(M.restWorld[n]);
+      else if (base === "upperarm01") w = aimTo(inh, J.elbow[sd].clone().sub(J.sh[sd]));
+      else if (base === "lowerarm01") w = aimTo(inh, J.wrist[sd].clone().sub(J.elbow[sd]));
+      else if (base === "lowerarm02") w = inh.clone().slerp(wristT[s].clone().multiply(M.restLocal["wrist" + s].clone().invert()), .55);
+      else if (base === "wrist") w = wristT[s].clone();
+      else w = inh;
+      wq[n] = w;
+      b.quaternion.copy(pq.clone().invert().multiply(w));
+      if (n === "root") {
+        const off = M.restRoot.clone().sub(M.restHip).applyQuaternion(J.Q);
+        b.position.copy(toRig(hipMid)).add(off);
+      }
     }
   }
   dispose() {
@@ -617,36 +806,132 @@ function faceoff() {
       },
     };
   });
-  return { d, res, single: !B };
+  return { d, res, single: !B, dist: [dA, dB] };
 }
 
-const jabEnv = tt => tt < 0 ? 0 : tt < .17 ? easeOut(tt / .17) : tt < .45 ? 1 : tt < .78 ? 1 - ease((tt - .45) / .33) : 0;
-const kickEnv = tt => tt < 0 ? 0 : tt < .36 ? ease(tt / .36) : tt < .62 ? 1 : tt < 1.02 ? 1 - ease((tt - .62) / .4) : 0;
-const STRIKES = { ej: "Jab", ec: "Cross", ek: "Kick" };
-const SCHED = {
-  combo: { P: 7.8, offB: 3.9, seq: [["ej", .5], ["ec", 1.1], ["ek", 2.0]] },
-  jab:   { P: 4.4, offB: 2.2, seq: [["ej", .5]] },
-  cross: { P: 4.4, offB: 2.2, seq: [["ec", .5]] },
-  kick:  { P: 5.2, offB: 2.6, seq: [["ek", .5]] },
+// ------------------------------------------------------------------ fight director
+// Every move has a duration and the fractions of it where the strike arrives (a) and leaves (b):
+// punches snap out and come straight home, kicks chamber and recoil.
+const MOVES = {
+  ej:  { dur: .42, a: .3,  b: .4,  name: "Jab" },
+  ec:  { dur: .52, a: .3,  b: .4,  name: "Cross" },
+  eh:  { dur: .6,  a: .4,  b: .5,  name: "Hook" },
+  eu:  { dur: .58, a: .44, b: .54, name: "Uppercut" },
+  ek:  { dur: 1.0, a: .36, b: .52, name: "Body kick" },
+  elk: { dur: .84, a: .4,  b: .55, name: "Leg kick" },
+  et:  { dur: .84, a: .4,  b: .56, name: "Teep" },
+  slip:  { dur: .5,  a: .3, b: .55 },
+  cover: { dur: .62, a: .2, b: .72 },
+  check: { dur: .72, a: .3, b: .66 },
+  roll:  { dur: .64, a: .5, b: .5 },
 };
-let strikeSel = "combo";
-function strikeAmounts(time, i, n) {
-  const out = { ej: 0, ec: 0, ek: 0 };
-  if (REDUCE_STRIKES()) return out;
-  const sc = SCHED[strikeSel];
-  const P = n > 1 ? sc.P : sc.offB + .2;
-  const ph = time % P - (i === 0 ? 0 : sc.offB);
-  for (const [k, t0] of sc.seq) out[k] = Math.max(out[k], (k === "ek" ? kickEnv : jabEnv)(ph - t0));
-  return out;
+const STRIKES = { ej: "Jab", ec: "Cross", ek: "Kick" };
+const STRIKE_KEYS = ["ej", "ec", "eh", "eu", "ek", "elk", "et"];
+function envelope(m, u) {
+  if (u <= 0 || u >= 1) return 0;
+  if (u < m.a) return easeOut(u / m.a);
+  if (u < m.b) return 1;
+  return 1 - ease((u - m.b) / (1 - m.b));
 }
-const REDUCE_STRIKES = () => false;
+// Combos and how the other fighter answers each strike ("" = it lands if it reaches).
+const COMBOS = [
+  { name: "1-2", seq: [["ej", 0], ["ec", .3]], react: ["", "slip"] },
+  { name: "1-2-3", seq: [["ej", 0], ["ec", .3], ["eh", .66]], react: ["cover", "", "roll"] },
+  { name: "1-2, leg kick", seq: [["ej", 0], ["ec", .3], ["elk", .7]], react: ["slip", "cover", "check"] },
+  { name: "Jab, body cross, hook", seq: [["ej", 0], ["ec", .34, "body"], ["eh", .76]], react: ["", "", "cover"] },
+  { name: "Double jab, cross", seq: [["ej", 0], ["ej", .27], ["ec", .56]], react: ["", "slip", ""] },
+  { name: "1-6-3", seq: [["ej", 0], ["eu", .32], ["eh", .72]], react: ["cover", "", "cover"] },
+  { name: "Teep", seq: [["et", 0]], react: [""] },
+  { name: "1-2, body kick", seq: [["ej", 0], ["ec", .3], ["ek", .72]], react: ["slip", "cover", ""], ko: true },
+];
+const TARGET_OF = { ej: "head", ec: "head", eh: "hook", eu: "chin", ek: "ribs", elk: "thigh", et: "belly" };
+let strikeSel = "spar";
+let PLAN = null;
+function buildPlan(sel, n) {
+  const ev = [];
+  let t = .6;
+  if (sel !== "spar") {                                 // one strike at the measured distance, fighters alternate
+    const m = { jab: "ej", cross: "ec", kick: "ek" }[sel];
+    for (let i = 0; i < (n > 1 ? 2 : 1); i++) {
+      ev.push({ kind: "strike", who: i, m, t0: t, dur: MOVES[m].dur, tgt: TARGET_OF[m], ko: m === "ek", combo: MOVES[m].name });
+      t += m === "ek" ? 3.2 : 2.2;
+    }
+    return { ev, len: t, spar: false };
+  }
+  let att = 0, dir = 1;
+  COMBOS.forEach((C, x) => {
+    if (n > 1) { ev.push({ kind: "circle", t0: t, dur: .95, ang: .34 * dir }); t += 1.1; dir = -dir; }
+    else t += .5;
+    const close = C.seq.some(([m]) => m === "eh" || m === "eu");
+    ev.push({ kind: "step", who: att, t0: t, dur: .34, dir: 1, depth: close ? .22 : .1 }); t += .3;
+    let end = t;
+    C.seq.forEach(([m, off, body], j) => {
+      const t0 = t + off;
+      ev.push({ kind: "strike", who: att, m, t0, dur: MOVES[m].dur, tgt: body ? "ribs" : TARGET_OF[m],
+                ko: !!C.ko && j === C.seq.length - 1, combo: C.name, first: j === 0 });
+      const r = n > 1 ? C.react[j] : "";
+      if (r) ev.push({ kind: "def", who: 1 - att, m: r, t0: t0 + (r === "cover" ? -.08 : r === "check" ? .05 : .04),
+                       dur: MOVES[r].dur, dir: j % 2 ? 1 : -1 });
+      end = Math.max(end, t0 + MOVES[m].dur);
+    });
+    t = end + .04;
+    ev.push({ kind: "step", who: att, t0: t, dur: .38, dir: -1, depth: close ? .22 : .1 }); t += .38 + (C.ko ? 2.1 : .6);
+    if (n > 1) att = 1 - att;
+  });
+  ev.sort((p, q) => p.t0 - q.t0);
+  return { ev, len: t + .2, spar: true };
+}
+
+// Where everyone stands at time t, and what they are doing. Pure function of t, so scrubbing works.
+function stage(t, fo, n) {
+  const P = PLAN, tt = ((t % P.len) + P.len) % P.len;
+  const rN = n > 1 ? (P.spar ? Math.max(fo.dist[0], fo.dist[1]) + .32 : fo.d) : 0;
+  const rAtt = (i, depth = .1) => n > 1 ? (P.spar ? fo.dist[i] - depth : fo.d) : -.25;   // combos go in past jab range
+  let theta = 0;
+  const sAx = [n > 1 ? -rN / 2 : 0, rN / 2];
+  const steps = [null, null];
+  const out = [0, 1].map(() => ({ amt: {}, tgt: {}, def: { slip: 0, cover: 0, check: 0, roll: 0, rollDir: 1 }, events: [] }));
+  for (const e of P.ev) {
+    if (e.t0 > tt) break;
+    const u = (tt - e.t0) / e.dur;
+    if (e.kind === "circle") {
+      theta += e.ang * ease(clamp(u, 0, 1));
+      if (u < 1) steps[0] = steps[1] = { e, u };
+    } else if (e.kind === "step") {
+      const delta = (rN - rAtt(e.who, e.depth)) * e.dir;
+      sAx[e.who] += (e.who === 0 ? 1 : -1) * delta * ease(clamp(u, 0, 1));
+      if (u < 1) steps[e.who] = { e, u, delta };
+    } else if (u < 1) {
+      const o = out[e.who], m = MOVES[e.m], a = envelope(m, u);
+      if (e.kind === "strike") {
+        if (a >= (o.amt[e.m] || 0)) { o.amt[e.m] = a; o.tgt[e.m] = e.tgt; }
+        o.events.push({ e, u, a });
+      } else if (e.m === "slip") o.def.slip = a * e.dir;
+      else { o.def[e.m] = Math.max(o.def[e.m], a); if (e.m === "roll") o.def.rollDir = e.dir; }
+    }
+  }
+  const axis = V(Math.sin(theta), 0, Math.cos(theta));
+  const pos = [axis.clone().multiplyScalar(sAx[0]), axis.clone().multiplyScalar(sAx[1])];
+  const yaw = [theta, theta + Math.PI];
+  // footwork: each fighter's displacement over the current step, in their own frame
+  [0, 1].forEach(i => {
+    const st = steps[i];
+    if (!st) return;
+    // circling: both fighters side-step the same way in their own frames
+    const D = st.e.kind === "step" ? V(0, 0, st.delta)
+      : V(i === 0 ? sAx[0] * st.e.ang : -sAx[1] * st.e.ang, 0, 0);
+    const first = Math.abs(D.z) >= Math.abs(D.x) ? (D.z > 0 ? "lead" : "rear") : (D.x > 0 ? LEFT : RIGHT);
+    out[i].step = { D, u: clamp(st.u, 0, 1), first };
+  });
+  return { pos, yaw, out, tt };
+}
 
 // impact flash: two expanding rings that face the camera
 const flashes = [];
 const ringGeo = new THREE.RingGeometry(.82, 1, 48);
 function flash(pos) {
   for (const delay of [0, .08]) {
-    const m = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color: COL.rule, transparent: true,
+    const m = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color: COL.hit, transparent: true,
       opacity: 0, depthTest: false, blending: THREE.AdditiveBlending }));
     m.position.copy(pos); m.renderOrder = 20;
     scene.add(m);
@@ -664,6 +949,12 @@ function stepFlashes(dt) {
     if (t >= 1) { scene.remove(f.m); f.m.material.dispose(); flashes.splice(i, 1); }
   }
 }
+
+new GLTFLoader().load("./fighter.glb", (gltf) => {
+  MODEL = buildModel(gltf);
+  for (const F of fighters) F.attach();
+  window.__ready = true;
+}, undefined, (e) => console.error("body model failed to load", e));
 
 // ------------------------------------------------------------------ camera framing
 function frameFor(m) {
@@ -703,57 +994,123 @@ function flyTo(m, instant = false) {
 const clock = new THREE.Clock();
 let time = 0;
 const CAPTURE = new URLSearchParams(location.search).has("capture");
+let paused = REDUCE;
+// world point -> fighter-local point
+const toLocal = (F, w) => w.clone().applyMatrix4(new THREE.Matrix4().copy(F.group.matrixWorld).invert());
+function targetsFor(F, O, OJ) {
+  // aim points on the opponent's un-defended pose, in F's own frame
+  const H = O.p.H, oQ = OJ.Q, w = v => v.applyMatrix4(O.group.matrixWorld);
+  const face = toLocal(F, w(OJ.head.clone().add(V(0, -.012 * H, OJ.d.headR * .9).applyQuaternion(OJ.QH))));
+  const ribs = toLocal(F, w(OJ.crotch.clone().add(V(0, .19 * H, .065 * H).applyQuaternion(oQ))));
+  const belly = toLocal(F, w(OJ.crotch.clone().add(V(0, .1 * H, .075 * H).applyQuaternion(oQ))));
+  const ol = leadOf(O.p);
+  const thigh = toLocal(F, w(OJ.hip[ol].clone().lerp(OJ.knee[ol], .55).add(V(ol * .05 * H, 0, 0))));
+  const leadX = leadOf(F.p);
+  return { head: face, hook: face.clone().add(V(leadX * .05 * H, 0, -.02 * H)), chin: face.clone().add(V(0, -.05 * H, 0)),
+           ribs: ribs.add(V(-leadX * .045 * H, 0, 0)), belly, thigh };
+}
+const DEF_VS = { slip: ["ej", "ec"], roll: ["eh"], cover: ["ej", "ec", "eh", "eu"], check: ["elk"] };
+const DEF_WORD = { slip: "slipped", roll: "rolled under", cover: "blocked", check: "checked" };
+
 function frame(dtFixed) {
   const dt = typeof dtFixed === "number" ? dtFixed : Math.min(clock.getDelta(), .1);
-  time += dt;
+  if (!paused) time += dt;
   modeT = Math.min(modeT + dt / .7, 1);
   const k = ease(modeT);
   const n = fighters.length;
   fighters.forEach(F => F.step(dt));
+  if (!PLAN || PLAN.n !== n || PLAN.sel !== strikeSel) { PLAN = buildPlan(strikeSel, n); PLAN.n = n; PLAN.sel = strikeSel; }
 
   const fo = n ? faceoff() : null;
+  const st = n ? stage(time, fo, n) : null;
   const maxH = n ? Math.max(...fighters.map(f => f.p.H)) : 1.8;
   const spacing = .34 * maxH + .12;
   const place = (m, i) => {
-    if (m === "face") {
-      if (n < 2) return { x: 0, z: 0, yaw: 0 };
-      return i === 0 ? { x: 0, z: -fo.d / 2, yaw: 0 } : { x: 0, z: fo.d / 2, yaw: Math.PI };
-    }
+    if (m === "face") return { x: st.pos[i].x, z: st.pos[i].z, yaw: st.yaw[i] };
     if (m === "tape") return n < 2 ? { x: 0, z: 0, yaw: 0 } : { x: i === 0 ? -spacing : spacing, z: 0, yaw: 0 };
-    return { x: 0, z: 0, yaw: 0 };
+    return { x: 0, z: n > 1 && i === 1 ? -.2 : 0, yaw: 0 };   // reach overlay: ghost stands just behind
   };
   const faceW = (prevMode === "face" ? 1 - k : 0) + (mode === "face" ? k : 0);
-  const amts = fighters.map((F, i) => strikeAmounts(time, i, n));
 
+  // 1. place every fighter and solve its un-defended pose (used as the other fighter's aim points)
   fighters.forEach((F, i) => {
-    const r = fo.res[i];
-    // reactions to the other fighter's landed strikes
-    const o = 1 - i, oa = amts[o] || { ej: 0, ec: 0, ek: 0 }, og = n > 1 ? fo.res[o].gap : null;
-    const hitHead = n > 1 && ((og.ej < .015 && oa.ej > .92) || (og.ec < .015 && oa.ec > .92));
-    const hitBody = n > 1 && og.ek < .015 && oa.ek > .92;
-    F.recoil += ((hitHead ? .022 * F.p.H : 0) - F.recoil) * Math.min(dt * 18, 1);
-    F.flinch += ((hitBody ? -fo.res[o].rearX * .03 * F.p.H : 0) - F.flinch) * Math.min(dt * 14, 1);
-    const a = amts[i];
-    const opts = { t: time + i * .37, ej: a.ej * faceW, ec: a.ec * faceW, ek: a.ek * faceW,
-                   face: r.face, ribs: r.ribs, recoil: F.recoil, flinch: F.flinch };
+    const pa = place(prevMode, i), pb = place(mode, i);
+    let dy = pb.yaw - pa.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy));
+    F.group.position.set(pa.x + (pb.x - pa.x) * k, 0, pa.z + (pb.z - pa.z) * k);
+    F.group.rotation.y = pa.yaw + dy * k;
+    F.group.updateMatrixWorld();
+    const so = st.out[i];
+    F.stepOpt = so.step && faceW > .5 ? { D: so.step.D, u: so.step.u,
+      first: so.step.first === "lead" ? leadOf(F.p) : so.step.first === "rear" ? -leadOf(F.p) : so.step.first } : null;
+    F.baseJ = solve(F.p, "guard", { t: time + i * .37, step: F.stepOpt });
+  });
+
+  // 2. full pose with strikes, defence and reactions
+  fighters.forEach((F, i) => {
+    const O = n > 1 ? fighters[1 - i] : null;
+    const so = st.out[i];
+    const tg = O ? targetsFor(F, O, O.baseJ) : null;
+    const aim = key => tg ? tg[so.tgt[key] || TARGET_OF[key]] : null;
+    const opts = { t: time + i * .37, step: F.stepOpt, recoil: F.recoil, flinch: F.flinch,
+                   jabT: aim("ej"), crossT: aim("ec"), hookT: aim("eh"), upperT: aim("eu"),
+                   ribs: tg && tg.ribs, thigh: tg && tg.thigh, belly: tg && tg.belly,
+                   slip: so.def.slip * faceW, cover: so.def.cover * faceW, check: so.def.check * faceW,
+                   roll: so.def.roll * faceW, rollDir: so.def.rollDir };
+    for (const key of STRIKE_KEYS) opts[key] = (so.amt[key] || 0) * faceW;
     const Jp = solve(F.p, MODES[prevMode], opts), Jc = solve(F.p, MODES[mode], opts);
     F.J = blendJ(Jp, Jc, k);
+    if (F.kd > 0) F.J = blendJ(F.J, solve(F.p, "down", opts), F.kd * faceW);
     F.place(F.J);
-    const pa = place(prevMode, i), pb = place(mode, i);
-    F.group.position.set(pa.x + (pb.x - pa.x) * k, 0, pa.z + (pb.z - pa.z) * k);
-    F.group.rotation.y = pa.yaw + (pb.yaw - pa.yaw) * k;
-    F.group.updateMatrixWorld();
     const op = (prevMode === "reach" && i === 1 ? 1 - k : 0) + (mode === "reach" && i === 1 ? k : 0);
     const target = 1 - .62 * op;
     if (Math.abs(target - F.opacity) > .004) F.setOpacity(target);
-    F.setArc(mode === "face" && k > .6, r.sh, r.dz);
-    // impact flash on the frame a strike connects
-    for (const key of ["ej", "ec", "ek"]) {
-      const lands = r.gap[key] < .015;
-      if (mode === "face" && lands && a[key] > .95 && !(F.prevAmt[key] > .95))
-        flash((key === "ek" ? r.ribs : r.face).clone().applyMatrix4(F.group.matrixWorld));
-      F.prevAmt[key] = a[key];
+    const r = fo.res[i];
+    F.setArc(mode === "face" && k > .6 && !PLAN.spar, r.sh, r.dz);
+
+    // 3. judge each strike the moment it arrives: short of the target, defended, or landed
+    F.chips = F.chips || {};
+    for (const ev of so.events) {
+      const id = ev.e.t0.toFixed(3) + ev.e.m;
+      if (ev.a < .995 || F.chips[id] || mode !== "face" || !tg) continue;
+      const m = ev.e.m, d = F.J.d, lead = leadOf(F.p);
+      const tgt = aim(m);
+      // can the limb reach? shoulder or hip to target against the limb's length for this strike
+      const bent = Math.sqrt(d.upper * d.upper + d.fore * d.fore), legL = d.thigh + d.shin;
+      const leg = m === "ek" || m === "elk" || m === "et";
+      const sd = (m === "ej" || m === "eh" || m === "et") ? lead : -lead;
+      const origin = leg ? F.J.hip[sd] : F.J.sh[sd];
+      const R = { ej: d.upper + d.fore + d.hand, ec: d.upper + d.fore + d.hand, eh: bent * 1.02 + d.hand,
+                  eu: bent * .98 + d.hand, ek: legL + d.foot, elk: legL + d.foot, et: legL + d.foot * .5 }[m];
+      const gap = Math.max(0, origin.distanceTo(tgt) - R);
+      const tip = leg ? F.J.ankle[sd].clone() : F.J.wrist[sd].clone().addScaledVector(F.J.fdir[sd], d.hand);
+      const od = st.out[1 - i].def;
+      const defended = Object.entries(DEF_VS).find(([dm, vs]) => vs.includes(m) && Math.abs(od[dm] || 0) > .5);
+      let text, color = TXT(F.corner), landed = false;
+      if (gap > .02) text = `${MOVES[m].name} ${cm(gap)} cm short`;
+      else if (defended) text = `${MOVES[m].name} ${DEF_WORD[defended[0]]}`;
+      else { text = `${MOVES[m].name} lands`; color = COL.rule; landed = true; }
+      F.chips[id] = { text, color, until: time + .7, m, tipLocal: tip.clone() };
+      if (landed && O) {
+        flash(tgt.clone().applyMatrix4(F.group.matrixWorld));
+        if (["ej", "ec", "eh", "eu"].includes(m)) O.hitHeadT = time;
+        else O.hitBodyT = time;
+        O.hitSide = leadOf(F.p) * (m === "ek" || m === "elk" ? -1 : 1);
+        if (ev.e.ko && O.kdT < 0 && mode === "face") O.kdT = 0;
+      }
     }
+    for (const [id, c] of Object.entries(F.chips)) if (c.until < time - 1 || c.until > time + 5) delete F.chips[id];
+  });
+
+  // 4. reactions decay toward rest
+  fighters.forEach(F => {
+    const sinceHead = time - (F.hitHeadT ?? -9), sinceBody = time - (F.hitBodyT ?? -9);
+    const hr = sinceHead >= 0 && sinceHead < .25 ? .025 * F.p.H : 0;
+    const br = sinceBody >= 0 && sinceBody < .3 ? (F.hitSide || 1) * .03 * F.p.H : 0;
+    F.recoil += (hr - F.recoil) * Math.min(dt * 18, 1);
+    F.flinch += (br - F.flinch) * Math.min(dt * 14, 1);
+    if (F.kdT >= 0) { F.kdT += dt; if (F.kdT > 2.0) F.kdT = -1; }
+    const kt = F.kdT;
+    F.kd = kt < 0 ? 0 : kt < .3 ? easeOut(kt / .3) : kt < 1.3 ? 1 : 1 - ease(clamp((kt - 1.3) / .7, 0, 1));
   });
   stepFlashes(dt);
 
@@ -766,12 +1123,12 @@ function frame(dtFixed) {
   }
   controls.update(dt);
   renderer.render(scene, camera);
-  annotate(fo, amts, k);
+  annotate(fo, st, k);
 }
 if (CAPTURE) {
   window.__step = (dt, steps = 1) => { for (let q = 0; q < steps; q++) frame(dt); return time; };
   window.__set = (o) => {
-    if (o.strike) setStrike(o.strike);
+    if (o.strike) setStrike(o.strike === "combo" ? "spar" : o.strike);
     if (o.mode) setMode(o.mode);
     if (o.spin !== undefined) { controls.autoRotate = o.spin; syncSpin(); }
     if (o.speed) controls.autoRotateSpeed = o.speed;
@@ -794,14 +1151,14 @@ function annotate(fo, env, k) {
 
   if (mode === "face") {
     const active = fighters.map((F, i) => {
-      const a = env[i] || {};
+      const o = env.out[i];
       let best = null;
-      for (const key of ["ej", "ec", "ek"]) if (a[key] > .5 && (!best || a[key] > a[best])) best = key;
-      return best;
+      for (const ev of o.events) if (ev.a > .3 && (!best || ev.a > best.a)) best = ev;
+      return best ? best.e.m : null;
     });
     const lands = g => g < .015;
     const cell = g => lands(g) ? `<td class="ok">Lands</td>` : `<td class="no">${cm(g)} cm short</td>`;
-    const rowOn = key => active.some(x => x === key) ? ` class="on"` : "";
+    const rowOn = key => active.some(x => x === key || (key === "ek" && x === "elk")) ? ` class="on"` : "";
     if (n > 1) {
       const [A, B] = fighters;
       const gA = fo.res[0].gap, gB = fo.res[1].gap;
@@ -811,7 +1168,7 @@ function annotate(fo, env, k) {
       html = gap < 2
         ? `Even range<span>From jabbing distance both lead hands reach the other's face. The table measures every strike from that spot.</span>`
         : `${who(L)} ${vb(L, "owns", "own")} the range<span>At the distance where ${poss(L)} jab just lands, ${isYou(S) ? "yours" : poss(S)} falls ${gap} cm short. The table measures every strike from that spot.</span>`;
-      table = `<table class="rt"><tr><th></th><th style="color:${A.corner}">${esc(first(A.info.label || "A"))}</th><th style="color:${B.corner}">${esc(first(B.info.label || "B"))}</th></tr>` +
+      table = `<table class="rt"><tr><th></th><th style="color:${TXT(A.corner)}">${esc(first(A.info.label || "A"))}</th><th style="color:${TXT(B.corner)}">${esc(first(B.info.label || "B"))}</th></tr>` +
         ["ej", "ec", "ek"].map(key => `<tr${rowOn(key)}><td>${STRIKES[key]}</td>${cell(gA[key])}${cell(gB[key])}</tr>`).join("") + `</table>`;
       const tops = fighters.map(F => solve(F.p, "guard", {}).head.clone()
         .applyMatrix4(F.group.matrixWorld).add(V(0, .16, 0)));
@@ -819,7 +1176,7 @@ function annotate(fo, env, k) {
       fighters.forEach((F, i) => {
         const leftSide = sx[i] < sx[1 - i];
         putLabel("tag" + i, "tag", tops[i], `${name(F)}<small>${esc(F.info.stance || "")}, ${esc((F.info.hand || "").toLowerCase())}-handed</small>`,
-          { color: F.corner, ax: leftSide ? -1 : 0, dx: leftSide ? 18 : -18, op: ready ? 1 : 0 });
+          { color: TXT(F.corner), ax: leftSide ? -1 : 0, dx: leftSide ? 18 : -18, op: ready ? 1 : 0 });
       });
     } else {
       const F = fighters[0];
@@ -827,23 +1184,30 @@ function annotate(fo, env, k) {
       const power = F.hand === leadSide ? "Power hand leads, so the jab is the best weapon."
                                          : "Power hand sits at the back for the cross and the hook.";
       html = `${isYou(F) ? "Your" : possFull(F)} ${esc((F.info.stance || "orthodox").toLowerCase())} stance<span>${power} The arc on the mat is jab range.</span>`;
-      table = `<table class="rt"><tr><th></th><th style="color:${F.corner}">vs same size</th></tr>` +
+      table = `<table class="rt"><tr><th></th><th style="color:${TXT(F.corner)}">vs same size</th></tr>` +
         ["ej", "ec", "ek"].map(key => `<tr${rowOn(key)}><td>${STRIKES[key]}</td>${cell(fo.res[0].gap[key])}</tr>`).join("") + `</table>`;
       const J = solve(F.p, "guard", {});
       putLabel("tag0", "tag", J.head.clone().applyMatrix4(F.group.matrixWorld).add(V(0, .16, 0)),
-        `${name(F)}`, { color: F.corner, op: ready ? 1 : 0 });
+        `${name(F)}`, { color: TXT(F.corner), op: ready ? 1 : 0 });
     }
-    // strike chip at the fist or foot
     fighters.forEach((F, i) => {
-      const key = active[i];
-      if (!key || !F.J) return;
-      const g = fo.res[i].gap[key], amt = env[i][key];
-      const lead = leadOf(F.p), side = key === "ej" ? lead : -lead;
-      const tip = key === "ek" ? F.J.ankle[side].clone()
-        : F.J.wrist[side].clone().addScaledVector(F.J.fdir[side], F.J.d.hand);
-      tip.applyMatrix4(F.group.matrixWorld).add(V(0, -.07, 0));
-      putLabel("hit" + i, "chip", tip, lands(g) ? `${STRIKES[key]} lands` : `${STRIKES[key]} ${cm(g)} cm short`,
-        { color: lands(g) ? COL.rule : F.corner, ay: 0, op: clamp((amt - .55) * 3, 0, 1) });
+      if (F.kd > .4 && F.J) putLabel("kd" + i, "chip", F.J.head.clone().applyMatrix4(F.group.matrixWorld).add(V(0, .22, 0)),
+        "Knockdown", { color: COL.a, op: clamp((F.kd - .4) * 2.5, 0, 1) });
+    });
+    // what each strike did, shown at the fist or foot as it arrives
+    fighters.forEach((F, i) => {
+      for (const [id, c] of Object.entries(F.chips || {})) {
+        const age = time - (c.until - .7);
+        if (age < 0 || age > .7) continue;
+        const pos = c.tipLocal.clone().applyMatrix4(F.group.matrixWorld).add(V(0, -.07, 0));
+        putLabel("hit" + i + id, "chip", pos, c.text, { color: c.color, ay: 0, op: clamp(1 - (age - .45) / .25, 0, 1) });
+      }
+      // combo name above the attacker while it runs
+      const ev = env.out[i].events.find(x => x.e.combo);
+      if (ev && PLAN.spar) {
+        const top = F.J.head.clone().applyMatrix4(F.group.matrixWorld).add(V(0, .34, 0));
+        putLabel("combo" + i, "chip", top, esc(ev.e.combo), { color: TXT(F.corner), op: 1 });
+      }
     });
   }
 
@@ -855,9 +1219,9 @@ function annotate(fo, env, k) {
       line("h" + i, V(x0, y, -.12), V(x1, y, -.12), F.corner, true, .9);
       const below = n > 1 && i === (H(fighters[0]) >= H(fighters[1]) ? 1 : 0);
       putLabel("hv" + i, "val", V(x1 + .03, y, -.12), `${cm(y)} cm`,
-        { color: F.corner, ax: 0, ay: -.5, dy: below ? 9 : -9, op: ready ? 1 : 0 });
+        { color: TXT(F.corner), ax: 0, ay: -.5, dy: below ? 9 : -9, op: ready ? 1 : 0 });
       putLabel("tag" + i, "tag", V(F.group.position.x, -.02, .1), `${name(F)}<small>${Math.round(F.target.W)} kg, ape index ${fmtSigned(cm(F.p.R - F.p.H))} cm</small>`,
-        { color: F.corner, ay: 0, op: ready ? 1 : 0 });
+        { color: TXT(F.corner), ay: 0, op: ready ? 1 : 0 });
     });
     if (n > 1) {
       const [A, B] = fighters;
@@ -884,7 +1248,7 @@ function annotate(fo, env, k) {
       line("dl" + i, V(-half, y, 0), V(-half, shY, 0), F.corner, true, .7);
       line("dr" + i, V(half, y, 0), V(half, shY, 0), F.corner, true, .7);
       putLabel("rv" + i, "val", V(0, y, 0), `${n > 1 ? name(F) + " " : "Reach "}${cm(F.p.R)} cm`,
-        { color: F.corner, ay: -1, dy: -4, op: ready ? 1 : 0 });
+        { color: TXT(F.corner), ay: -1, dy: -4, op: ready ? 1 : 0 });
     });
     if (n > 1) {
       const [A, B] = fighters;
@@ -904,7 +1268,8 @@ function annotate(fo, env, k) {
       html = `Reach ${cm(F.p.R)} cm<span>Ape index ${fmtSigned(ape)} cm: arms ${ape >= 4 ? "longer than" : ape <= -4 ? "shorter than" : "about the same as"} height${ape >= 4 ? ", an edge at range" : ""}.</span>`;
     }
   }
-  if (html !== headHTML) { head.innerHTML = html; headHTML = html; }
+  if (html !== headHTML) { head.innerHTML = html; headHTML = html;
+    renderer.domElement.setAttribute("aria-label", "3D comparison. " + head.textContent); }
   if (table !== tableHTML) { rangeEl.innerHTML = table; tableHTML = table; }
   endLabels(); endSegs();
 }
@@ -920,20 +1285,26 @@ const btn = { face: document.getElementById("mFace"), tape: document.getElementB
 function setMode(m) {
   if (m === mode) return;
   prevMode = mode; mode = m; modeT = 0;
-  for (const [key, b] of Object.entries(btn)) b.classList.toggle("on", key === m);
+  for (const [key, b] of Object.entries(btn)) { b.classList.toggle("on", key === m); b.setAttribute("aria-pressed", String(key === m)); }
   document.getElementById("strikes").style.display = m === "face" ? "" : "none";
   flyTo(m);
 }
+function clearKD() { for (const F of fighters) { F.kdT = -1; F.kd = 0; } }
 function setStrike(k) {
+  clearKD();
   strikeSel = k;
-  for (const b of document.querySelectorAll("#strikes button")) b.classList.toggle("on", b.dataset.k === k);
+  for (const b of document.querySelectorAll("#strikes button")) { b.classList.toggle("on", b.dataset.k === k); b.setAttribute("aria-pressed", String(b.dataset.k === k)); }
 }
-for (const b of document.querySelectorAll("#strikes button")) b.onclick = () => { setStrike(b.dataset.k); time = 0; };
+for (const b of document.querySelectorAll("#strikes button")) b.onclick = () => { setStrike(b.dataset.k); time = 0; if (paused) { paused = false; syncPlay(); } };
 btn.face.onclick = () => setMode("face");
 btn.tape.onclick = () => setMode("tape");
 btn.reach.onclick = () => setMode("reach");
 const bSpin = document.getElementById("bSpin");
-const syncSpin = () => bSpin.classList.toggle("on", controls.autoRotate);
+const syncSpin = () => { bSpin.classList.toggle("on", controls.autoRotate); bSpin.setAttribute("aria-pressed", String(controls.autoRotate)); };
+const bPlay = document.getElementById("bPlay");
+const syncPlay = () => { bPlay.textContent = paused ? "Play" : "Pause"; bPlay.classList.toggle("on", !paused); bPlay.setAttribute("aria-pressed", String(!paused)); bPlay.setAttribute("aria-label", paused ? "Play the strikes" : "Pause the strikes"); };
+bPlay.onclick = () => { paused = !paused; if (paused) controls.autoRotate = false; syncSpin(); syncPlay(); };
+syncPlay();
 bSpin.onclick = () => { controls.autoRotate = !controls.autoRotate; syncSpin(); };
 document.getElementById("bReset").onclick = () => flyTo(mode);
 controls.addEventListener("start", () => { camTween = null; });
@@ -967,7 +1338,7 @@ window.addEventListener("message", (e) => {
     mode = prevMode = m;
     for (const [key, b] of Object.entries(btn)) b.classList.toggle("on", key === m);
     document.getElementById("strikes").style.display = m === "face" ? "" : "none";
-    if (args.strike && SCHED[args.strike]) setStrike(args.strike);
+    if (args.strike && ["spar", "jab", "cross", "kick"].includes(args.strike)) setStrike(args.strike);
     if (args.autorotate === false || REDUCE) controls.autoRotate = false;
     syncSpin();
     flyTo(mode, true);

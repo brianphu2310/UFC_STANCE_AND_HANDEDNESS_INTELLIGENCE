@@ -9,7 +9,7 @@ import ufc_core as core
 import ui
 from body3d import body3d
 
-A_COLOR, B_COLOR = ui.PALETTE[0], ui.PALETTE[1]      # magenta vs indigo
+A_COLOR, B_COLOR = ui.PALETTE[0], ui.PALETTE[1]      # red corner vs steel corner
 
 
 @st.cache_data
@@ -25,8 +25,8 @@ def _h2h(df, a, b):
 def _filters(df):
     with st.sidebar:
         st.markdown('<div class="sbh">Filter the table</div>', unsafe_allow_html=True)
-        q = st.text_input("Search name", placeholder="e.g. Adesanya")
-        gender = st.selectbox("Divisions", ["All", "Men", "Women"], key="ex_g")
+        q = st.text_input("Search by name", placeholder="e.g. Adesanya")
+        gender = st.selectbox("Division", ["All", "Men", "Women"], key="ex_g")
         divs = st.multiselect("Weight class",
                               [d for d in core.DIVISION_ORDER if d in set(df["weight_class"])])
         stances = st.multiselect("Stance", ["Orthodox", "Southpaw", "Switch"])
@@ -117,7 +117,7 @@ def render(df: pd.DataFrame):
     h = _h2h(df, a, b)
 
     with st.container(key="oct_tape"):
-        left, mid, right = st.columns([1, 2.3, 1], gap="small")
+        left, mid, right = st.columns([1, 2.75, 1], gap="small")
     with left:
         st.markdown(_tape(fa, A_COLOR), unsafe_allow_html=True)
     with right:

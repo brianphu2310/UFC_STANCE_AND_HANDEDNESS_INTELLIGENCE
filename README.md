@@ -45,13 +45,19 @@ win rates don't.
 
 ## See it move
 
-The 3D face-off sets the fighters at the distance where the longer jab just lands, then throws a
-jab, cross and rear roundhouse kick from that same spot. Every strike either stops on contact or
-fully extends and comes up short, so the table in the corner is a real measurement of each frame.
+The fighters are a real human body model (the MakeHuman CC0 base mesh, shaped into an athletic
+male and rigged by `scripts/build_body_model.py`), posed every frame by the app's own joint solver.
+In **Spar** mode the two fighters circle, step in with real footwork (the moving foot leads, the
+other follows), throw eight combos (1-2, 1-2-3, 1-2 and leg kick, jab-body cross-hook, double jab-cross,
+1-6-3, teep, 1-2 and body kick) and step back out, while the other fighter slips, covers, rolls under
+hooks and checks leg kicks. Every strike is judged as it arrives: short of the target, defended, or
+landed, from the live distance between the two bodies. A body kick that lands drops the opponent
+to one knee. The **Jab / Cross / Kick** buttons instead throw one strike from the measured distance
+in the range table, where the longer jab just lands.
 
-| Face-off combo | Jones vs Cormier: 30 cm of reach |
+| Spar: footwork, combos and defence | Jones vs Cormier: 30 cm of reach |
 |---|---|
-| ![Face-off combo](docs/gif/faceoff_combo.gif) | ![Face-off, height and reach views](docs/gif/modes.gif) |
+| ![Spar mode](docs/gif/faceoff_combo.gif) | ![Face-off, height and reach views](docs/gif/modes.gif) |
 
 **Build a fighter:** the body model reshapes as height, weight and reach change, and switches stance on the spot.
 
@@ -84,6 +90,7 @@ fully extends and comes up short, so the table in the corner is a real measureme
 | [UFCSTATS](http://ufcstats.com) via the public [Greco1899/scrape_ufc_stats](https://github.com/Greco1899/scrape_ufc_stats) dump | Official stance, height, reach, date of birth, round-by-round fight stats |
 | Derived | Strike accuracy/defence, output, damage absorbed, takedowns, control time, fighting style, popularity index |
 | Estimated | **Dominant foot only** — no public source records it; clearly marked "≈" / "EST" everywhere |
+| [MakeHuman](https://github.com/makehumancommunity/makehuman) (CC0) | 3D body mesh, skeleton, skin weights and body-shape targets for the fighter model |
 
 Every column's source is listed in `data/data_dictionary.csv`. Coaches and classes on the
 Build-a-fighter page are a fictional sample catalogue you can replace with a real gym's roster.
@@ -117,8 +124,8 @@ ufc_core.py                 statistics, recommender, roadmap (no Streamlit — u
 ui.py                       theme, chart defaults, shared HTML pieces
 views/                      one module per page
 components/globe3d/         three.js globe (bundled locally, no CDN)
-components/body3d/          three.js parametric body model
-scripts/                    build_clean_dataset.py → enrich_dataset.py
+components/body3d/          three.js face-off: skinned MakeHuman body (fighter.glb) driven by a joint solver
+scripts/                    build_clean_dataset.py → enrich_dataset.py, build_body_model.py
 data/                       cleaned + enriched dataset, data dictionary, sample catalogues
 tests/                      pytest suite incl. Streamlit AppTest page smoke tests
 notebooks (*.ipynb)         original scraping, cleaning and visualisation work

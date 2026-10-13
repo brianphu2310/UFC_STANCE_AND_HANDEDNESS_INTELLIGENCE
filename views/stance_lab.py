@@ -71,7 +71,7 @@ def render(df: pd.DataFrame):
         except ValueError:
             pass
     if not results:
-        st.info("Not enough fighters to compare groups.")
+        st.info("Each group needs at least a few fighters before it can be compared. Clear a filter to widen the view.")
         return
 
     holm = core.holm_adjust([r.welch_p for r in results])
