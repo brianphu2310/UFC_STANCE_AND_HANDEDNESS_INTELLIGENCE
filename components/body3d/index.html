@@ -534,15 +534,9 @@ function solve(p, mode, o = {}) {
     if (down) { drop = .21 * H; yaw = -S * .25; lean = .58; roll = 0; shift.set(0, 0, -.05 * H); }
   } else {
     const breathe = REDUCE ? 0 : Math.sin(t * TAU * .25) * .002 * H;
-    drop = .01 * H + breathe; yaw = 0; lean = .02;
-    // relaxed athletic stance: lead foot a half step ahead and toes forward, rear foot turned out,
-    // feet about shoulder width, knees soft; the upper body stays square for the measurement
-    if (mode === "stand") {
-      feet[leadSide] = [V(-rearX * .058 * H, 0, .065 * H), -rearX * .08];
-      feet[rearSide] = [V(rearX * .07 * H, 0, -.065 * H), rearX * .5];
-    } else {
-      feet[LEFT] = [V(.056 * H, 0, .01 * H), .14]; feet[RIGHT] = [V(-.056 * H, 0, .01 * H), -.14];
-    }
+    drop = .004 * H + breathe; yaw = 0; lean = .02;
+    // standing straight: feet under the hips, toes turned out a little, legs straight
+    feet[LEFT] = [V(.056 * H, 0, .01 * H), .14]; feet[RIGHT] = [V(-.056 * H, 0, .01 * H), -.14];
     for (const sd of [LEFT, RIGHT]) baseYaw[sd] = feet[sd][1];
   }
   // footwork: the moving foot leads, the other follows; feet stay planted while the body travels
