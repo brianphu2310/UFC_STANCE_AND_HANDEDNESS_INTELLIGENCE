@@ -103,7 +103,7 @@ const send = (type, data = {}) =>
   window.parent.postMessage({ isStreamlitMessage: true, type, ...data }, "*");
 let frameHeight = 520;
 
-const COL = { a: "#F04A3E", b: "#A7ADB8", rule: "#E9B44C", skin: "#404047", ink: "#F2F0ED", hit: "#FF6A4D" };
+const COL = { a: "#F04A3E", b: "#A7ADB8", rule: "#E9B44C", skin: "#a26c50", ink: "#F2F0ED", hit: "#FF6A4D" };
 const KIT = { "#F04A3E": "#C8291C", "#A7ADB8": "#B4B9C2" };   // fight-kit fabric per corner
 const REDUCE = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const V = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
@@ -165,8 +165,27 @@ controls.maxPolarAngle = Math.PI * 0.52;
 controls.autoRotate = !REDUCE;
 
 scene.fog = new THREE.Fog("#0C0C0E", 6.5, 17);
-scene.add(new THREE.HemisphereLight("#d6d8de", "#2a0d0b", 0.55));
-const spot = new THREE.SpotLight("#fff6ee", 6, 0, 0.55, 0.85, 0);
+let ENV = null;
+// arena reflections: a dark room with an overhead softbox and two red corner panels, prefiltered
+// once so skin, gloves and shorts pick up believable highlights (the stage background stays dark)
+{
+  const env = new THREE.Scene();
+  env.add(new THREE.Mesh(new THREE.BoxGeometry(20, 12, 20),
+    new THREE.MeshBasicMaterial({ color: "#121214", side: THREE.BackSide })));
+  const panel = (w, h, color, k, pos, look) => {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(k), side: THREE.DoubleSide }));
+    m.position.set(...pos); m.lookAt(...look); env.add(m);
+  };
+  panel(6, 6, "#fff4e8", 6, [0, 5.8, 0], [0, 0, 0]);
+  panel(3, 4, "#ff4a36", 2.5, [-8, 2.5, -6], [0, 1, 0]);
+  panel(3, 4, "#ff4a36", 2, [-8, 2.5, 6], [0, 1, 0]);
+  panel(4, 3, "#c9d4e6", 1.5, [9, 2, 2], [0, 1, 0]);
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  ENV = pmrem.fromScene(env, 0.04).texture;          // used by the fighters' materials only
+  pmrem.dispose();
+}
+scene.add(new THREE.HemisphereLight("#d6d8de", "#2a0d0b", 0.35));
+const spot = new THREE.SpotLight("#fff3e6", 6.5, 0, 0.55, 0.85, 0);
 spot.position.set(0.8, 7, 1.4);
 spot.target.position.set(0, 0.9, 0);
 spot.castShadow = true;
@@ -174,10 +193,10 @@ spot.shadow.mapSize.set(2048, 2048);
 spot.shadow.bias = -0.0004;
 spot.shadow.camera.near = 2; spot.shadow.camera.far = 14;
 scene.add(spot, spot.target);
-const rimA = new THREE.DirectionalLight("#FF3B2F", 3.4); rimA.position.set(-3, 2.4, -4.5); scene.add(rimA);
-const rimB = new THREE.DirectionalLight("#FF4A36", 2.6); rimB.position.set(-3, 2.4, 4.5); scene.add(rimB);
-const fill = new THREE.DirectionalLight("#b8c4d8", 0.85); fill.position.set(5, 2, 1); scene.add(fill);
-const glow = new THREE.PointLight("#FF2A1A", 0.8, 5, 1.8); glow.position.set(0, 0.25, 0); scene.add(glow);
+const rimA = new THREE.DirectionalLight("#FF5040", 2.4); rimA.position.set(-3, 2.4, -4.5); scene.add(rimA);
+const rimB = new THREE.DirectionalLight("#FF6450", 1.6); rimB.position.set(-3, 2.4, 4.5); scene.add(rimB);
+const fill = new THREE.DirectionalLight("#c9d4e6", 1.1); fill.position.set(5, 2, 1); scene.add(fill);
+const glow = new THREE.PointLight("#FF2A1A", 0.45, 5, 1.8); glow.position.set(0, 0.25, 0); scene.add(glow);
 
 // ---- stage: black floor with a red neon grid that fades into the dark
 const MAT_R = 3.0;
@@ -199,7 +218,7 @@ function gridTexture() {
   return t;
 }
 const floor = new THREE.Mesh(new THREE.PlaneGeometry(60, 60),
-  new THREE.MeshStandardMaterial({ color: "#0E0E10", roughness: 0.95, metalness: 0,
+  new THREE.MeshStandardMaterial({ color: "#070708", roughness: 0.95, metalness: 0,
     emissive: "#ffffff", emissiveMap: gridTexture(), emissiveIntensity: 0.9 }));
 floor.rotation.x = -Math.PI / 2;
 floor.receiveShadow = true;
@@ -279,9 +298,142 @@ function buildModel(gltf) {
     hand[s] = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(b0.clone().cross(f0), b0, f0));
   }
   const headInv = new THREE.Matrix4().copy(bone("head").matrixWorld).invert();
+  paintSkin(root, ext);
   return { scene: root, Hm, floor: y0, order, parentOf, restLocal, restWorld, restPos, hand,
            restRoot: wp("root"), restHip: hip,
-           eyeLocal: ["L", "R"].map(s => V(...ext.eyes[s]).applyMatrix4(headInv)) };
+           eyeLocal: ["L", "R"].map(s => V(...ext.eyes[s]).applyMatrix4(headInv)),
+           eyeFwd: V(0, 0, 1).transformDirection(headInv) };
+}
+
+// Per-vertex detail for the skin, computed once from the bind pose (no textures: the mesh has no UVs).
+//   ao:    ambient occlusion from surface curvature, so muscle separations, collarbones and
+//          creases read as shape instead of flat plastic;
+//   hair:  0..1 mask for a short fade haircut and eyebrows, coloured in the skin shader.
+function paintSkin(root, ext) {
+  const body = root.getObjectByName("body");
+  if (!body || !body.geometry.index) return;
+  const g = body.geometry, P = g.attributes.position, Nr = g.attributes.normal, n = P.count;
+  const ix = g.index.array;
+  const nb = Array.from({ length: n }, () => new Set());
+  for (let i = 0; i < ix.length; i += 3) {
+    const a = ix[i], b = ix[i + 1], c = ix[i + 2];
+    nb[a].add(b).add(c); nb[b].add(a).add(c); nb[c].add(a).add(b);
+  }
+  const pos = i => V(P.getX(i), P.getY(i), P.getZ(i));
+  const nrm = i => V(Nr.getX(i), Nr.getY(i), Nr.getZ(i));
+  // signed curvature: > 0 where the neighbours sit in front of the vertex (a crease)
+  const cav = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    if (!nb[i].size) continue;
+    const p = pos(i), avg = V();
+    let edge = 0;
+    for (const j of nb[i]) { const q = pos(j); avg.add(q); edge += q.distanceTo(p); }
+    avg.multiplyScalar(1 / nb[i].size);
+    cav[i] = avg.sub(p).dot(nrm(i)) / (edge / nb[i].size + 1e-6);
+  }
+  const blur = (src, it) => {
+    let a = src;
+    for (let k = 0; k < it; k++) {
+      const b = new Float32Array(n);
+      for (let i = 0; i < n; i++) {
+        let s = a[i];
+        for (const j of nb[i]) s += a[j];
+        b[i] = s / (nb[i].size + 1);
+      }
+      a = b;
+    }
+    return a;
+  };
+  const fine = blur(cav, 2), broad = blur(cav, 14);
+  const ao = new Float32Array(n);
+  for (let i = 0; i < n; i++)
+    ao[i] = clamp(1 - 2.4 * Math.max(broad[i], 0) - .8 * Math.max(fine[i], 0), .4, 1);
+  g.setAttribute("ao", new THREE.BufferAttribute(ao, 1));
+
+  // hair: fade haircut on the scalp, eyebrows over each eye
+  const SI = g.attributes.skinIndex, SW = g.attributes.skinWeight;
+  const hb = body.skeleton ? body.skeleton.bones.findIndex(b => b.name === "head") : -1;
+  const E = V(...ext.eyes.L).add(V(...ext.eyes.R)).multiplyScalar(.5);
+  const ex = [ext.eyes.L[0], ext.eyes.R[0]];
+  const ss = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+  const hair = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    let wHead = 0;
+    if (hb >= 0) for (let k = 0; k < 4; k++) if (SI.getComponent(i, k) === hb) wHead += SW.getComponent(i, k);
+    if (wHead < .35) continue;
+    const dx = P.getX(i), dy = P.getY(i) - E.y, dz = P.getZ(i) - E.z, nz = Nr.getZ(i);
+    // hairline: high at the forehead, above the ears at the sides, down to the nape at the back
+    let line = THREE.MathUtils.lerp(.06, .032, ss(-.025, -.08, dz));
+    line = THREE.MathUtils.lerp(line, -.07, ss(-.115, -.165, dz));
+    let h = ss(line - .004, line + .01, dy);
+    const ear = Math.abs(dx) > .062 && dz > -.125 && dz < -.055 && dy < .035;
+    if (ear) h *= 1 - ss(.062, .068, Math.abs(dx));
+    h *= .55 + .45 * ss(line, line + .05, dy);                     // fade: shorter at the sides
+    for (const x0 of ex) {
+      const u = (dx - x0) / .028;                                  // -1..1 across the brow
+      if (Math.abs(u) > 1 || nz < .25) continue;
+      const mid = .019 + .004 * (1 - u * u);                       // gentle arch
+      const brow = (1 - ss(.55, 1, Math.abs(u))) * (1 - ss(.0035, .0065, Math.abs(dy - mid)));
+      h = Math.max(h, .9 * brow);
+    }
+    hair[i] = h;
+  }
+  g.setAttribute("hair", new THREE.BufferAttribute(hair, 1));
+}
+
+// Skin: physical material plus procedural pores (bump from noise on the bind-pose position),
+// a hair layer driven by the "hair" attribute, and the curvature occlusion from "ao".
+const SKIN_GLSL = `
+varying vec3 vObj;
+varying float vHair;
+varying float vAO;
+uniform vec3 uHairColor;
+float h31(vec3 p) { p = fract(p * .1031); p += dot(p, p.zyx + 31.32); return fract((p.x + p.y) * p.z); }
+float vnoise(vec3 x) {
+  vec3 i = floor(x), f = fract(x); f = f * f * (3. - 2. * f);
+  return mix(mix(mix(h31(i), h31(i + vec3(1,0,0)), f.x), mix(h31(i + vec3(0,1,0)), h31(i + vec3(1,1,0)), f.x), f.y),
+             mix(mix(h31(i + vec3(0,0,1)), h31(i + vec3(1,0,1)), f.x), mix(h31(i + vec3(0,1,1)), h31(i + vec3(1,1,1)), f.x), f.y), f.z);
+}
+vec3 perturbSkin(vec3 surf_pos, vec3 surf_norm, vec2 dHdxy, float faceDir) {
+  vec3 sx = normalize(dFdx(surf_pos)), sy = normalize(dFdy(surf_pos));
+  vec3 r1 = cross(sy, surf_norm), r2 = cross(surf_norm, sx);
+  float det = dot(sx, r1) * faceDir;
+  return normalize(abs(det) * surf_norm - sign(det) * (dHdxy.x * r1 + dHdxy.y * r2));
+}`;
+function skinMaterial(color) {
+  const m = new THREE.MeshPhysicalMaterial({ color, roughness: .52, metalness: 0,
+    specularIntensity: .55, sheen: .35, sheenRoughness: .6, sheenColor: new THREE.Color("#e8a08a"),
+    clearcoat: .08, clearcoatRoughness: .35 });
+  m.userData.hair = { value: new THREE.Color("#17110d") };
+  m.onBeforeCompile = (sh) => {
+    sh.uniforms.uHairColor = m.userData.hair;
+    sh.vertexShader = sh.vertexShader
+      .replace("#include <common>", "#include <common>\nattribute float hair;\nattribute float ao;\nvarying vec3 vObj;\nvarying float vHair;\nvarying float vAO;")
+      .replace("#include <begin_vertex>", "#include <begin_vertex>\nvObj = position;\nvHair = hair;\nvAO = ao;");
+    sh.fragmentShader = sh.fragmentShader
+      .replace("#include <common>", "#include <common>\n" + SKIN_GLSL)
+      .replace("#include <color_fragment>", `#include <color_fragment>
+        float px = length(fwidth(vObj));                           // metres per pixel
+        // fade each noise octave out before its cells shrink to a pixel (no sparkle at a distance)
+        float lodC = clamp((.35 - px * 140.) / .25, 0., 1.);
+        float lod = clamp((.35 - px * 700.) / .25, 0., 1.);
+        float lodF = clamp((.35 - px * 1500.) / .25, 0., 1.);
+        float stub = mix(.5, vnoise(vObj * 1500.), lodF);
+        float hairAmt = clamp(vHair * (.72 + .5 * stub), 0., 1.);
+        diffuseColor.rgb = mix(diffuseColor.rgb, uHairColor * (.8 + .4 * stub), hairAmt);
+        diffuseColor.rgb *= mix(1., vAO, .3);                       // a little cavity darkening under direct light`)
+      .replace("#include <aomap_fragment>", `#include <aomap_fragment>
+        reflectedLight.indirectDiffuse *= vAO;                      // full occlusion for ambient and reflections
+        reflectedLight.indirectSpecular *= vAO * vAO;`)
+      .replace("#include <roughnessmap_fragment>", `#include <roughnessmap_fragment>
+        float pore = mix(.5, vnoise(vObj * 700.), lod), grain = mix(.5, vnoise(vObj * 1500.), lodF);
+        roughnessFactor = clamp(roughnessFactor + .14 * (pore - .5) + .06 * (grain - .5), .3, .8);
+        roughnessFactor = mix(roughnessFactor, .9, hairAmt);`)
+      .replace("#include <normal_fragment_maps>", `#include <normal_fragment_maps>
+        float bh = .35 * lod * vnoise(vObj * 700.) + .2 * lodF * vnoise(vObj * 1500.) + .5 * lodC * vnoise(vObj * 140.);
+        normal = perturbSkin(-vViewPosition, normal, vec2(dFdx(bh), dFdy(bh)) * mix(.35, .7, hairAmt), faceDirection);`);
+  };
+  return m;
 }
 
 // ------------------------------------------------------------------ fighter
@@ -531,10 +683,9 @@ class Fighter {
     this.opacity = 1;
     const kit = KIT[corner] || corner;
     this.mats = {
-      skin: new THREE.MeshPhysicalMaterial({ color: COL.skin, roughness: .46, metalness: 0, sheen: .5,
-        sheenRoughness: .45, sheenColor: new THREE.Color("#ff6a55"), clearcoat: .25, clearcoatRoughness: .5 }),
-      kit: new THREE.MeshStandardMaterial({ color: kit, roughness: .62, emissive: kit, emissiveIntensity: .05,
-        side: THREE.DoubleSide }),
+      skin: skinMaterial(COL.skin),
+      kit: new THREE.MeshPhysicalMaterial({ color: kit, roughness: .72, sheen: .5, sheenRoughness: .55,
+        sheenColor: new THREE.Color(kit).lerp(new THREE.Color("#ffffff"), .12), side: THREE.DoubleSide }),
       pad: new THREE.MeshPhysicalMaterial({ color: "#121214", roughness: .34, clearcoat: .7, clearcoatRoughness: .28,
         sheen: .4, sheenColor: new THREE.Color("#8a8a92"), side: THREE.DoubleSide }),     // black fight-glove leather
       patch: new THREE.MeshStandardMaterial({ color: kit, roughness: .5, emissive: kit, emissiveIntensity: .08,
@@ -542,10 +693,13 @@ class Fighter {
       band: new THREE.MeshStandardMaterial({ color: "#121214", roughness: .55, side: THREE.DoubleSide }),
       gold: new THREE.MeshStandardMaterial({ color: COL.rule, roughness: .35, emissive: COL.rule,
         emissiveIntensity: .6, side: THREE.DoubleSide }),
-      eye: new THREE.MeshStandardMaterial({ color: "#0b0b0c", roughness: .15 }),
+      eye: new THREE.MeshPhysicalMaterial({ color: "#d8d0c6", roughness: .2, clearcoat: 1, clearcoatRoughness: .05 }),
+      iris: new THREE.MeshPhysicalMaterial({ color: "#3a2416", roughness: .3, clearcoat: 1, clearcoatRoughness: .03 }),
+      pupil: new THREE.MeshStandardMaterial({ color: "#050505", roughness: .2 }),
       leather: new THREE.MeshPhysicalMaterial({ color: "#141416", roughness: .42, clearcoat: .35,
         clearcoatRoughness: .4, side: THREE.DoubleSide }),
     };
+    for (const m of Object.values(this.mats)) { m.envMap = ENV; m.envMapIntensity = m === this.mats.skin ? .45 : .6; }
     this.meshes = [];
     this.rig = null;
     // floor range arc (face-off)
@@ -574,10 +728,18 @@ class Fighter {
     });
     this.bones = {};
     rig.traverse(o => { if (o.isBone) this.bones[o.name] = o; });
-    const eyeGeo = new THREE.SphereGeometry(.0125, 16, 12);
+    // eyeball: sclera, a brown iris cap and a pupil, looking straight ahead
+    const eyeGeo = new THREE.SphereGeometry(.0125, 24, 16);
+    const irisGeo = new THREE.SphereGeometry(.0125, 24, 8, 0, Math.PI * 2, 0, .62);
+    const pupilGeo = new THREE.SphereGeometry(.0125, 16, 4, 0, Math.PI * 2, 0, .26);
+    const aim = new THREE.Quaternion().setFromUnitVectors(UP, MODEL.eyeFwd);
     for (const p of MODEL.eyeLocal) {
       const e = new THREE.Mesh(eyeGeo, this.mats.eye);
       e.position.copy(p).add(V(0, 0, -.006));
+      const iris = new THREE.Mesh(irisGeo, this.mats.iris), pupil = new THREE.Mesh(pupilGeo, this.mats.pupil);
+      iris.quaternion.copy(aim); pupil.quaternion.copy(aim);
+      iris.scale.setScalar(1.004); pupil.scale.setScalar(1.008);
+      e.add(iris, pupil);
       this.bones.head.add(e);
     }
     this.rig = rig;
@@ -586,6 +748,8 @@ class Fighter {
   }
   setTarget(f) {
     this.info = f;
+    this.mats.skin.color.set(f.skin || COL.skin);
+    this.mats.skin.userData.hair.value.set(f.hair || "#17110d");
     this.target = params(f);
     if (!this.p) this.p = { ...this.target };
     this.hand = sideOf(f.hand);

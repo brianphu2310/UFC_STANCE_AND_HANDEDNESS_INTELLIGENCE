@@ -11,7 +11,8 @@ def body3d(figures: list[dict], height: int = 520, pose: str = "guard",
            autorotate: bool = True, key: str | None = None):
     """
     figures: dicts with height_cm, weight_kg, reach_cm, stance, hand, foot and optional
-             label, ghost (bool, drawn translucent), accent (hex colour for dominant side).
+             label, ghost (bool, drawn translucent), accent (hex colour for dominant side),
+             skin and hair (hex colours; default a medium-brown skin tone with dark hair).
     """
     return _component(figures=figures, height=height, pose=pose, autorotate=autorotate,
                       key=key, default=None)
