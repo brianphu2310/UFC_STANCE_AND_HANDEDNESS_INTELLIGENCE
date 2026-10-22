@@ -395,6 +395,26 @@ function fightKit(root) {
     }
     g.setAttribute("kit2", new THREE.BufferAttribute(kit2, 2));
   }
+  // glove pads: edge distance (in mesh hops, smoothed by interpolation) for the trim and stitching
+  for (const name of ["gloveL", "gloveR"]) {
+    const m = root.getObjectByName(name);
+    if (!m || !m.geometry.index) continue;
+    const g = m.geometry, n = g.attributes.position.count, ix = g.index.array;
+    const nb = Array.from({ length: n }, () => new Set());
+    for (let i = 0; i < ix.length; i += 3) {
+      const a = ix[i], b = ix[i + 1], c = ix[i + 2];
+      nb[a].add(b).add(c); nb[b].add(a).add(c); nb[c].add(a).add(b);
+    }
+    const rim = new Float32Array(n).fill(99);
+    let front = [...openEdges(g).keys()];
+    for (const v of front) rim[v] = 0;
+    for (let d = 1; front.length && d < 8; d++) {
+      const nx = [];
+      for (const v of front) for (const w of nb[v]) if (rim[w] > d) { rim[w] = d; nx.push(w); }
+      front = nx;
+    }
+    g.setAttribute("rim", new THREE.BufferAttribute(rim, 1));
+  }
   for (const name of ["strapL", "strapR"]) {
     const m = root.getObjectByName(name);
     if (!m || !m.geometry.index) continue;
@@ -509,30 +529,84 @@ function goldLeather(rough) {
 }
 // MMA fight shorts: black, with a white panel down the outside of each thigh that sweeps wider toward
 // the hem (white piping-free, like a stock fight short). No logos.
+// glove pad trim: a contrast border round the edge of the padding and a row of stitches inside it
+function gloveTrim(mat, trim, key) {
+  mat.onBeforeCompile = (sh) => {
+    sh.uniforms.uTrimC = { value: new THREE.Color(trim) };
+    sh.vertexShader = sh.vertexShader
+      .replace("#include <common>", "#include <common>\nattribute float rim;\nvarying float vRim;\nvarying vec3 vGP;")
+      .replace("#include <begin_vertex>", "#include <begin_vertex>\nvRim = rim;\nvGP = position;");
+    sh.fragmentShader = sh.fragmentShader
+      .replace("#include <common>", "#include <common>\nvarying float vRim;\nvarying vec3 vGP;\nuniform vec3 uTrimC;")
+      .replace("#include <color_fragment>", `#include <color_fragment>
+        float aa = max(fwidth(vRim), 1e-3);
+        float border = 1. - smoothstep(.45, .45 + aa, vRim);         // thin contrast binding along the edge
+        float dash = step(.45, fract(dot(vGP, vec3(1., .8, .6)) * 260.));
+        float stitch = (1. - smoothstep(.12, .12 + aa, abs(vRim - 1.6))) * dash;  // a row of stitches just inside
+        diffuseColor.rgb = mix(diffuseColor.rgb, uTrimC, max(border * .85, stitch * .6));`);
+  };
+  mat.customProgramCacheKey = () => key;
+  return mat;
+}
 function shortsMaterial(base, panel) {
   const m = new THREE.MeshPhysicalMaterial({ color: "#ffffff", roughness: .62, sheen: .6, sheenRoughness: .45,
     sheenColor: new THREE.Color("#4a4a52"), side: THREE.DoubleSide });
-  const u = { uBase: { value: new THREE.Color(base) }, uPanel: { value: new THREE.Color(panel) } };
+  const u = { uBase: { value: new THREE.Color(base) }, uPanel: { value: new THREE.Color(panel) },
+              uGold: { value: new THREE.Color("#D9A93E") } };
   m.onBeforeCompile = (sh) => {
     Object.assign(sh.uniforms, u);
     sh.vertexShader = sh.vertexShader
       .replace("#include <common>", "#include <common>\nattribute vec3 kit;\nattribute vec2 kit2;\nvarying vec3 vKit;\nvarying vec2 vKit2;")
       .replace("#include <begin_vertex>", "#include <begin_vertex>\nvKit = kit;\nvKit2 = kit2;");
     sh.fragmentShader = sh.fragmentShader
-      .replace("#include <common>", "#include <common>\nvarying vec3 vKit; varying vec2 vKit2;\nuniform vec3 uBase, uPanel;")
+      .replace("#include <common>", "#include <common>\nvarying vec3 vKit; varying vec2 vKit2;\nuniform vec3 uBase, uPanel, uGold;")
       .replace("#include <color_fragment>", `#include <color_fragment>
-        float ax = vKit2.x, t = vKit2.y, fz = vKit.z;
+        float ax = vKit2.x, t = vKit2.y, fz = vKit.z, hd = vKit.y;
+        // anti-aliased band helpers: crisp edges at any zoom
+        #define AA(v) max(fwidth(v), 1e-5)
         // curved boundary: a narrow stripe on the outer hip that sweeps wider across the front of the hem
         float edge = mix(.135, .192, pow(t, .6)) - .025 * max(fz, 0.) * (1. - t);
-        float panel = smoothstep(edge - .003, edge + .003, ax) * step(-.2, fz);   // outer side and front, not the seat
-        diffuseColor.rgb = mix(uBase, uPanel, panel);`);
+        float back = smoothstep(-.24, -.16, fz);                    // panel on the outer side and front, not the seat
+        float de = ax - edge;
+        float panel = smoothstep(-AA(de), AA(de), de) * back;
+        // tone-on-tone chevrons sublimated into the base fabric
+        float chev = fract(t * 9. + abs(fz) * 1.6);
+        float chevL = smoothstep(.0, .06, chev) * (1. - smoothstep(.42, .48, chev));
+        vec3 base = uBase * mix(.9, 1.07, chevL);
+        vec3 col = mix(base, uPanel, panel);
+        // gold piping along the panel edge
+        float pipe = 1. - smoothstep(.0028, .0028 + AA(de), abs(de));
+        col = mix(col, uGold, pipe * back);
+        // hem band in the panel colour, with a gold line above it
+        float band = 1. - smoothstep(.022, .022 + AA(hd), hd);
+        float bandLine = (1. - smoothstep(.0025, .0025 + AA(hd), abs(hd - .028)));
+        col = mix(col, uPanel, band);
+        col = mix(col, uGold, bandLine);
+        diffuseColor.rgb = col;
+        float goldAmt = max(pipe * back, bandLine);`)
+      .replace("#include <roughnessmap_fragment>", `#include <roughnessmap_fragment>
+        roughnessFactor = mix(roughnessFactor, .3, goldAmt);         // satin-gold trim catches the light`);
   };
   m.customProgramCacheKey = () => "shorts-fight";   // colours are uniforms, so both corners share one program
   return m;
 }
-function waistbandMaterial() {                   // plain black waistband
-  return new THREE.MeshPhysicalMaterial({ color: "#0f0f11", roughness: .5, sheen: .5, sheenColor: new THREE.Color("#4a4a52"),
+function waistbandMaterial() {                   // black waistband with a gold stripe round the middle
+  const m = new THREE.MeshPhysicalMaterial({ color: "#0f0f11", roughness: .5, sheen: .5, sheenColor: new THREE.Color("#4a4a52"),
     side: THREE.DoubleSide });
+  m.onBeforeCompile = (sh) => {
+    sh.uniforms.uGold = { value: new THREE.Color("#D9A93E") };
+    sh.vertexShader = sh.vertexShader
+      .replace("#include <common>", "#include <common>\nvarying float vY;")
+      .replace("#include <begin_vertex>", "#include <begin_vertex>\nvY = position.y;");
+    sh.fragmentShader = sh.fragmentShader
+      .replace("#include <common>", "#include <common>\nvarying float vY;\nuniform vec3 uGold;")
+      .replace("#include <color_fragment>", `#include <color_fragment>
+        float dy = abs(vY - .222);                                   // waistband centre on fighter.glb (m)
+        float stripe = 1. - smoothstep(.0035, .0035 + max(fwidth(vY), 1e-5), dy);
+        diffuseColor.rgb = mix(diffuseColor.rgb, uGold, stripe);`);
+  };
+  m.customProgramCacheKey = () => "waistband-gold";
+  return m;
 }
 function piped(mat, trim = "#e9e7e2") {          // white piping along a wrist-strap edge
   mat.onBeforeCompile = (sh) => {
@@ -849,15 +923,15 @@ class Fighter {
       // red corner wears red shorts, the other corner white; both with a black outer panel
       kit: corner === COL.a ? shortsMaterial("#B3121A", "#121214") : shortsMaterial("#e6e5e1", "#121214"),
       // non-dominant hand: white 4 oz MMA glove leather
-      pad: new THREE.MeshPhysicalMaterial({ color: "#e8e6e1", roughness: .38, clearcoat: .6, clearcoatRoughness: .3,
-        sheen: .3, sheenColor: new THREE.Color("#ffffff"), side: THREE.DoubleSide }),
+      pad: gloveTrim(new THREE.MeshPhysicalMaterial({ color: "#e8e6e1", roughness: .38, clearcoat: .6, clearcoatRoughness: .3,
+        sheen: .3, sheenColor: new THREE.Color("#ffffff"), side: THREE.DoubleSide }), "#2a2a2e", "glove-white"),
       patch: new THREE.MeshStandardMaterial({ color: "#0d0d0f", roughness: .5, side: THREE.DoubleSide }),   // cuff label
       band: waistbandMaterial(),
       gold: new THREE.MeshStandardMaterial({ color: COL.rule, roughness: .35, emissive: COL.rule,
         emissiveIntensity: .6, side: THREE.DoubleSide }),
       // dominant side: gold leather glove on the dominant hand (black on the other), and a gold ring on
       // the canvas under the dominant foot
-      padDom: goldLeather(.3),
+      padDom: gloveTrim(goldLeather(.3), "#111113", "glove-gold"),
       palmDom: goldLeather(.42),
       strapDom: goldLeather(.36),
       ring: new THREE.MeshBasicMaterial({ color: "#D4961C", transparent: true, opacity: .85, depthWrite: false,
