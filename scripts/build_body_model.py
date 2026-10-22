@@ -68,11 +68,17 @@ MACRO = "targets/macrodetails/"
 verts0, quads = load_obj(fetch("3dobjs/base.obj"))
 N = len(verts0)
 T = lambda name: load_target(fetch(MACRO + name + ".target"), N)
+TG = lambda name: load_target(fetch("targets/" + name + ".target"), N)
 
 shape = (verts0
          + 0.5 * T("caucasian-male-young") + 0.5 * T("african-male-young")
          + 1.0 * T("proportions/male-young-averagemuscle-averageweight-idealproportions")
-         + 0.85 * T("universal-male-young-maxmuscle-averageweight"))
+         + 0.85 * T("universal-male-young-maxmuscle-averageweight")
+         # fighter's legs: fuller quads and calves, slimmer knees and ankles (the base legs are tube-like)
+         + 0.6 * TG("measure/measure-thigh-circ-incr") + 0.7 * TG("measure/measure-calf-circ-incr")
+         + 0.5 * TG("measure/measure-knee-circ-decr") + 0.5 * TG("measure/measure-ankle-circ-decr")
+         + 0.7 * (TG("armslegs/l-upperleg-muscle-incr") + TG("armslegs/r-upperleg-muscle-incr"))
+         + 0.7 * (TG("armslegs/l-lowerleg-muscle-incr") + TG("armslegs/r-lowerleg-muscle-incr")))
 morphs = {
     "heavy": T("universal-male-young-maxmuscle-maxweight") - T("universal-male-young-maxmuscle-averageweight"),
     "lean": T("universal-male-young-maxmuscle-minweight") - T("universal-male-young-maxmuscle-averageweight"),

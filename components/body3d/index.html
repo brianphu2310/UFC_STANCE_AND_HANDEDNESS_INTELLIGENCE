@@ -533,7 +533,7 @@ function solve(p, mode, o = {}) {
   } else {
     const breathe = REDUCE ? 0 : Math.sin(t * TAU * .25) * .002 * H;
     drop = .004 * H + breathe; yaw = 0; lean = .02;
-    feet[LEFT] = [V(.07 * H, 0, .01 * H), .14]; feet[RIGHT] = [V(-.07 * H, 0, .01 * H), -.14];
+    feet[LEFT] = [V(.056 * H, 0, .01 * H), .14]; feet[RIGHT] = [V(-.056 * H, 0, .01 * H), -.14];   // feet under the hips
   }
   // footwork: the moving foot leads, the other follows; feet stay planted while the body travels
   const lift = {};
@@ -826,6 +826,24 @@ class Fighter {
       const cur = Y1.clone().applyQuaternion(inh);
       return new THREE.Quaternion().setFromUnitVectors(cur, dir.clone().normalize()).multiply(inh);
     };
+    // legs: aim the bone down the limb AND turn it so the kneecap faces where the knee bends
+    // (a shortest-arc aim leaves the twist free, which rolls the thigh and caves the knee in)
+    const aimLeg = (n, dir, kneeFwd) => {
+      const y = dir.clone().normalize(), z = kneeFwd.clone().addScaledVector(y, -kneeFwd.dot(y)).normalize();
+      const Bt = new THREE.Matrix4().makeBasis(y.clone().cross(z), y, z);
+      // in the bone's own frame the limb runs along +y; its rest-pose "front" is world +z
+      const yl = Y1.clone(), zl = ZAX.clone().applyQuaternion(M.restWorld[n].clone().invert());
+      zl.addScaledVector(yl, -zl.dot(yl)).normalize();
+      const Bl = new THREE.Matrix4().makeBasis(yl.clone().cross(zl), yl, zl);
+      return new THREE.Quaternion().setFromRotationMatrix(Bt.multiply(Bl.transpose()));
+    };
+    const kneeFwd = {};
+    for (const sd of [LEFT, RIGHT]) {
+      const h = J.hip[sd], kn = J.knee[sd], an = J.ankle[sd], axis = an.clone().sub(h).normalize();
+      const perp = kn.clone().sub(h); perp.addScaledVector(axis, -perp.dot(axis));
+      const toe = ZAX.clone().applyQuaternion(J.footQ[sd]);   // straight leg: the kneecap follows the foot
+      kneeFwd[sd] = perp.add(toe.multiplyScalar(.02));
+    }
     const hipMid = J.hip[LEFT].clone().add(J.hip[RIGHT]).multiplyScalar(.5);
     const neck1 = J.Q.clone().slerp(J.QH, .35), neck2 = J.Q.clone().slerp(J.QH, .7);
     const wristT = {};
@@ -848,8 +866,8 @@ class Fighter {
       else if (n === "neck01") w = neck1.clone().multiply(M.restWorld[n]);
       else if (n === "neck02" || n === "neck03") w = neck2.clone().multiply(M.restWorld[n]);
       else if (n === "head") w = J.QH.clone().multiply(M.restWorld[n]);
-      else if (base === "upperleg01") w = aimTo(inh, J.knee[sd].clone().sub(J.hip[sd]));
-      else if (base === "lowerleg01") w = aimTo(inh, J.ankle[sd].clone().sub(J.knee[sd]));
+      else if (base === "upperleg01") w = aimLeg(n, J.knee[sd].clone().sub(J.hip[sd]), kneeFwd[sd]);
+      else if (base === "lowerleg01") w = aimLeg(n, J.ankle[sd].clone().sub(J.knee[sd]), kneeFwd[sd]);
       else if (base === "foot") w = J.footQ[sd].clone().multiply(M.restWorld[n]);
       else if (base === "upperarm01") w = aimTo(inh, J.elbow[sd].clone().sub(J.sh[sd]));
       else if (base === "lowerarm01") w = aimTo(inh, J.wrist[sd].clone().sub(J.elbow[sd]));
@@ -1317,6 +1335,7 @@ function frame(dtFixed) {
 }
 if (CAPTURE) {
   window.__step = (dt, steps = 1) => { for (let q = 0; q < steps; q++) frame(dt); return time; };
+  window.__cam = (pos, tgt) => { camTween = null; camera.position.set(...pos); controls.target.set(...tgt); controls.update(); };
   window.__plan = () => PLAN && PLAN.ev.map(e => ({ kind: e.kind, m: e.m, who: e.who, t0: e.t0, dur: e.dur, combo: e.combo }));
   window.__set = (o) => {
     if (o.strike) setStrike(o.strike === "combo" ? "spar" : o.strike);
