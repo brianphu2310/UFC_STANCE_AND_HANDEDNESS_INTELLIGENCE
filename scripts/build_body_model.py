@@ -227,7 +227,7 @@ def region(pred):
 
 hipY = (head["upperleg01.L"][1] + head["upperleg01.R"][1]) / 2
 kneeY = (head["lowerleg01.L"][1] + head["lowerleg01.R"][1]) / 2
-hemY = hipY - 0.5 * (hipY - kneeY)
+hemY = hipY - 0.8 * (hipY - kneeY)               # MMA fight shorts end just above the knee
 waistY = head["spine04"][1]
 crotchY = hipY - 0.35 * (hipY - kneeY)
 short_bones = {B[b] for b in ["root", "spine05", "pelvis.L", "pelvis.R", "upperleg01.L", "upperleg01.R",
@@ -235,7 +235,7 @@ short_bones = {B[b] for b in ["root", "spine05", "pelvis.L", "pelvis.R", "upperl
 
 shells = {}
 shells["shorts"] = (region(lambda i: dominant[i] in short_bones and hemY <= posed[i][1] <= waistY),
-                    lambda i: 0.13 + 0.28 * np.clip((crotchY - posed[i][1]) / (crotchY - hemY), 0, 1) ** 1.5)
+                    lambda i: 0.14 + 0.36 * np.clip((crotchY - posed[i][1]) / (crotchY - hemY), 0, 1) ** 1.2)
 shells["waist"] = (region(lambda i: dominant[i] in short_bones and waistY - 0.55 <= posed[i][1] <= waistY + 0.05),
                    lambda i: 0.2)
 # --- 4oz MMA gloves: padded knuckle shell, thin leather palm, open fingers, wide wrist strap
@@ -278,9 +278,10 @@ for s in "LR":
     dors = -pn
     kproj = float(np.dot(knuckle - w_, f_dir))
     proj = {i: float(np.dot(posed[i] - w_, f_dir)) for i in used}
-    near = [i for i in used if dominant[i] in (B[f"lowerarm02.{s}"], B[f"wrist.{s}"])
+    near = [i for i in used if dominant[i] in (B[f"lowerarm01.{s}"], B[f"lowerarm02.{s}"], B[f"wrist.{s}"])
             and np.linalg.norm(posed[i] - w_) < 1.6]
     STRAP_END = 0.22                                     # dm past the wrist joint where the strap stops
+    STRAP_START = -0.75                                  # ~7.5 cm hook-and-loop cuff up the forearm
     covered, strap = [], []
     for i in near:
         o = orig_dom[i]                                  # e.g. "finger3-2.L": finger 3, segment 2
@@ -288,7 +289,7 @@ for s in "LR":
             continue                                     # middle and tip of the fingers stay bare
         if o.startswith("finger1-3"):
             continue                                     # thumb tip bare
-        if -0.62 <= proj[i] <= STRAP_END + 0.06:
+        if STRAP_START <= proj[i] <= STRAP_END + 0.06:
             strap.append(i)
         if proj[i] >= STRAP_END - 0.06 and (dominant[i] == B[f"wrist.{s}"] or proj[i] > 0.05):
             covered.append(i)
@@ -311,9 +312,9 @@ for s in "LR":
     thick = {}
     for i in pad:
         u = np.clip((proj[i] / kproj - 0.15) / 0.75, 0, 1)
-        base = 0.12 + 0.16 * (u * u * (3 - 2 * u))      # ~1.2 cm by the wrist -> 2.8 cm over the knuckles
+        base = 0.14 + 0.19 * (u * u * (3 - 2 * u))      # ~1.4 cm by the wrist -> 3.3 cm over the knuckles
         if orig_dom[i].startswith("finger"):
-            base = 0.27
+            base = 0.31
         thick[i] = base * (0.5, 0.78, 0.92, 1.0)[min(rp[i], 3)]
     thick = smooth(thick, pad, 3)
     # finger tubes: a groove wherever the pad passes from one finger to the next
@@ -332,12 +333,12 @@ for s in "LR":
     glove_parts[f"glove.{s}"] = (pad, thick, None, 2)
     glove_parts[f"glovePalm.{s}"] = (leather, lth, None, 0)
     rs = rings(strap)
-    st_off = {i: 0.15 * (0.6 if rs[i] == 0 else 1.0) for i in strap}
+    st_off = {i: 0.17 * (0.6 if rs[i] == 0 else 1.0) for i in strap}
     glove_parts[f"strap.{s}"] = (strap, st_off, None, 2)
     # label patch on the back of the strap (corner colour, gold on the dominant hand)
     across_ = np.cross(f_dir, pn)
     patch = [i for i in strap if np.dot(NRM[i], dors) > 0.35 and abs(np.dot(posed[i] - w_, across_)) < 0.33
-             and -0.5 <= proj[i] <= 0.08 and rs[i] >= 1]
+             and -0.7 <= proj[i] <= 0.08 and rs[i] >= 1]
     glove_parts[f"strapPatch.{s}"] = (patch, {i: st_off[i] + 0.022 for i in patch}, None, 2)
     ank = head[f"foot.{s}"]
     shells[f"ankle.{s}"] = (region(lambda i, s=s, ank=ank: dominant[i] in (B[f"lowerleg02.{s}"], B[f"foot.{s}"])
@@ -345,7 +346,15 @@ for s in "LR":
                             lambda i: 0.09)
 
 
-def submesh(vidx, offset=None, face_ok=None, relax=0):
+def follow(b, only):
+    """Nearest ancestor of bone index b that is in `only`."""
+    name = order[b]
+    while bidx[name] not in only and kparent[name]:
+        name = kparent[name]
+    return bidx[name]
+
+
+def submesh(vidx, offset=None, face_ok=None, relax=0, only=None):
     vidx = np.asarray(vidx, dtype=int)
     remap = -np.ones(N, dtype=int)
     remap[vidx] = np.arange(len(vidx))
@@ -370,7 +379,12 @@ def submesh(vidx, offset=None, face_ok=None, relax=0):
     J = np.zeros((len(vidx), 4), dtype=np.uint16)
     W = np.zeros((len(vidx), 4), dtype=np.float32)
     for r, i in enumerate(vidx):
-        for c, (b, w) in enumerate(merged[i]):
+        bw = merged[i]
+        if only is not None:                    # loose cloth: drop weights from bones it should not follow
+            kept_ = [(b, w) for b, w in bw if b in only] or [(follow(bw[0][0], only), 1.0)]
+            tot = sum(w for _, w in kept_)
+            bw = [(b, w / tot) for b, w in kept_]
+        for c, (b, w) in enumerate(bw):
             J[r, c], W[r, c] = b, w
     mt = {k: (v[vidx] * S).astype(np.float32) for k, v in morphs.items()}
     return dict(P=(P * S).astype(np.float32), N=normals(P, t).astype(np.float32), J=J, W=W,
@@ -379,7 +393,7 @@ def submesh(vidx, offset=None, face_ok=None, relax=0):
 
 meshes = {"body": submesh(used)}
 for name, (vidx, off) in shells.items():
-    meshes[name] = submesh(vidx, off)
+    meshes[name] = submesh(vidx, off, only=short_bones if name in ("shorts", "waist") else None)
     print(f"{name:12s} {len(vidx):6d} verts")
 for name, (vidx, off, ok, rl) in glove_parts.items():
     meshes[name] = submesh(vidx, off, ok, rl)

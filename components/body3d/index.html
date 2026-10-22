@@ -104,7 +104,7 @@ const send = (type, data = {}) =>
 let frameHeight = 520;
 
 const COL = { a: "#F04A3E", b: "#A7ADB8", rule: "#E9B44C", skin: "#404047", ink: "#F2F0ED", hit: "#FF6A4D" };
-const KIT = { "#F04A3E": "#C8291C", "#A7ADB8": "#B4B9C2" };   // fight-kit fabric per corner
+const KIT = { "#F04A3E": "#D20A0A", "#A7ADB8": "#1F4FD1" };   // fight-kit panels: UFC red and blue corners
 const REDUCE = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const V = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
 const UP = V(0, 1, 0), ZAX = V(0, 0, 1);
@@ -279,9 +279,105 @@ function buildModel(gltf) {
     hand[s] = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(b0.clone().cross(f0), b0, f0));
   }
   const headInv = new THREE.Matrix4().copy(bone("head").matrixWorld).invert();
+  fightKit(root);
   return { scene: root, Hm, floor: y0, order, parentOf, restLocal, restWorld, restPos, hand,
            restRoot: wp("root"), restHip: hip,
            eyeLocal: ["L", "R"].map(s => V(...ext.eyes[s]).applyMatrix4(headInv)) };
+}
+
+// ------------------------------------------------------------------ fight kit
+// UFC-style kit drawn from per-vertex data computed once from the bind pose (the mesh has no UVs):
+// black fight shorts with corner-colour side panels, hem band, white piping and a side slit;
+// wrist straps with white piping along their edges.
+function openEdges(g) {
+  const ix = g.index.array, count = new Map(), nb = new Map();
+  const key = (a, b) => a < b ? a * 1e6 + b : b * 1e6 + a;
+  for (let i = 0; i < ix.length; i += 3)
+    for (const [a, b] of [[ix[i], ix[i + 1]], [ix[i + 1], ix[i + 2]], [ix[i + 2], ix[i]]])
+      count.set(key(a, b), (count.get(key(a, b)) || 0) + 1);
+  for (const [k, c] of count) {
+    if (c !== 1) continue;
+    const a = Math.floor(k / 1e6), b = k % 1e6;
+    if (!nb.has(a)) nb.set(a, []);
+    if (!nb.has(b)) nb.set(b, []);
+    nb.get(a).push(b); nb.get(b).push(a);
+  }
+  return nb;                                            // boundary vertex -> boundary neighbours
+}
+function fightKit(root) {
+  const shorts = root.getObjectByName("shorts");
+  if (shorts && shorts.geometry.index) {
+    const g = shorts.geometry, P = g.attributes.position, Nr = g.attributes.normal, n = P.count;
+    let y0 = Infinity, y1 = -Infinity;
+    for (let i = 0; i < n; i++) { y0 = Math.min(y0, P.getY(i)); y1 = Math.max(y1, P.getY(i)); }
+    const hem = [...openEdges(g)].filter(([v]) => P.getY(v) < (y0 + y1) / 2);
+    // straighten the ragged hem: pull each leg's hem loop toward a clean, level line
+    const hemY = {};
+    for (const sgn of [1, -1]) {
+      const loop = hem.filter(([v]) => Math.sign(P.getX(v)) === sgn);
+      if (!loop.length) continue;
+      const mean = loop.reduce((s, [v]) => s + P.getY(v), 0) / loop.length;
+      for (let it = 0; it < 8; it++) {
+        const ny = loop.map(([v, nbs]) => .5 * P.getY(v) + .5 * nbs.reduce((s, w) => s + P.getY(w), 0) / nbs.length);
+        loop.forEach(([v], j) => P.setY(v, THREE.MathUtils.lerp(ny[j], mean, .25)));
+      }
+      hemY[sgn] = mean;
+    }
+    P.needsUpdate = true;
+    const kit = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) {
+      const sgn = Math.sign(P.getX(i)) || 1;
+      kit[i * 3] = Nr.getX(i) * sgn;                    // 1 on the outer seam of each leg
+      kit[i * 3 + 1] = P.getY(i) - (hemY[sgn] ?? y0);   // metres above the hem
+      kit[i * 3 + 2] = Nr.getZ(i);                      // front (+) / back (-) across the seam
+    }
+    g.setAttribute("kit", new THREE.BufferAttribute(kit, 3));
+  }
+  for (const name of ["strapL", "strapR"]) {
+    const m = root.getObjectByName(name);
+    if (!m || !m.geometry.index) continue;
+    const edge = new Float32Array(m.geometry.attributes.position.count);
+    for (const [v] of openEdges(m.geometry)) edge[v] = 1;
+    m.geometry.setAttribute("edge", new THREE.BufferAttribute(edge, 1));
+  }
+}
+function shortsMaterial(corner) {
+  const m = new THREE.MeshPhysicalMaterial({ color: "#ffffff", roughness: .7, sheen: .6, sheenRoughness: .5,
+    sheenColor: new THREE.Color("#3a3a40"), side: THREE.DoubleSide });
+  const u = { uBase: { value: new THREE.Color("#131316") }, uCorner: { value: new THREE.Color(corner) },
+              uTrim: { value: new THREE.Color("#e9e7e2") } };
+  m.userData.kit = u;
+  m.onBeforeCompile = (sh) => {
+    Object.assign(sh.uniforms, u);
+    sh.vertexShader = sh.vertexShader
+      .replace("#include <common>", "#include <common>\nattribute vec3 kit;\nvarying vec3 vKit;")
+      .replace("#include <begin_vertex>", "#include <begin_vertex>\nvKit = kit;");
+    sh.fragmentShader = sh.fragmentShader
+      .replace("#include <common>", "#include <common>\nvarying vec3 vKit;\nuniform vec3 uBase, uCorner, uTrim;")
+      .replace("#include <color_fragment>", `#include <color_fragment>
+        float outer = vKit.x, hd = vKit.y, fz = vKit.z;
+        if (outer > .55 && hd < .075 * (1. - abs(fz) / .2)) discard;       // side slit on the outer seam
+        float edge = mix(.5, .78, clamp(hd / .28, 0., 1.));                // panel flares out toward the hem
+        float panel = step(edge, outer), pipe = step(edge - .07, outer) * (1. - panel);
+        float band = step(hd, .028), bandPipe = step(hd, .036) * (1. - band);
+        vec3 col = mix(uBase, uCorner, max(panel, band));
+        col = mix(col, uTrim, max(pipe, bandPipe) * (1. - band));
+        diffuseColor.rgb = col;`);
+  };
+  return m;
+}
+function piped(mat, trim = "#e9e7e2") {          // white piping along a wrist-strap edge
+  mat.onBeforeCompile = (sh) => {
+    sh.uniforms.uTrim = { value: new THREE.Color(trim) };
+    sh.vertexShader = sh.vertexShader
+      .replace("#include <common>", "#include <common>\nattribute float edge;\nvarying float vEdge;")
+      .replace("#include <begin_vertex>", "#include <begin_vertex>\nvEdge = edge;");
+    sh.fragmentShader = sh.fragmentShader
+      .replace("#include <common>", "#include <common>\nvarying float vEdge;\nuniform vec3 uTrim;")
+      .replace("#include <color_fragment>", "#include <color_fragment>\ndiffuseColor.rgb = mix(diffuseColor.rgb, uTrim, step(.6, vEdge));");
+  };
+  mat.customProgramCacheKey = () => "piped";
+  return mat;
 }
 
 // ------------------------------------------------------------------ fighter
@@ -319,8 +415,9 @@ function ik(a, target, l1, l2, pole) {
 
 // Pose solver: joint positions in the fighter's local frame (faces +z, +x = own left).
 // Strike amounts 0..1: ej jab, ec cross, eh lead hook, eu rear uppercut, ek rear body kick,
-// elk rear leg kick, et lead teep. Defence: slip (-1..1 sideways), cover, check, roll.
-// Targets (local): jabT, crossT, hookT, upperT, ribs, thigh, belly. o.step: footwork in progress.
+// elk rear calf kick, et lead teep, sh double-leg shot. Defence: slip (-1..1 sideways), cover, check,
+// roll, sprawl.
+// Targets (local): jabT, crossT, hookT, upperT, hipsT, ribs, calf, belly. o.step: footwork in progress.
 function solve(p, mode, o = {}) {
   const d = dims(p), H = d.H, s = p.lead;
   const t = o.t || 0;
@@ -328,35 +425,54 @@ function solve(p, mode, o = {}) {
   const A = k => (guard ? clamp(o[k] || 0, 0, 1) : 0);
   const ej = A("ej"), ec = A("ec"), eh = A("eh"), eu = A("eu"), ek = A("ek"), elk = A("elk"), et = A("et");
   const cover = A("cover"), check = A("check"), rl = A("roll");
+  const shot = A("sh"), spr = A("sprawl");              // wrestling: double-leg shot and the sprawl against it
+  const mat = Math.max(shot, spr);
   const slip = guard ? clamp(o.slip || 0, -1, 1) : 0;
   const kickAmt = Math.max(ek, elk);
-  const busy = Math.min(1, ej + ec + eh + eu + ek + elk + et + cover + check + rl + Math.abs(slip));
+  const busy = Math.min(1, ej + ec + eh + eu + ek + elk + et + cover + check + rl + Math.abs(slip) + shot + spr);
   const J = { d, footQ: {} };
   const wl = (1 + s) / 2, S = 2 * wl - 1;            // +1 orthodox, -1 southpaw (continuous)
   const rearX = -S;                                    // x sign of the rear side
   const leadSide = S >= 0 ? LEFT : RIGHT, rearSide = -leadSide;
   const live = REDUCE ? 0 : 1, calm = (1 - busy) * live;
   const TAU = Math.PI * 2;
-  let drop, yaw, lean, roll = 0;
+  let drop, yaw, lean, roll = 0, pump = 0;
   const shift = V();
   const feet = {};
   if (fight) {
-    const bounce = Math.sin(t * TAU * 1.55) * .009 * H * calm;           // light bounce on the balls of the feet
+    const bounce = Math.sin(t * TAU * 1.75) * .013 * H * calm;           // MMA bounce on the balls of the feet
     const rock = Math.sin(t * TAU * .5) * .014 * H * calm;               // weight rocks front to back
     const sway = Math.sin(t * TAU * .37 + 1) * .011 * H * calm;          // head and hips drift off the centre line
     const dip = Math.sin(Math.PI * eu);                                   // uppercut: sink, then drive up
     const bob = Math.sin(Math.PI * rl);
-    drop = .058 * H + bounce + .012 * H * ej + .024 * H * ec + .02 * H * eh + .05 * H * dip * (1 - eu * .5)
+    // feints every few seconds while nothing else is happening: a shoulder-and-hand pump,
+    // every other one a level change that sells the takedown
+    const fph = (t * .31) % 1, fe = fph < .14 ? Math.sin(Math.PI * fph / .14) * calm : 0;
+    const levelFeint = Math.floor(t * .31) % 2 === 1;
+    pump = levelFeint ? 0 : fe;
+    drop = .064 * H + bounce + (levelFeint ? .075 : .025) * H * fe + .16 * H * shot + .2 * H * spr + .012 * H * ej + .024 * H * ec + .02 * H * eh + .05 * H * dip * (1 - eu * .5)
          - .03 * H * ek - .015 * H * elk - .02 * H * et + .035 * H * cover + .09 * H * bob
          + .025 * H * Math.abs(slip);
     yaw = -S * (.52 + .2 * ej) + S * .9 * ec + S * 1.3 * ek + S * 1.05 * elk - S * .55 * eh + S * .55 * eu
         + .05 * Math.sin(t * TAU * .3) * calm;
-    lean = .11 + .06 * ej + .1 * ec + .06 * eh - .03 * eu - .34 * ek - .2 * elk - .3 * et + .14 * cover + .3 * bob;
+    lean = .13 + .06 * ej + .1 * ec + .06 * eh - .03 * eu - .34 * ek - .2 * elk - .3 * et + .14 * cover + .3 * bob
+         + (levelFeint ? .22 : .1) * fe + .5 * shot + .8 * spr;
+    yaw *= 1 - .85 * mat;                                 // square up to shoot or sprawl
     roll = -S * .28 * ek - S * .16 * elk + slip * .3 + bob * .2 * (o.rollDir || 1);
     shift.set(S * .02 * H * ek + slip * .075 * H + sway + bob * .05 * H * (o.rollDir || 1), 0,
-              .035 * H * ec + .1 * H * ek + .05 * H * elk + .02 * H * eh + rock - .04 * H * et);
-    feet[LEFT] = [V(.062 * H, 0, .17 * H).lerp(V(.088 * H, 0, -.15 * H), 1 - wl), -.2 * wl + .8 * (1 - wl)];
-    feet[RIGHT] = [V(-.088 * H, 0, -.15 * H).lerp(V(-.062 * H, 0, .17 * H), 1 - wl), -.8 * wl + .2 * (1 - wl)];
+              .035 * H * ec + .1 * H * ek + .05 * H * elk + .02 * H * eh + rock - .04 * H * et
+              + .2 * H * shot - .22 * H * spr);
+    // MMA stance: slightly lower than a kickboxer's, weight centred to defend takedowns
+    feet[LEFT] = [V(.066 * H, 0, .175 * H).lerp(V(.09 * H, 0, -.155 * H), 1 - wl), -.2 * wl + .8 * (1 - wl)];
+    feet[RIGHT] = [V(-.09 * H, 0, -.155 * H).lerp(V(-.066 * H, 0, .175 * H), 1 - wl), -.8 * wl + .2 * (1 - wl)];
+    if (shot > 0) {                                       // penetration step: lead foot drives deep between the legs
+      feet[leadSide][0].z += .2 * H * shot;
+      feet[rearSide][0].z -= .06 * H * shot;
+    }
+    if (spr > 0) for (const sd of [LEFT, RIGHT]) {        // sprawl: both legs shoot back and wide, hips to the mat
+      feet[sd][0].z = THREE.MathUtils.lerp(feet[sd][0].z, -.52 * H, spr);
+      feet[sd][0].x *= 1 + .7 * spr;
+    }
     feet[rearSide][1] += S * .6 * ec + S * .4 * eu;   // rear heel turns out on the cross and uppercut
     feet[leadSide][1] += S * 1.35 * ek + S * 1.1 * elk - S * .5 * eh;   // lead foot turns to plant kicks, pivots on the hook
     if (down) { drop = .21 * H; yaw = -S * .25; lean = .58; roll = 0; shift.set(0, 0, -.05 * H); }
@@ -408,7 +524,7 @@ function solve(p, mode, o = {}) {
     let footAim = null;
     if (kicking) {
       const low = elk > ek, hip = J.hip[side];
-      const tgt = (low ? o.thigh : o.ribs) || hip.clone().add(V(-rearX * .06 * H, low ? -.16 * H : .16 * H, .45 * H));
+      const tgt = (low ? o.calf : o.ribs) || hip.clone().add(V(-rearX * .06 * H, low ? -.3 * H : .16 * H, .45 * H));
       const dir = tgt.clone().sub(hip); const dist = dir.length(); dir.normalize();
       const hit = hip.clone().addScaledVector(dir, Math.min(legLen * .9995, dist - d.foot));
       const chamber = hip.clone().add(low ? V(rearX * .2 * H, -.22 * H, .08 * H) : V(rearX * .22 * H, -.05 * H, .12 * H));
@@ -452,7 +568,7 @@ function solve(p, mode, o = {}) {
     let wrist, pole;
     if (fight) {
       const wLead = clamp((1 + side * s) / 2, 0, 1), isLead = wLead > .5;
-      const leadT = chin.clone().add(V(side * .028 * H, .012 * H, .17 * H));
+      const leadT = chin.clone().add(V(side * .036 * H, -.006 * H, .21 * H + .06 * H * pump));   // long MMA lead hand
       const rearT = chin.clone().add(V(side * .056 * H, -.004 * H, .05 * H));
       wrist = rearT.lerp(leadT, wLead);
       if (isLead)                                       // the lead hand paws and measures
@@ -492,6 +608,16 @@ function solve(p, mode, o = {}) {
         else wrist.lerp(chin.clone().add(V(side * .04 * H, .012 * H, .07 * H)), kickAmt * .7);
       }
       if (et > 0) wrist.lerp(chin.clone().add(V(side * .06 * H, -.02 * H, .1 * H)), et * .5);
+      if (shot > 0) {                                   // both hands reach for the hips behind the knees
+        const tgt = (o.hipsT ? o.hipsT.clone() : J.crotch.clone().add(V(0, .05 * H, .42 * H))).add(V(side * .13 * H, -.02 * H, -.03 * H));
+        const dir = tgt.clone().sub(sh); const dist = dir.length(); dir.normalize();
+        wrist.lerp(sh.clone().addScaledVector(dir, Math.min((d.upper + d.fore) * .97, dist)), shot);
+        pole.lerp(V(side * .8, -.4, -.2), shot);
+      }
+      if (spr > 0) {                                    // sprawl: palms drive down on the opponent's back and head
+        wrist.lerp(J.crotch.clone().add(V(side * .14 * H, .06 * H, .36 * H)), spr);
+        pole.lerp(V(side * .9, .2, -.3), spr);
+      }
       if (down && isLead) { wrist = V(side * .17 * H, .07 * H, .2 * H); pole = V(side * .6, .2, -1); }   // posts a glove on the mat
     } else if (mode === "stand") {
       wrist = sh.clone().add(V(side * .045 * H, -(d.upper + d.fore) * .965, .03 * H));
@@ -533,10 +659,9 @@ class Fighter {
     this.mats = {
       skin: new THREE.MeshPhysicalMaterial({ color: COL.skin, roughness: .46, metalness: 0, sheen: .5,
         sheenRoughness: .45, sheenColor: new THREE.Color("#ff6a55"), clearcoat: .25, clearcoatRoughness: .5 }),
-      kit: new THREE.MeshStandardMaterial({ color: kit, roughness: .62, emissive: kit, emissiveIntensity: .05,
-        side: THREE.DoubleSide }),
+      kit: shortsMaterial(kit),
       pad: new THREE.MeshPhysicalMaterial({ color: "#121214", roughness: .34, clearcoat: .7, clearcoatRoughness: .28,
-        sheen: .4, sheenColor: new THREE.Color("#8a8a92"), side: THREE.DoubleSide }),     // black fight-glove leather
+        sheen: .4, sheenColor: new THREE.Color("#8a8a92"), side: THREE.DoubleSide }),     // black 4 oz MMA glove leather
       patch: new THREE.MeshStandardMaterial({ color: kit, roughness: .5, emissive: kit, emissiveIntensity: .08,
         side: THREE.DoubleSide }),
       band: new THREE.MeshStandardMaterial({ color: "#121214", roughness: .55, side: THREE.DoubleSide }),
@@ -545,6 +670,8 @@ class Fighter {
       eye: new THREE.MeshStandardMaterial({ color: "#0b0b0c", roughness: .15 }),
       leather: new THREE.MeshPhysicalMaterial({ color: "#141416", roughness: .42, clearcoat: .35,
         clearcoatRoughness: .4, side: THREE.DoubleSide }),
+      strap: piped(new THREE.MeshPhysicalMaterial({ color: "#141416", roughness: .42, clearcoat: .35,
+        clearcoatRoughness: .4, side: THREE.DoubleSide })),
     };
     this.meshes = [];
     this.rig = null;
@@ -563,7 +690,7 @@ class Fighter {
     const rig = SkeletonUtils.clone(MODEL.scene);
     const pick = { body: "skin", shorts: "kit", waist: "band", gloveL: "pad", gloveR: "pad",
                    glovePalmL: "leather", glovePalmR: "leather",
-                   strapL: "leather", strapR: "leather", strapPatchL: "patch", strapPatchR: "patch",
+                   strapL: "strap", strapR: "strap", strapPatchL: "patch", strapPatchR: "patch",
                    ankleL: "gold", ankleR: "gold" };
     this.parts = {};
     rig.traverse(o => {
@@ -818,15 +945,17 @@ const MOVES = {
   eh:  { dur: .6,  a: .4,  b: .5,  name: "Hook" },
   eu:  { dur: .58, a: .44, b: .54, name: "Uppercut" },
   ek:  { dur: 1.0, a: .36, b: .52, name: "Body kick" },
-  elk: { dur: .84, a: .4,  b: .55, name: "Leg kick" },
+  elk: { dur: .84, a: .4,  b: .55, name: "Calf kick" },
+  sh:  { dur: 1.15, a: .36, b: .62, name: "Double-leg" },
   et:  { dur: .84, a: .4,  b: .56, name: "Teep" },
   slip:  { dur: .5,  a: .3, b: .55 },
   cover: { dur: .62, a: .2, b: .72 },
   check: { dur: .72, a: .3, b: .66 },
   roll:  { dur: .64, a: .5, b: .5 },
+  sprawl: { dur: 1.2, a: .3, b: .64 },
 };
 const STRIKES = { ej: "Jab", ec: "Cross", ek: "Kick" };
-const STRIKE_KEYS = ["ej", "ec", "eh", "eu", "ek", "elk", "et"];
+const STRIKE_KEYS = ["ej", "ec", "eh", "eu", "ek", "elk", "et", "sh"];
 function envelope(m, u) {
   if (u <= 0 || u >= 1) return 0;
   if (u < m.a) return easeOut(u / m.a);
@@ -837,14 +966,16 @@ function envelope(m, u) {
 const COMBOS = [
   { name: "1-2", seq: [["ej", 0], ["ec", .3]], react: ["", "slip"] },
   { name: "1-2-3", seq: [["ej", 0], ["ec", .3], ["eh", .66]], react: ["cover", "", "roll"] },
-  { name: "1-2, leg kick", seq: [["ej", 0], ["ec", .3], ["elk", .7]], react: ["slip", "cover", "check"] },
+  { name: "1-2, calf kick", seq: [["ej", 0], ["ec", .3], ["elk", .7]], react: ["slip", "cover", "check"] },
+  { name: "Jab, double-leg", seq: [["ej", 0], ["sh", .3]], react: ["slip", "sprawl"] },
   { name: "Jab, body cross, hook", seq: [["ej", 0], ["ec", .34, "body"], ["eh", .76]], react: ["", "", "cover"] },
   { name: "Double jab, cross", seq: [["ej", 0], ["ej", .27], ["ec", .56]], react: ["", "slip", ""] },
   { name: "1-6-3", seq: [["ej", 0], ["eu", .32], ["eh", .72]], react: ["cover", "", "cover"] },
+  { name: "Jab, calf kick", seq: [["ej", 0], ["elk", .32]], react: ["cover", ""] },
   { name: "Teep", seq: [["et", 0]], react: [""] },
   { name: "1-2, body kick", seq: [["ej", 0], ["ec", .3], ["ek", .72]], react: ["slip", "cover", ""], ko: true },
 ];
-const TARGET_OF = { ej: "head", ec: "head", eh: "hook", eu: "chin", ek: "ribs", elk: "thigh", et: "belly" };
+const TARGET_OF = { ej: "head", ec: "head", eh: "hook", eu: "chin", ek: "ribs", elk: "calf", et: "belly", sh: "hips" };
 let strikeSel = "spar";
 let PLAN = null;
 function buildPlan(sel, n) {
@@ -862,7 +993,7 @@ function buildPlan(sel, n) {
   COMBOS.forEach((C, x) => {
     if (n > 1) { ev.push({ kind: "circle", t0: t, dur: .95, ang: .34 * dir }); t += 1.1; dir = -dir; }
     else t += .5;
-    const close = C.seq.some(([m]) => m === "eh" || m === "eu");
+    const close = C.seq.some(([m]) => m === "eh" || m === "eu" || m === "sh");
     ev.push({ kind: "step", who: att, t0: t, dur: .34, dir: 1, depth: close ? .22 : .1 }); t += .3;
     let end = t;
     C.seq.forEach(([m, off, body], j) => {
@@ -890,7 +1021,7 @@ function stage(t, fo, n) {
   let theta = 0;
   const sAx = [n > 1 ? -rN / 2 : 0, rN / 2];
   const steps = [null, null];
-  const out = [0, 1].map(() => ({ amt: {}, tgt: {}, def: { slip: 0, cover: 0, check: 0, roll: 0, rollDir: 1 }, events: [] }));
+  const out = [0, 1].map(() => ({ amt: {}, tgt: {}, def: { slip: 0, cover: 0, check: 0, roll: 0, sprawl: 0, rollDir: 1 }, events: [] }));
   for (const e of P.ev) {
     if (e.t0 > tt) break;
     const u = (tt - e.t0) / e.dur;
@@ -1005,12 +1136,14 @@ function targetsFor(F, O, OJ) {
   const belly = toLocal(F, w(OJ.crotch.clone().add(V(0, .1 * H, .075 * H).applyQuaternion(oQ))));
   const ol = leadOf(O.p);
   const thigh = toLocal(F, w(OJ.hip[ol].clone().lerp(OJ.knee[ol], .55).add(V(ol * .05 * H, 0, 0))));
+  const calf = toLocal(F, w(OJ.knee[ol].clone().lerp(OJ.ankle[ol], .38).add(V(ol * .04 * H, 0, 0))));
+  const hips = toLocal(F, w(OJ.crotch.clone().add(V(0, .02 * H, 0))));
   const leadX = leadOf(F.p);
   return { head: face, hook: face.clone().add(V(leadX * .05 * H, 0, -.02 * H)), chin: face.clone().add(V(0, -.05 * H, 0)),
-           ribs: ribs.add(V(-leadX * .045 * H, 0, 0)), belly, thigh };
+           ribs: ribs.add(V(-leadX * .045 * H, 0, 0)), belly, thigh, calf, hips };
 }
-const DEF_VS = { slip: ["ej", "ec"], roll: ["eh"], cover: ["ej", "ec", "eh", "eu"], check: ["elk"] };
-const DEF_WORD = { slip: "slipped", roll: "rolled under", cover: "blocked", check: "checked" };
+const DEF_VS = { slip: ["ej", "ec"], roll: ["eh"], cover: ["ej", "ec", "eh", "eu"], check: ["elk"], sprawl: ["sh"] };
+const DEF_WORD = { slip: "slipped", roll: "rolled under", cover: "blocked", check: "checked", sprawl: "stuffed" };
 
 function frame(dtFixed) {
   const dt = typeof dtFixed === "number" ? dtFixed : Math.min(clock.getDelta(), .1);
@@ -1053,7 +1186,8 @@ function frame(dtFixed) {
     const aim = key => tg ? tg[so.tgt[key] || TARGET_OF[key]] : null;
     const opts = { t: time + i * .37, step: F.stepOpt, recoil: F.recoil, flinch: F.flinch,
                    jabT: aim("ej"), crossT: aim("ec"), hookT: aim("eh"), upperT: aim("eu"),
-                   ribs: tg && tg.ribs, thigh: tg && tg.thigh, belly: tg && tg.belly,
+                   ribs: tg && tg.ribs, thigh: tg && tg.thigh, calf: tg && tg.calf, belly: tg && tg.belly,
+                   hipsT: aim("sh"), sprawl: so.def.sprawl * faceW,
                    slip: so.def.slip * faceW, cover: so.def.cover * faceW, check: so.def.check * faceW,
                    roll: so.def.roll * faceW, rollDir: so.def.rollDir };
     for (const key of STRIKE_KEYS) opts[key] = (so.amt[key] || 0) * faceW;
@@ -1080,7 +1214,8 @@ function frame(dtFixed) {
       const sd = (m === "ej" || m === "eh" || m === "et") ? lead : -lead;
       const origin = leg ? F.J.hip[sd] : F.J.sh[sd];
       const R = { ej: d.upper + d.fore + d.hand, ec: d.upper + d.fore + d.hand, eh: bent * 1.02 + d.hand,
-                  eu: bent * .98 + d.hand, ek: legL + d.foot, elk: legL + d.foot, et: legL + d.foot * .5 }[m];
+                  eu: bent * .98 + d.hand, ek: legL + d.foot, elk: legL + d.foot, et: legL + d.foot * .5,
+                  sh: d.upper + d.fore + d.hand + .4 * F.p.H }[m];     // the shot travels: arms plus the penetration step
       const gap = Math.max(0, origin.distanceTo(tgt) - R);
       const tip = leg ? F.J.ankle[sd].clone() : F.J.wrist[sd].clone().addScaledVector(F.J.fdir[sd], d.hand);
       const od = st.out[1 - i].def;
@@ -1127,6 +1262,7 @@ function frame(dtFixed) {
 }
 if (CAPTURE) {
   window.__step = (dt, steps = 1) => { for (let q = 0; q < steps; q++) frame(dt); return time; };
+  window.__plan = () => PLAN && PLAN.ev.map(e => ({ kind: e.kind, m: e.m, who: e.who, t0: e.t0, dur: e.dur, combo: e.combo }));
   window.__set = (o) => {
     if (o.strike) setStrike(o.strike === "combo" ? "spar" : o.strike);
     if (o.mode) setMode(o.mode);
