@@ -89,7 +89,7 @@
     <button class="tool on" id="bSpin" aria-pressed="true">Rotate</button>
     <button class="tool" id="bReset">Reset</button>
     <span class="spacer"></span>
-    <span class="key"><i></i>Gold glove and the gold ring under the foot mark the dominant hand and foot</span>
+    <span class="key"><i></i>Gold glove and gold ring: dominant hand and foot</span>
   </div>
 </div>
 <script type="module">
@@ -509,10 +509,10 @@ function goldLeather(rough) {
 }
 // MMA fight shorts: black, with a white panel down the outside of each thigh that sweeps wider toward
 // the hem (white piping-free, like a stock fight short). No logos.
-function shortsMaterial() {
+function shortsMaterial(base, panel) {
   const m = new THREE.MeshPhysicalMaterial({ color: "#ffffff", roughness: .62, sheen: .6, sheenRoughness: .45,
     sheenColor: new THREE.Color("#4a4a52"), side: THREE.DoubleSide });
-  const u = { uBase: { value: new THREE.Color("#121214") }, uPanel: { value: new THREE.Color("#e4e3df") } };
+  const u = { uBase: { value: new THREE.Color(base) }, uPanel: { value: new THREE.Color(panel) } };
   m.onBeforeCompile = (sh) => {
     Object.assign(sh.uniforms, u);
     sh.vertexShader = sh.vertexShader
@@ -527,7 +527,7 @@ function shortsMaterial() {
         float panel = smoothstep(edge - .003, edge + .003, ax) * step(-.2, fz);   // outer side and front, not the seat
         diffuseColor.rgb = mix(uBase, uPanel, panel);`);
   };
-  m.customProgramCacheKey = () => "shorts-fight";
+  m.customProgramCacheKey = () => "shorts-fight";   // colours are uniforms, so both corners share one program
   return m;
 }
 function waistbandMaterial() {                   // plain black waistband
@@ -846,9 +846,11 @@ class Fighter {
     this.mats = {
       skin: muscled(new THREE.MeshPhysicalMaterial({ color: COL.skin, roughness: .46, metalness: 0, sheen: .5,
         sheenRoughness: .45, sheenColor: new THREE.Color("#ff6a55"), clearcoat: .25, clearcoatRoughness: .5 })),
-      kit: shortsMaterial(),
-      pad: new THREE.MeshPhysicalMaterial({ color: "#121214", roughness: .34, clearcoat: .7, clearcoatRoughness: .28,
-        sheen: .4, sheenColor: new THREE.Color("#8a8a92"), side: THREE.DoubleSide }),     // black 4 oz MMA glove leather
+      // red corner wears red shorts, the other corner white; both with a black outer panel
+      kit: corner === COL.a ? shortsMaterial("#B3121A", "#121214") : shortsMaterial("#e6e5e1", "#121214"),
+      // non-dominant hand: white 4 oz MMA glove leather
+      pad: new THREE.MeshPhysicalMaterial({ color: "#e8e6e1", roughness: .38, clearcoat: .6, clearcoatRoughness: .3,
+        sheen: .3, sheenColor: new THREE.Color("#ffffff"), side: THREE.DoubleSide }),
       patch: new THREE.MeshStandardMaterial({ color: "#0d0d0f", roughness: .5, side: THREE.DoubleSide }),   // cuff label
       band: waistbandMaterial(),
       gold: new THREE.MeshStandardMaterial({ color: COL.rule, roughness: .35, emissive: COL.rule,
@@ -861,10 +863,10 @@ class Fighter {
       ring: new THREE.MeshBasicMaterial({ color: "#D4961C", transparent: true, opacity: .85, depthWrite: false,
         side: THREE.DoubleSide }),
       eye: new THREE.MeshStandardMaterial({ color: "#0b0b0c", roughness: .15 }),
-      leather: new THREE.MeshPhysicalMaterial({ color: "#141416", roughness: .42, clearcoat: .35,
+      leather: new THREE.MeshPhysicalMaterial({ color: "#dedcd6", roughness: .45, clearcoat: .3,
         clearcoatRoughness: .4, side: THREE.DoubleSide }),
-      strap: piped(new THREE.MeshPhysicalMaterial({ color: "#141416", roughness: .42, clearcoat: .35,
-        clearcoatRoughness: .4, side: THREE.DoubleSide })),
+      strap: piped(new THREE.MeshPhysicalMaterial({ color: "#e2e0db", roughness: .42, clearcoat: .35,
+        clearcoatRoughness: .4, side: THREE.DoubleSide }), "#1a1a1c"),
     };
     this.meshes = [];
     this.rig = null;
