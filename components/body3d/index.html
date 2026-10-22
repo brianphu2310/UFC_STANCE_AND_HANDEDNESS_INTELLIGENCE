@@ -88,6 +88,7 @@
     <button class="tool on" id="bPlay" aria-pressed="true">Pause</button>
     <button class="tool on" id="bSpin" aria-pressed="true">Rotate</button>
     <button class="tool" id="bReset">Reset</button>
+    <button class="tool" id="bNeon" aria-pressed="false">Neon</button>
     <span class="spacer"></span>
     <span class="key"><i></i>Gold glove and gold ring: dominant hand and foot</span>
   </div>
@@ -511,6 +512,9 @@ function muscleShading(root) {
 // Carved torso detail on the bind-pose surface (metres, model space; measured on fighter.glb):
 // six-pack with the centre line and three cross grooves, outer ab edges, the chest's lower edge and
 // centre groove, and the V-lines toward the hips. Drawn as a bump, so the silhouette is unchanged.
+const NEON_T = { value: 0 };
+const NEON_SKIN = new THREE.Color("#1A0B33");                     // shared clock for the neon pulse
+let NEON_MODE = false;
 const ABS_GLSL = `
 varying vec3 vObj;
 float gr(float d, float w) { return exp(-(d * d) / (w * w)); }
@@ -533,12 +537,17 @@ float torsoH(vec3 p) {
   return h;
 }`;
 function muscled(mat) {                          // skin material that reads the "ao" attribute
+  // neon look (the Neon button): rim glow, glowing muscle lines and a violet emissive skin
+  mat.userData.neon = { value: 0 };
+  mat.userData.neonCol = { value: new THREE.Color("#B37BFF") };
   mat.onBeforeCompile = (sh) => {
+    sh.uniforms.uNeon = mat.userData.neon;
+    sh.uniforms.uNeonCol = mat.userData.neonCol;
     sh.vertexShader = sh.vertexShader
       .replace("#include <common>", "#include <common>\nattribute float ao;\nvarying float vAO;\nvarying vec3 vObj;")
       .replace("#include <begin_vertex>", "#include <begin_vertex>\nvAO = ao;\nvObj = position;");
     sh.fragmentShader = sh.fragmentShader
-      .replace("#include <common>", "#include <common>\nvarying float vAO;\n" + ABS_GLSL)
+      .replace("#include <common>", "#include <common>\nvarying float vAO;\nuniform float uNeon, uNeonT;\nuniform vec3 uNeonCol;\n" + ABS_GLSL)
       .replace("#include <normal_fragment_maps>", `#include <normal_fragment_maps>
         float th = torsoH(vObj) * .0045;
         vec3 sx = dFdx(-vViewPosition), sy = dFdy(-vViewPosition);
@@ -548,7 +557,16 @@ function muscled(mat) {                          // skin material that reads the
         normal = mix(normal, bumped, step(1e-9, abs(det)));
         float carve = 1. + .3 * torsoH(vObj);                       // a little shadow in each groove`)
       // the dummy's dark skin is lit mostly by its sheen and clearcoat, so darken the final light
-      .replace("#include <opaque_fragment>", "outgoingLight *= mix(1., vAO, .85) * clamp(carve, .6, 1.);\n#include <opaque_fragment>");
+      .replace("#include <opaque_fragment>", `outgoingLight *= mix(1., vAO, .85) * clamp(carve, .6, 1.);
+        if (uNeon > 0.) {
+          float fres = pow(1. - clamp(abs(dot(normal, normalize(vViewPosition))), 0., 1.), 3.);
+          float lines = smoothstep(.5, .95, -torsoH(vObj)) + .45 * smoothstep(.3, .75, 1. - vAO);
+          float pulse = .8 + .2 * sin(vObj.y * 14. - uNeonT * 2.2);       // light running up the body
+          vec3 glow = uNeonCol * (1.6 * fres + .9 * lines * pulse);
+          outgoingLight = mix(outgoingLight, outgoingLight * .35 + glow, uNeon);
+        }
+        #include <opaque_fragment>`);
+    sh.uniforms.uNeonT = NEON_T;
   };
   mat.customProgramCacheKey = () => "muscled";
   return mat;
@@ -1141,6 +1159,10 @@ class Fighter {
     }
     this.parts.ankleL.visible = this.foot === LEFT;
     this.parts.ankleR.visible = this.foot === RIGHT;
+    // Neon button: violet glowing skin (eases in and out)
+    const nu = this.mats.skin.userData.neon;
+    nu.value += ((NEON_MODE ? 1 : 0) - nu.value) * .12;
+    this.mats.skin.color.set(COL.skin).lerp(NEON_SKIN, nu.value);
     // glow: a slow breathing pulse, flaring when that hand or foot throws
     const pulse = REDUCE ? .5 : .5 + .5 * Math.sin(time * 3.2);
     const hb = this.domHand || 0, fb = this.domFoot || 0;
@@ -1567,6 +1589,7 @@ function frame(dtFixed) {
   const k = ease(modeT);
   const n = fighters.length;
   fighters.forEach(F => F.step(dt));
+  NEON_T.value += dt;
   if (!PLAN || PLAN.n !== n || PLAN.sel !== strikeSel) { PLAN = buildPlan(strikeSel, n); PLAN.n = n; PLAN.sel = strikeSel; }
 
   const fo = n ? faceoff() : null;
@@ -1726,6 +1749,7 @@ if (CAPTURE) {
     if (o.time !== undefined) time = o.time;
     if (o.figures) window.postMessage({ type: "streamlit:render",
       args: { height: window.innerHeight, figures: o.figures } }, "*");
+    if (o.neon !== undefined) { NEON_MODE = o.neon; for (const F of fighters) if (F.mats) F.mats.skin.userData.neon.value = o.neon ? 1 : 0; }
     if (o.clearFlashes) { for (const f of flashes) scene.remove(f.m); flashes.length = 0; }
   };
 } else {
@@ -1898,6 +1922,8 @@ bPlay.onclick = () => { paused = !paused; if (paused) controls.autoRotate = fals
 syncPlay();
 bSpin.onclick = () => { controls.autoRotate = !controls.autoRotate; syncSpin(); };
 document.getElementById("bReset").onclick = () => flyTo(mode);
+const bNeon = document.getElementById("bNeon");
+bNeon.onclick = () => { NEON_MODE = !NEON_MODE; bNeon.classList.toggle("on", NEON_MODE); bNeon.setAttribute("aria-pressed", String(NEON_MODE)); };
 controls.addEventListener("start", () => { camTween = null; });
 
 function resize() {
