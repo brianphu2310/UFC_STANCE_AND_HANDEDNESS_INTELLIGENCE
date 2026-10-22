@@ -492,7 +492,7 @@ function solve(p, mode, o = {}) {
   const TAU = Math.PI * 2;
   let drop, yaw, lean, roll = 0, pump = 0;
   const shift = V();
-  const feet = {};
+  const feet = {}, baseYaw = {}, heel = {};
   if (fight) {
     const bounce = Math.sin(t * TAU * 1.75) * .013 * H * calm;           // MMA bounce on the balls of the feet
     const rock = Math.sin(t * TAU * .5) * .014 * H * calm;               // weight rocks front to back
@@ -527,13 +527,23 @@ function solve(p, mode, o = {}) {
       feet[sd][0].z = THREE.MathUtils.lerp(feet[sd][0].z, -.52 * H, spr);
       feet[sd][0].x *= 1 + .7 * spr;
     }
+    for (const sd of [LEFT, RIGHT]) baseYaw[sd] = feet[sd][1];
+    heel[rearSide] = .15 * (1 - mat) * (1 - kickAmt);     // rear heel up: weight on the ball of the back foot
     feet[rearSide][1] += S * .6 * ec + S * .4 * eu;   // rear heel turns out on the cross and uppercut
     feet[leadSide][1] += S * 1.35 * ek + S * 1.1 * elk - S * .5 * eh;   // lead foot turns to plant kicks, pivots on the hook
     if (down) { drop = .21 * H; yaw = -S * .25; lean = .58; roll = 0; shift.set(0, 0, -.05 * H); }
   } else {
     const breathe = REDUCE ? 0 : Math.sin(t * TAU * .25) * .002 * H;
-    drop = .004 * H + breathe; yaw = 0; lean = .02;
-    feet[LEFT] = [V(.056 * H, 0, .01 * H), .14]; feet[RIGHT] = [V(-.056 * H, 0, .01 * H), -.14];   // feet under the hips
+    drop = .01 * H + breathe; yaw = 0; lean = .02;
+    // relaxed athletic stance: lead foot a half step ahead and toes forward, rear foot turned out,
+    // feet about shoulder width, knees soft; the upper body stays square for the measurement
+    if (mode === "stand") {
+      feet[leadSide] = [V(-rearX * .058 * H, 0, .065 * H), -rearX * .08];
+      feet[rearSide] = [V(rearX * .07 * H, 0, -.065 * H), rearX * .5];
+    } else {
+      feet[LEFT] = [V(.056 * H, 0, .01 * H), .14]; feet[RIGHT] = [V(-.056 * H, 0, .01 * H), -.14];
+    }
+    for (const sd of [LEFT, RIGHT]) baseYaw[sd] = feet[sd][1];
   }
   // footwork: the moving foot leads, the other follows; feet stay planted while the body travels
   const lift = {};
@@ -566,10 +576,16 @@ function solve(p, mode, o = {}) {
   const legLen = d.thigh + d.shin;
   const bez = (p0, p1, p2, u) => p0.clone().multiplyScalar((1 - u) * (1 - u)).addScaledVector(p1, 2 * u * (1 - u)).addScaledVector(p2, u * u);
   for (const side of [LEFT, RIGHT]) {
-    const [f, fy] = feet[side];
-    let ankle = V(f.x, ANAT.ankle * H + (lift[side] || 0), f.z);
-    let pole = V(Math.sin(fy), 0, Math.cos(fy)).add(V(side * .15, 0, 0));
-    const fq = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, fy, 0));
+    const [f0, fy] = feet[side];
+    // pivots turn the foot on its ball, not its ankle, so the toes stay put on the canvas;
+    // a raised heel rotates about the same point, so the ball never leaves or sinks into the floor
+    const BALL = .085 * H, toeDir = a => V(Math.sin(a), 0, Math.cos(a));
+    const pitch = down ? 0 : heel[side] || 0;
+    const ball = f0.clone().addScaledVector(toeDir(baseYaw[side] ?? fy), BALL);
+    const f = ball.clone().addScaledVector(toeDir(fy), -BALL * Math.cos(pitch));
+    let ankle = V(f.x, ANAT.ankle * H + BALL * Math.sin(pitch) + (lift[side] || 0), f.z);
+    let pole = toeDir(fy).add(V(side * .04, 0, 0));      // knee tracks over the toes
+    const fq = new THREE.Quaternion().setFromEuler(new THREE.Euler(pitch, fy, 0, "YXZ"));
     const kicking = kickAmt > 0 && side === rearSide, teeping = et > 0 && side === leadSide;
     if (down && side === rearSide) {                  // rear knee drops to the canvas
       ankle = V(rearX * .1 * H, .05 * H, -.27 * H);
