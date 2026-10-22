@@ -245,8 +245,8 @@ def crotch_front(i):
 
 shells = {}
 shells["shorts"] = (region(lambda i: dominant[i] in short_bones and hemY <= posed[i][1] <= waistY),
-                    lambda i: 0.04 + 0.16 * crotch_front(i))
-                    # compression fit ~4 mm off the skin; the front of the crotch stands off up to ~2 cm
+                    lambda i: 0.03 + 0.11 * crotch_front(i))
+                    # compression fit ~3 mm off the skin; the front of the crotch stands off up to ~1.4 cm
                     # so the fabric bridges smoothly between the thighs like real fight shorts
 shells["waist"] = (region(lambda i: dominant[i] in short_bones and waistY - 0.4 <= posed[i][1] <= waistY + 0.05),
                    lambda i: 0.1)
