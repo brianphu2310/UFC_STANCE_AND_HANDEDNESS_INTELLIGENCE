@@ -72,7 +72,7 @@ T = lambda name: load_target(fetch(MACRO + name + ".target"), N)
 shape = (verts0
          + 0.5 * T("caucasian-male-young") + 0.5 * T("african-male-young")
          + 1.0 * T("proportions/male-young-averagemuscle-averageweight-idealproportions")
-         + 0.85 * T("universal-male-young-maxmuscle-averageweight"))
+         + 1.0 * T("universal-male-young-maxmuscle-averageweight"))
 morphs = {
     "heavy": T("universal-male-young-maxmuscle-maxweight") - T("universal-male-young-maxmuscle-averageweight"),
     "lean": T("universal-male-young-maxmuscle-minweight") - T("universal-male-young-maxmuscle-averageweight"),
@@ -227,7 +227,7 @@ def region(pred):
 
 hipY = (head["upperleg01.L"][1] + head["upperleg01.R"][1]) / 2
 kneeY = (head["lowerleg01.L"][1] + head["lowerleg01.R"][1]) / 2
-hemY = hipY - 0.5 * (hipY - kneeY)               # tight vale-tudo fight shorts end mid-thigh
+hemY = hipY - 0.78 * (hipY - kneeY)              # vale-tudo compression shorts end just above the knee
 waistY = head["spine04"][1]
 crotchY = hipY - 0.35 * (hipY - kneeY)
 short_bones = {B[b] for b in ["root", "spine05", "pelvis.L", "pelvis.R", "upperleg01.L", "upperleg01.R",

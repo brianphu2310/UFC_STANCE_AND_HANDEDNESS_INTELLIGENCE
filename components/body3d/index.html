@@ -89,7 +89,7 @@
     <button class="tool on" id="bSpin" aria-pressed="true">Rotate</button>
     <button class="tool" id="bReset">Reset</button>
     <span class="spacer"></span>
-    <span class="key"><i></i>Gold strap patch and ankle band mark the dominant hand and foot</span>
+    <span class="key"><i></i>Gold glove and the gold ring under the foot mark the dominant hand and foot</span>
   </div>
 </div>
 <script type="module">
@@ -104,7 +104,6 @@ const send = (type, data = {}) =>
 let frameHeight = 520;
 
 const COL = { a: "#F04A3E", b: "#A7ADB8", rule: "#E9B44C", skin: "#404047", ink: "#F2F0ED", hit: "#FF6A4D" };
-const KIT = { "#F04A3E": "#D20A0A", "#A7ADB8": "#1F4FD1" };   // fight-kit panels: UFC red and blue corners
 const REDUCE = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const V = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
 const UP = V(0, 1, 0), ZAX = V(0, 0, 1);
@@ -335,6 +334,7 @@ function buildModel(gltf) {
   }
   const headInv = new THREE.Matrix4().copy(bone("head").matrixWorld).invert();
   fightKit(root);
+  muscleShading(root);
   return { scene: root, Hm, floor: y0, order, parentOf, restLocal, restWorld, restPos, hand,
            restRoot: wp("root"), restHip: hip,
            eyeLocal: ["L", "R"].map(s => V(...ext.eyes[s]).applyMatrix4(headInv)) };
@@ -387,6 +387,13 @@ function fightKit(root) {
       kit[i * 3 + 2] = Nr.getZ(i);                      // front (+) / back (-) across the seam
     }
     g.setAttribute("kit", new THREE.BufferAttribute(kit, 3));
+    const kit2 = new Float32Array(n * 2);                // distance out from the midline, height hem -> waist (0..1)
+    for (let i = 0; i < n; i++) {
+      const h0 = hemY[Math.sign(P.getX(i)) || 1] ?? y0;
+      kit2[i * 2] = Math.abs(P.getX(i));
+      kit2[i * 2 + 1] = clamp((P.getY(i) - h0) / (y1 - h0), 0, 1);
+    }
+    g.setAttribute("kit2", new THREE.BufferAttribute(kit2, 2));
   }
   for (const name of ["strapL", "strapR"]) {
     const m = root.getObjectByName(name);
@@ -396,28 +403,133 @@ function fightKit(root) {
     m.geometry.setAttribute("edge", new THREE.BufferAttribute(edge, 1));
   }
 }
-function shortsMaterial(corner) {
-  const m = new THREE.MeshPhysicalMaterial({ color: "#ffffff", roughness: .7, sheen: .6, sheenRoughness: .5,
-    sheenColor: new THREE.Color("#3a3a40"), side: THREE.DoubleSide });
-  const u = { uBase: { value: new THREE.Color("#131316") }, uCorner: { value: new THREE.Color(corner) },
-              uTrim: { value: new THREE.Color("#e9e7e2") } };
-  m.userData.kit = u;
+// Muscle definition without changing the body's shape: occlusion from surface curvature, so the
+// separations between muscles (pecs, abs, delts, quads, calves) sit in a little shadow.
+function muscleShading(root) {
+  const body = root.getObjectByName("body");
+  if (!body || !body.geometry.index) return;
+  const g = body.geometry, P = g.attributes.position, Nr = g.attributes.normal, n = P.count, ix = g.index.array;
+  const nb = Array.from({ length: n }, () => new Set());
+  for (let i = 0; i < ix.length; i += 3) {
+    const a = ix[i], b = ix[i + 1], c = ix[i + 2];
+    nb[a].add(b).add(c); nb[b].add(a).add(c); nb[c].add(a).add(b);
+  }
+  let cav = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    if (!nb[i].size) continue;
+    let ax = 0, ay = 0, az = 0, edge = 0;
+    const px = P.getX(i), py = P.getY(i), pz = P.getZ(i);
+    for (const j of nb[i]) {
+      const qx = P.getX(j), qy = P.getY(j), qz = P.getZ(j);
+      ax += qx; ay += qy; az += qz; edge += Math.hypot(qx - px, qy - py, qz - pz);
+    }
+    const k = 1 / nb[i].size;
+    cav[i] = ((ax * k - px) * Nr.getX(i) + (ay * k - py) * Nr.getY(i) + (az * k - pz) * Nr.getZ(i)) / (edge * k + 1e-6);
+  }
+  const blur = (a, it) => {
+    for (let r = 0; r < it; r++) {
+      const b = new Float32Array(n);
+      for (let i = 0; i < n; i++) { let t = a[i]; for (const j of nb[i]) t += a[j]; b[i] = t / (nb[i].size + 1); }
+      a = b;
+    }
+    return a;
+  };
+  const broad = blur(cav, 6);
+  // the body mesh is smooth, so judge each point against the body's typical curvature rather than
+  // its deepest creases: the gentle grooves between pecs, abs, delts and quads then read too
+  const sorted = Array.from(broad).sort((x, y) => x - y), q = f => sorted[Math.floor(sorted.length * f)];
+  const mid = q(.5), hi = q(.9);
+  const ao = new Float32Array(n);
+  for (let i = 0; i < n; i++) ao[i] = 1 - .7 * clamp((broad[i] - mid) / (hi - mid), 0, 1);
+  g.setAttribute("ao", new THREE.BufferAttribute(ao, 1));
+}
+function muscled(mat) {                          // skin material that reads the "ao" attribute
+  mat.onBeforeCompile = (sh) => {
+    sh.vertexShader = sh.vertexShader
+      .replace("#include <common>", "#include <common>\nattribute float ao;\nvarying float vAO;")
+      .replace("#include <begin_vertex>", "#include <begin_vertex>\nvAO = ao;");
+    sh.fragmentShader = sh.fragmentShader
+      .replace("#include <common>", "#include <common>\nvarying float vAO;")
+      // the dummy's dark skin is lit mostly by its sheen and clearcoat, so darken the final light
+      .replace("#include <opaque_fragment>", "outgoingLight *= mix(1., vAO, .85);\n#include <opaque_fragment>");
+  };
+  mat.customProgramCacheKey = () => "muscled";
+  return mat;
+}
+// Vale-tudo compression shorts in black and white: black base, a tone-on-tone grey wave print on the
+// outer panel, a white diagonal seam from the outer hip to the inner hem with white flecks beside it,
+// and a plain black inner panel. No logos.
+// gold leather for the dominant hand's glove, with its own small studio reflection so the metal reads
+let GOLD_ENV = null;
+function goldEnv() {
+  if (GOLD_ENV) return GOLD_ENV;
+  const env = new THREE.Scene();
+  env.add(new THREE.Mesh(new THREE.BoxGeometry(20, 12, 20), new THREE.MeshBasicMaterial({ color: "#1a1a1c", side: THREE.BackSide })));
+  for (const [w, h, c, k, pos] of [[6, 6, "#fff4e8", 5, [0, 5.8, 0]], [3, 4, "#ffffff", 2.2, [-8, 2.5, -4]], [4, 3, "#ffffff", 1.5, [9, 2, 3]]]) {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color: new THREE.Color(c).multiplyScalar(k), side: THREE.DoubleSide }));
+    m.position.set(...pos); m.lookAt(0, 1, 0); env.add(m);
+  }
+  const pm = new THREE.PMREMGenerator(renderer);
+  GOLD_ENV = pm.fromScene(env, .04).texture; pm.dispose();
+  return GOLD_ENV;
+}
+function goldLeather(rough) {
+  return new THREE.MeshPhysicalMaterial({ color: "#C99A3B", metalness: .75, roughness: rough, clearcoat: .6,
+    clearcoatRoughness: .25, envMap: goldEnv(), envMapIntensity: 1.1, emissive: "#E9B44C", emissiveIntensity: 0,
+    side: THREE.DoubleSide });
+}
+function shortsMaterial() {
+  const m = new THREE.MeshPhysicalMaterial({ color: "#ffffff", roughness: .55, sheen: .7, sheenRoughness: .4,
+    sheenColor: new THREE.Color("#4a4a52"), side: THREE.DoubleSide });
+  const u = { uBase: { value: new THREE.Color("#0f0f11") }, uPrint: { value: new THREE.Color("#2e2e33") },
+              uTrim: { value: new THREE.Color("#ecebe8") } };
   m.onBeforeCompile = (sh) => {
     Object.assign(sh.uniforms, u);
     sh.vertexShader = sh.vertexShader
-      .replace("#include <common>", "#include <common>\nattribute vec3 kit;\nvarying vec3 vKit;")
-      .replace("#include <begin_vertex>", "#include <begin_vertex>\nvKit = kit;");
+      .replace("#include <common>", "#include <common>\nattribute vec3 kit;\nattribute vec2 kit2;\nvarying vec3 vKit;\nvarying vec2 vKit2;\nvarying vec3 vPos;")
+      .replace("#include <begin_vertex>", "#include <begin_vertex>\nvKit = kit;\nvKit2 = kit2;\nvPos = position;");
     sh.fragmentShader = sh.fragmentShader
-      .replace("#include <common>", "#include <common>\nvarying vec3 vKit;\nuniform vec3 uBase, uCorner, uTrim;")
+      .replace("#include <common>", `#include <common>
+        varying vec3 vKit; varying vec2 vKit2; varying vec3 vPos;
+        uniform vec3 uBase, uPrint, uTrim;
+        float h21(vec2 p) { p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }`)
       .replace("#include <color_fragment>", `#include <color_fragment>
-        float outer = vKit.x, hd = vKit.y, fz = vKit.z;
-        float edge = mix(.42, .72, clamp(hd / .2, 0., 1.));                 // side panel widens toward the hem
-        float panel = step(edge, outer), pipe = step(edge - .07, outer) * (1. - panel);
-        float band = step(hd, .022), bandPipe = step(hd, .029) * (1. - band);
-        vec3 col = mix(uBase, uCorner, max(panel, band));
-        col = mix(col, uTrim, max(pipe, bandPipe) * (1. - band));
+        float ax = vKit2.x, t = vKit2.y, fz = vKit.z;
+        float lineX = mix(.075, .165, t);                          // diagonal seam: inner hem -> outer hip
+        float d = ax - lineX;                                      // > 0: outer side of the seam
+        vec3 col = uBase;
+        // wave print on the outer panel (front, side and back of the outer thigh)
+        float wave = sin(vPos.y * 260. + 2.2 * sin(ax * 90. + vPos.z * 60.));
+        float onPrint = step(0., d) * smoothstep(.2, .6, wave) * .85;
+        col = mix(col, uPrint, onPrint);
+        // white seam line and white flecks just outside it
+        float seam = 1. - smoothstep(.0022, .0042, abs(d));
+        vec2 cell = floor(vec2(vPos.y, ax + vPos.z * .5) * 520.);
+        float fleck = step(.86, h21(cell)) * step(0., d) * (1. - smoothstep(.006, .03, d));
+        col = mix(col, uTrim, max(seam, fleck * .9) * step(-.35, fz + .6));
         diffuseColor.rgb = col;`);
   };
+  m.customProgramCacheKey = () => "shorts-bw";
+  return m;
+}
+function waistbandMaterial() {                   // black waistband, white squares on the sides
+  const m = new THREE.MeshPhysicalMaterial({ color: "#0f0f11", roughness: .5, sheen: .5, sheenColor: new THREE.Color("#4a4a52"),
+    side: THREE.DoubleSide });
+  m.onBeforeCompile = (sh) => {
+    sh.uniforms.uTrim = { value: new THREE.Color("#ecebe8") };
+    sh.vertexShader = sh.vertexShader
+      .replace("#include <common>", "#include <common>\nvarying vec3 vPos;")
+      .replace("#include <begin_vertex>", "#include <begin_vertex>\nvPos = position;");
+    sh.fragmentShader = sh.fragmentShader
+      .replace("#include <common>", "#include <common>\nvarying vec3 vPos;\nuniform vec3 uTrim;")
+      .replace("#include <color_fragment>", `#include <color_fragment>
+        float ang = atan(vPos.x, vPos.z);                          // around the waist, 0 at the front
+        vec2 g = vec2(ang * 9., vPos.y * 110.);
+        float sq = step(abs(fract(g.x) - .5), .3) * step(abs(fract(g.y) - .5), .26);
+        float sides = step(.55, abs(ang)) * step(abs(ang), 2.6);   // plain panels front and back
+        diffuseColor.rgb = mix(diffuseColor.rgb, uTrim, sq * sides);`);
+  };
+  m.customProgramCacheKey = () => "waistband";
   return m;
 }
 function piped(mat, trim = "#e9e7e2") {          // white piping along a wrist-strap edge
@@ -504,7 +616,7 @@ function solve(p, mode, o = {}) {
     const fph = (t * .31) % 1, fe = fph < .14 ? Math.sin(Math.PI * fph / .14) * calm : 0;
     const levelFeint = Math.floor(t * .31) % 2 === 1;
     pump = levelFeint ? 0 : fe;
-    drop = .064 * H + bounce + (levelFeint ? .075 : .025) * H * fe + .16 * H * shot + .2 * H * spr + .012 * H * ej + .024 * H * ec + .02 * H * eh + .05 * H * dip * (1 - eu * .5)
+    drop = .038 * H + bounce + (levelFeint ? .075 : .025) * H * fe + .16 * H * shot + .2 * H * spr + .012 * H * ej + .024 * H * ec + .02 * H * eh + .05 * H * dip * (1 - eu * .5)
          - .03 * H * ek - .015 * H * elk - .02 * H * et + .035 * H * cover + .09 * H * bob
          + .025 * H * Math.abs(slip);
     yaw = -S * (.52 + .2 * ej) + S * .9 * ec + S * 1.3 * ek + S * 1.05 * elk - S * .55 * eh + S * .55 * eu
@@ -516,9 +628,9 @@ function solve(p, mode, o = {}) {
     shift.set(S * .02 * H * ek + slip * .075 * H + sway + bob * .05 * H * (o.rollDir || 1), 0,
               .035 * H * ec + .1 * H * ek + .05 * H * elk + .02 * H * eh + rock - .04 * H * et
               + .2 * H * shot - .22 * H * spr);
-    // MMA stance: slightly lower than a kickboxer's, weight centred to defend takedowns
-    feet[LEFT] = [V(.066 * H, 0, .175 * H).lerp(V(.09 * H, 0, -.155 * H), 1 - wl), -.2 * wl + .8 * (1 - wl)];
-    feet[RIGHT] = [V(-.09 * H, 0, -.155 * H).lerp(V(-.066 * H, 0, .175 * H), 1 - wl), -.8 * wl + .2 * (1 - wl)];
+    // MMA stance: about shoulder width, a natural step long, knees only softly bent
+    feet[LEFT] = [V(.062 * H, 0, .15 * H).lerp(V(.084 * H, 0, -.13 * H), 1 - wl), -.15 * wl + .7 * (1 - wl)];
+    feet[RIGHT] = [V(-.084 * H, 0, -.13 * H).lerp(V(-.062 * H, 0, .15 * H), 1 - wl), -.7 * wl + .15 * (1 - wl)];
     if (shot > 0) {                                       // penetration step: lead foot drives deep between the legs
       feet[leadSide][0].z += .2 * H * shot;
       feet[rearSide][0].z -= .06 * H * shot;
@@ -534,9 +646,12 @@ function solve(p, mode, o = {}) {
     if (down) { drop = .21 * H; yaw = -S * .25; lean = .58; roll = 0; shift.set(0, 0, -.05 * H); }
   } else {
     const breathe = REDUCE ? 0 : Math.sin(t * TAU * .25) * .002 * H;
-    drop = .004 * H + breathe; yaw = 0; lean = .02;
-    // standing straight: feet under the hips, toes turned out a little, legs straight
-    feet[LEFT] = [V(.056 * H, 0, .01 * H), .14]; feet[RIGHT] = [V(-.056 * H, 0, .01 * H), -.14];
+    yaw = 0; lean = .02;
+    // standing like a person: the hip joints are wide, so the thighs slope in to knees that nearly
+    // meet, the shins drop almost vertical to ankles a hand apart, and the toes turn out ~8 degrees.
+    // The hips sit a couple of millimetres low so the knee can move in off the hip-ankle line.
+    drop = .0022 * H + breathe;
+    feet[LEFT] = [V(.032 * H, 0, .012 * H), .14]; feet[RIGHT] = [V(-.032 * H, 0, .012 * H), -.14];
     for (const sd of [LEFT, RIGHT]) baseYaw[sd] = feet[sd][1];
   }
   // footwork: the moving foot leads, the other follows; feet stay planted while the body travels
@@ -609,6 +724,7 @@ function solve(p, mode, o = {}) {
       ankle.lerp(V(f.x * .9, .3 * H, f.z - .03 * H), check);
       pole = pole.lerp(V(side * .8, .2, 1), check);
     }
+    if (mode === "stand") pole = V(-side, 0, .3);      // standing: the knee sits in toward the midline, kneecap forward
     const { joint, end } = ik(J.hip[side], ankle, d.thigh, d.shin, pole);
     if (joint.y < .035 * H) joint.y = .035 * H;
     J.knee[side] = joint; J.ankle[side] = end;
@@ -668,8 +784,12 @@ function solve(p, mode, o = {}) {
         pole.lerp(V(side * .35, -1, -.2), Math.min(1, eu * 1.6));
       }
       if (kickAmt > 0) {
-        if (!isLead) wrist.lerp(sh.clone().add(V(side * .16 * H, -(d.upper + d.fore) * .75, -.22 * H)), kickAmt);
-        else wrist.lerp(chin.clone().add(V(side * .04 * H, .012 * H, .07 * H)), kickAmt * .7);
+        // the kicking-side arm drops beside the hip for balance, elbow soft (not flung out behind);
+        // the other glove stays on the chin
+        if (!isLead) {
+          wrist.lerp(sh.clone().add(V(side * .09 * H, -(d.upper + d.fore) * .82, -.04 * H)), kickAmt * .85);
+          pole.lerp(V(side * .3, 0, -1), kickAmt);
+        } else wrist.lerp(chin.clone().add(V(side * .04 * H, .012 * H, .07 * H)), kickAmt * .8);
       }
       if (et > 0) wrist.lerp(chin.clone().add(V(side * .06 * H, -.02 * H, .1 * H)), et * .5);
       if (shot > 0) {                                   // both hands reach for the hips behind the knees
@@ -719,18 +839,23 @@ class Fighter {
     this.group = new THREE.Group();
     scene.add(this.group);
     this.opacity = 1;
-    const kit = KIT[corner] || corner;
     this.mats = {
-      skin: new THREE.MeshPhysicalMaterial({ color: COL.skin, roughness: .46, metalness: 0, sheen: .5,
-        sheenRoughness: .45, sheenColor: new THREE.Color("#ff6a55"), clearcoat: .25, clearcoatRoughness: .5 }),
-      kit: shortsMaterial(kit),
+      skin: muscled(new THREE.MeshPhysicalMaterial({ color: COL.skin, roughness: .46, metalness: 0, sheen: .5,
+        sheenRoughness: .45, sheenColor: new THREE.Color("#ff6a55"), clearcoat: .25, clearcoatRoughness: .5 })),
+      kit: shortsMaterial(),
       pad: new THREE.MeshPhysicalMaterial({ color: "#121214", roughness: .34, clearcoat: .7, clearcoatRoughness: .28,
         sheen: .4, sheenColor: new THREE.Color("#8a8a92"), side: THREE.DoubleSide }),     // black 4 oz MMA glove leather
-      patch: new THREE.MeshStandardMaterial({ color: kit, roughness: .5, emissive: kit, emissiveIntensity: .08,
-        side: THREE.DoubleSide }),
-      band: new THREE.MeshStandardMaterial({ color: "#121214", roughness: .55, side: THREE.DoubleSide }),
+      patch: new THREE.MeshStandardMaterial({ color: "#0d0d0f", roughness: .5, side: THREE.DoubleSide }),   // cuff label
+      band: waistbandMaterial(),
       gold: new THREE.MeshStandardMaterial({ color: COL.rule, roughness: .35, emissive: COL.rule,
         emissiveIntensity: .6, side: THREE.DoubleSide }),
+      // dominant side: gold leather glove on the dominant hand (black on the other), and a gold ring on
+      // the canvas under the dominant foot
+      padDom: goldLeather(.3),
+      palmDom: goldLeather(.42),
+      strapDom: goldLeather(.36),
+      ring: new THREE.MeshBasicMaterial({ color: "#D4961C", transparent: true, opacity: .85, depthWrite: false,
+        side: THREE.DoubleSide }),
       eye: new THREE.MeshStandardMaterial({ color: "#0b0b0c", roughness: .15 }),
       leather: new THREE.MeshPhysicalMaterial({ color: "#141416", roughness: .42, clearcoat: .35,
         clearcoatRoughness: .4, side: THREE.DoubleSide }),
@@ -739,6 +864,10 @@ class Fighter {
     };
     this.meshes = [];
     this.rig = null;
+    this.footRing = new THREE.Mesh(new THREE.RingGeometry(.062, .078, 48), this.mats.ring);
+    this.footRing.rotation.x = -Math.PI / 2;
+    this.footRing.renderOrder = 3;
+    this.group.add(this.footRing);
     // floor range arc (face-off)
     this.arc = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshBasicMaterial({
       color: corner, transparent: true, opacity: .95, depthWrite: false, side: THREE.DoubleSide }));
@@ -789,6 +918,7 @@ class Fighter {
   setOpacity(o) {
     this.opacity = o;
     for (const mat of Object.values(this.mats)) {
+      if (mat === this.mats.ring) continue;          // the foot ring stays see-through; place() sets its opacity
       mat.transparent = o < .995;
       mat.opacity = o;
       mat.depthWrite = true;          // ghost shows only its outer surface
@@ -822,10 +952,24 @@ class Fighter {
       m.morphTargetInfluences[0] = heavy; m.morphTargetInfluences[1] = lean;
     }
     // dominant-side markers
-    this.parts.strapPatchL.material = this.hand === LEFT ? this.mats.gold : this.mats.patch;
-    this.parts.strapPatchR.material = this.hand === RIGHT ? this.mats.gold : this.mats.patch;
+    for (const [sfx, sd] of [["L", LEFT], ["R", RIGHT]]) {
+      const dom = this.hand === sd;
+      this.parts["glove" + sfx].material = dom ? this.mats.padDom : this.mats.pad;
+      this.parts["glovePalm" + sfx].material = dom ? this.mats.palmDom : this.mats.leather;
+      this.parts["strap" + sfx].material = dom ? this.mats.strapDom : this.mats.strap;
+      this.parts["strapPatch" + sfx].material = this.mats.patch;
+    }
     this.parts.ankleL.visible = this.foot === LEFT;
     this.parts.ankleR.visible = this.foot === RIGHT;
+    // glow: a slow breathing pulse, flaring when that hand or foot throws
+    const pulse = REDUCE ? .5 : .5 + .5 * Math.sin(time * 3.2);
+    const hb = this.domHand || 0, fb = this.domFoot || 0;
+    this.mats.padDom.emissiveIntensity = .5 * hb;           // the gold glove flares as it lands
+    const fs = this.foot, ank = J.ankle[fs], toe = ZAX.clone().applyQuaternion(J.footQ[fs]);
+    const lift = Math.max(0, ank.y - ANAT.ankle * d.H);
+    this.footRing.position.set(ank.x + toe.x * .045 * d.H, .007, ank.z + toe.z * .045 * d.H);
+    this.footRing.scale.setScalar(d.H * (1 + .06 * pulse + .35 * fb));
+    this.mats.ring.opacity = this.opacity * clamp(.6 + .2 * pulse + .3 * fb - 2.5 * lift, .1, 1);
     // arm length for this fighter's reach
     for (const s of ["L", "R"]) for (const n of ["upperarm02", "lowerarm01", "lowerarm02", "wrist"])
       this.bones[n + s].position.copy(M.restPos[n + s]).multiplyScalar(n === "upperarm02" || n === "lowerarm01" ? d.sa : 1);
@@ -852,7 +996,10 @@ class Fighter {
       const h = J.hip[sd], kn = J.knee[sd], an = J.ankle[sd], axis = an.clone().sub(h).normalize();
       const perp = kn.clone().sub(h); perp.addScaledVector(axis, -perp.dot(axis));
       const toe = ZAX.clone().applyQuaternion(J.footQ[sd]);   // straight leg: the kneecap follows the foot
-      kneeFwd[sd] = perp.add(toe.multiplyScalar(.02));
+      // nearly straight leg: the kneecap faces the toes even when the knee sits in toward the midline
+      const straightness = clamp(1 - perp.length() / (.06 * d.H), 0, 1);
+      perp.x *= 1 - straightness;
+      kneeFwd[sd] = perp.add(toe.multiplyScalar(.04));
     }
     const hipMid = J.hip[LEFT].clone().add(J.hip[RIGHT]).multiplyScalar(.5);
     const neck1 = J.Q.clone().slerp(J.QH, .35), neck2 = J.Q.clone().slerp(J.QH, .7);
@@ -1273,6 +1420,11 @@ function frame(dtFixed) {
                    slip: so.def.slip * faceW, cover: so.def.cover * faceW, check: so.def.check * faceW,
                    roll: so.def.roll * faceW, rollDir: so.def.rollDir };
     for (const key of STRIKE_KEYS) opts[key] = (so.amt[key] || 0) * faceW;
+    // is the dominant hand / foot the one throwing? lead hand: jab, hook; rear: cross, uppercut;
+    // rear leg: body and calf kicks; lead leg: teep
+    const leadIsHand = leadOf(F.p) === F.hand, leadIsFoot = leadOf(F.p) === F.foot;
+    F.domHand = Math.max(...(leadIsHand ? ["ej", "eh"] : ["ec", "eu"]).map(k => opts[k] || 0));
+    F.domFoot = Math.max(...(leadIsFoot ? ["et"] : ["ek", "elk"]).map(k => opts[k] || 0));
     const Jp = solve(F.p, MODES[prevMode], opts), Jc = solve(F.p, MODES[mode], opts);
     F.J = blendJ(Jp, Jc, k);
     if (F.kd > 0) F.J = blendJ(F.J, solve(F.p, "down", opts), F.kd * faceW);
@@ -1346,6 +1498,11 @@ function frame(dtFixed) {
 if (CAPTURE) {
   window.__step = (dt, steps = 1) => { for (let q = 0; q < steps; q++) frame(dt); return time; };
   window.__cam = (pos, tgt) => { camTween = null; camera.position.set(...pos); controls.target.set(...tgt); controls.update(); };
+  window.__anat = () => ({ ...ANAT });
+  window.__dbg = () => { const b = MODEL.scene.getObjectByName("body"), a = b.geometry.attributes.ao;
+    const F = fighters[0], m = F && F.parts && F.parts.body && F.parts.body.material;
+    return { hasAO: !!a, ao: a ? [Math.min(...a.array), Math.max(...a.array), a.array.filter(x => x < .9).length, a.count] : null,
+             mat: m && m.type, isSkin: m === (F && F.mats.skin), key: m && m.customProgramCacheKey && m.customProgramCacheKey() }; };
   window.__plan = () => PLAN && PLAN.ev.map(e => ({ kind: e.kind, m: e.m, who: e.who, t0: e.t0, dur: e.dur, combo: e.combo }));
   window.__set = (o) => {
     if (o.strike) setStrike(o.strike === "combo" ? "spar" : o.strike);
