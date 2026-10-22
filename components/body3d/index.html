@@ -9,12 +9,12 @@
   @font-face { font-family: "Big Shoulders Display"; src: url("/app/static/fonts/big-shoulders-display-latin-700-normal.woff2") format("woff2"); font-weight: 700; }
   @font-face { font-family: "Big Shoulders Display"; src: url("/app/static/fonts/big-shoulders-display-latin-800-normal.woff2") format("woff2"); font-weight: 800; }
   :root { --bg:#0C0C0E; --ink:#F2F0ED; --ink2:#C4C1BC; --mute:#8F8C88; --line:#2A2A2F;
-          --a:#F04A3E; --afill:#C42A20; --b:#A7ADB8; --rule:#E9B44C; }
+          --a:#F04A3E; --afill:#7A3CF0; --b:#A7ADB8; --rule:#E9B44C; --neon:#A879FF; }
   html, body { margin:0; height:100%; background:var(--bg); overflow:hidden; color:var(--ink);
                font-family:"Instrument Sans", "Segoe UI", system-ui, sans-serif; }
   #wrap { position:relative; width:100%; height:100%; overflow:hidden; box-sizing:border-box;
           border:1px solid var(--line); border-radius:6px;
-          background: radial-gradient(120% 85% at 50% 8%, #1C1C20 0%, #111113 52%, #0A0A0B 100%); }
+          background: radial-gradient(120% 85% at 50% 8%, #221A33 0%, #120E1C 52%, #08070C 100%); }
   canvas { display:block; position:absolute; inset:0; }
   #labels { position:absolute; inset:0; pointer-events:none; overflow:hidden; }
   .lab { position:absolute; left:0; top:0; white-space:nowrap; will-change:transform; transition:opacity .2s; }
@@ -163,8 +163,10 @@ controls.maxDistance = 14;
 controls.maxPolarAngle = Math.PI * 0.52;
 controls.autoRotate = !REDUCE;
 
-scene.fog = new THREE.Fog("#0C0C0E", 6.5, 17);
-scene.add(new THREE.HemisphereLight("#d6d8de", "#1c1716", 0.7));   // arena rig: neutral light into the shadows
+// future-purple arena: violet rims and fog, neutral key light so skin and kit keep their colours
+const NEON = "#A879FF", NEON_DEEP = "#6B2FE0";
+scene.fog = new THREE.Fog("#0D0A14", 6.5, 17);
+scene.add(new THREE.HemisphereLight("#d9d4e6", "#1a1426", 0.7));
 const spot = new THREE.SpotLight("#fff6ee", 6, 0, 0.55, 0.85, 0);
 spot.position.set(0.8, 7, 1.4);
 spot.target.position.set(0, 0.9, 0);
@@ -173,9 +175,9 @@ spot.shadow.mapSize.set(2048, 2048);
 spot.shadow.bias = -0.0004;
 spot.shadow.camera.near = 2; spot.shadow.camera.far = 14;
 scene.add(spot, spot.target);
-const rimA = new THREE.DirectionalLight("#FF5A48", 2.2); rimA.position.set(-3, 2.4, -4.5); scene.add(rimA);
-const rimB = new THREE.DirectionalLight("#FF6A56", 1.5); rimB.position.set(-3, 2.4, 4.5); scene.add(rimB);
-const fill = new THREE.DirectionalLight("#b8c4d8", 0.85); fill.position.set(5, 2, 1); scene.add(fill);
+const rimA = new THREE.DirectionalLight("#9B6BFF", 2.4); rimA.position.set(-3, 2.4, -4.5); scene.add(rimA);
+const rimB = new THREE.DirectionalLight("#C77DFF", 1.6); rimB.position.set(-3, 2.4, 4.5); scene.add(rimB);
+const fill = new THREE.DirectionalLight("#c3c8f0", 0.85); fill.position.set(5, 2, 1); scene.add(fill);
 
 // ---- stage: a UFC-size Octagon. 30 ft across the flats, canvas mat, eight padded posts,
 // black chain-link fence with a padded top rail, on a dark arena floor
@@ -186,7 +188,7 @@ const FENCE_H = 1.75, SKIRT_H = .22;
 const octAngle = k => Math.PI / 8 + k * Math.PI / 4;  // post k sits at this angle
 const CORNER_POST = { 5: COL.a, 1: "#1F4FD1" };      // red and blue corner posts
 const floor = new THREE.Mesh(new THREE.PlaneGeometry(60, 60),
-  new THREE.MeshStandardMaterial({ color: "#0a0a0b", roughness: 0.95, metalness: 0 }));
+  new THREE.MeshStandardMaterial({ color: "#0b0912", roughness: 0.9, metalness: 0 }));
 floor.rotation.x = -Math.PI / 2;
 floor.receiveShadow = true;
 scene.add(floor);
@@ -195,17 +197,43 @@ function canvasTexture() {                             // the mat: worn light ca
   const g = c.getContext("2d"), px = N / (2 * OCT_R);
   const oct = (r) => { g.beginPath(); for (let k = 0; k < 8; k++) { const a = octAngle(k);
     const x = N / 2 + r * px * Math.cos(a), y = N / 2 - r * px * Math.sin(a); k ? g.lineTo(x, y) : g.moveTo(x, y); } g.closePath(); };
-  g.fillStyle = "#1a1a1c"; g.fillRect(0, 0, N, N);
-  oct(OCT_R); g.fill();
-  g.fillStyle = "#c9c5bc"; oct(OCT_R - .62 / Math.cos(Math.PI / 8)); g.fill();
-  g.strokeStyle = "#a31a12"; g.lineWidth = .05 * px; oct(OCT_R - .7 / Math.cos(Math.PI / 8)); g.stroke();
+  const k8 = 1 / Math.cos(Math.PI / 8), cx = N / 2;
+  g.fillStyle = "#16111f"; g.fillRect(0, 0, N, N);
+  oct(OCT_R); g.fill();                                       // dark apron by the fence
+  g.fillStyle = "#cfcad8"; oct(OCT_R - .62 * k8); g.fill();   // lilac-grey canvas
+  // apron: hash marks round the edge, like a dial
+  g.strokeStyle = "#3b2d57"; g.lineWidth = .025 * px;
+  for (let k = 0; k < 96; k++) {
+    const a = k / 96 * Math.PI * 2, r0 = (OCT_A - .55) * px, r1 = (OCT_A - (k % 4 ? .45 : .32)) * px;
+    g.beginPath(); g.moveTo(cx + r0 * Math.cos(a), cx - r0 * Math.sin(a)); g.lineTo(cx + r1 * Math.cos(a), cx - r1 * Math.sin(a)); g.stroke();
+  }
+  g.strokeStyle = "#7A3CF0"; g.lineWidth = .05 * px; oct(OCT_R - .7 * k8); g.stroke();      // purple boundary line
+  g.strokeStyle = "rgba(122,60,240,.35)"; g.lineWidth = .02 * px; oct(OCT_R - .82 * k8); g.stroke();
+  // centre: double octagon with spokes and a filled core
+  g.globalAlpha = .9;
+  g.strokeStyle = "#7A3CF0"; g.lineWidth = .04 * px; oct(1.25 * k8); g.stroke();
+  g.lineWidth = .02 * px; oct(1.05 * k8); g.stroke();
+  g.globalAlpha = .35; g.lineWidth = .015 * px;
+  for (let k = 0; k < 8; k++) {
+    const a = octAngle(k), r0 = 1.25 * k8 * px, r1 = (OCT_R - .82 * k8) * px;
+    g.beginPath(); g.moveTo(cx + r0 * Math.cos(a), cx - r0 * Math.sin(a)); g.lineTo(cx + r1 * Math.cos(a), cx - r1 * Math.sin(a)); g.stroke();
+  }
+  g.globalAlpha = .18; g.fillStyle = "#7A3CF0"; oct(1.05 * k8); g.fill();
+  g.globalAlpha = .55; g.fillStyle = "#4c1fa8"; oct(.35 * k8); g.fill();
+  g.globalAlpha = 1;
+  // corner quarters: faint arcs in front of the red and blue corners
+  for (const [k, col] of [[5, "rgba(210,40,40,.28)"], [1, "rgba(31,79,209,.28)"]]) {
+    const a = octAngle(k), r = (OCT_R - 1.2) * px;
+    g.strokeStyle = col; g.lineWidth = .05 * px;
+    g.beginPath(); g.arc(cx + r * Math.cos(a), cx - r * Math.sin(a), .7 * px, 0, Math.PI * 2); g.stroke();
+  }
   const img = g.getImageData(0, 0, N, N), d = img.data;   // canvas weave and scuffs
   for (let i = 0; i < d.length; i += 4) {
     const n = (Math.random() - .5) * 14;
     d[i] += n; d[i + 1] += n; d[i + 2] += n;
   }
   g.putImageData(img, 0, 0);
-  g.globalAlpha = .05; g.fillStyle = "#3a2f28";
+  g.globalAlpha = .05; g.fillStyle = "#3a2f48";
   for (let k = 0; k < 160; k++) { g.beginPath(); g.ellipse(N * Math.random(), N * Math.random(), 4 + 30 * Math.random(), 2 + 10 * Math.random(), Math.PI * Math.random(), 0, 7); g.fill(); }
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
@@ -223,10 +251,10 @@ canvasMat.scale.set(1, -1, 1);                        // keep the shape's +y as 
 canvasMat.position.y = .003;
 canvasMat.receiveShadow = true;
 scene.add(canvasMat);
-function chainLink() {                                // black vinyl-coated chain link, about 5 cm diamonds
+function chainLink() {                                // vinyl-coated chain link, about 5 cm diamonds
   const c = document.createElement("canvas"); c.width = c.height = 64;
   const g = c.getContext("2d");
-  g.strokeStyle = "#fff"; g.lineWidth = 5; g.lineCap = "round";
+  g.strokeStyle = "#fff"; g.lineWidth = 7; g.lineCap = "round";
   g.beginPath(); g.moveTo(0, 32); g.lineTo(32, 0); g.lineTo(64, 32); g.lineTo(32, 64); g.closePath(); g.stroke();
   const t = new THREE.CanvasTexture(c);
   t.wrapS = t.wrapT = THREE.RepeatWrapping;
@@ -236,8 +264,8 @@ function chainLink() {                                // black vinyl-coated chai
 const side = 2 * OCT_A * Math.tan(Math.PI / 8);
 const linkTex = chainLink();
 linkTex.repeat.set(side / .055, FENCE_H / .055);
-const fenceMat = new THREE.MeshStandardMaterial({ color: "#151517", alphaMap: linkTex, transparent: true,
-  roughness: .45, metalness: .3, side: THREE.DoubleSide, depthWrite: false });
+const fenceMat = new THREE.MeshStandardMaterial({ color: "#6e6880", alphaMap: linkTex, transparent: true,
+  roughness: .35, metalness: .55, emissive: NEON_DEEP, emissiveIntensity: .18, side: THREE.DoubleSide, depthWrite: false });
 const padMat = new THREE.MeshPhysicalMaterial({ color: "#0f0f11", roughness: .38, clearcoat: .5, clearcoatRoughness: .3 });
 // cut-away: fence sections between the camera and the centre are hidden, like a broadcast cage cam
 const cageParts = [];                                 // { objs, dir }: hide objs when the camera is past dir
@@ -251,6 +279,8 @@ function updateCage() {
 const fenceGeo = new THREE.PlaneGeometry(side, FENCE_H);
 const railGeo = new THREE.CylinderGeometry(.085, .085, side, 20);
 const skirtGeo = new THREE.BoxGeometry(side, SKIRT_H, .1);
+const neonGeo = new THREE.CylinderGeometry(.012, .012, side - .2, 8);
+const neonMat = new THREE.MeshBasicMaterial({ color: NEON });
 for (let k = 0; k < 8; k++) {
   const a = Math.PI / 4 * (k + 1), mid = V(OCT_A * Math.cos(a), 0, -OCT_A * Math.sin(a));
   const yaw = Math.atan2(mid.x, mid.z);                // each panel faces the centre
@@ -261,8 +291,12 @@ for (let k = 0; k < 8; k++) {
   const skirt = new THREE.Mesh(skirtGeo, padMat);
   skirt.position.copy(mid).setY(SKIRT_H / 2); skirt.rotation.y = yaw;
   rail.castShadow = skirt.castShadow = true;
-  scene.add(fence, rail, skirt);
-  cageParts.push({ objs: [fence, rail, skirt], dir: mid.clone().normalize() });
+  // neon strips: under the top rail and along the top of the skirt
+  const neonTop = new THREE.Mesh(neonGeo, neonMat), neonLow = new THREE.Mesh(neonGeo, neonMat);
+  neonTop.position.copy(mid).setY(SKIRT_H + FENCE_H - .03); neonTop.rotation.set(0, yaw, Math.PI / 2, "YXZ");
+  neonLow.position.copy(mid).setY(SKIRT_H + .01); neonLow.rotation.set(0, yaw, Math.PI / 2, "YXZ");
+  scene.add(fence, rail, skirt, neonTop, neonLow);
+  cageParts.push({ objs: [fence, rail, skirt, neonTop, neonLow], dir: mid.clone().normalize() });
 }
 const postGeo = new THREE.CylinderGeometry(.11, .11, SKIRT_H + FENCE_H + .18, 24);
 const postTopGeo = new THREE.SphereGeometry(.11, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2);
@@ -275,8 +309,10 @@ for (let k = 0; k < 8; k++) {
   const cap = new THREE.Mesh(postTopGeo, m);
   cap.position.set(post.position.x, h, post.position.z);
   post.castShadow = true;
-  scene.add(post, cap);
-  cageParts.push({ objs: [post, cap], dir: V(Math.cos(a), 0, Math.sin(a)) });
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(.118, .012, 8, 32), new THREE.MeshBasicMaterial({ color: c || NEON }));
+  ring.rotation.x = Math.PI / 2; ring.position.set(post.position.x, h - .08, post.position.z);
+  scene.add(post, cap, ring);
+  cageParts.push({ objs: [post, cap, ring], dir: V(Math.cos(a), 0, Math.sin(a)) });
 }
 
 // ------------------------------------------------------------------ body model
@@ -324,6 +360,14 @@ function buildModel(gltf) {
     restPos[o.name] = o.position.clone();
     restWorld[o.name] = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().extractRotation(o.matrixWorld));
   });
+  // rest direction from each limb bone to the next joint, in that bone's own frame (the short hip and
+  // shoulder bones' own axes do not point at the knee or elbow, so aiming those axes swings the limb off)
+  const jointDir = {};
+  for (const s of ["L", "R"]) for (const [a, b] of [["upperleg01", "lowerleg01"], ["lowerleg01", "foot"],
+                                                    ["upperarm01", "lowerarm01"], ["lowerarm01", "wrist"]]) {
+    const n = nm(a + "." + s);
+    jointDir[n] = wp(b + "." + s).sub(wp(a + "." + s)).normalize().applyQuaternion(restWorld[n].clone().invert());
+  }
   const hand = {};
   for (const s of ["L", "R"]) {
     const w = bone("wrist." + s);
@@ -335,7 +379,7 @@ function buildModel(gltf) {
   const headInv = new THREE.Matrix4().copy(bone("head").matrixWorld).invert();
   fightKit(root);
   muscleShading(root);
-  return { scene: root, Hm, floor: y0, order, parentOf, restLocal, restWorld, restPos, hand,
+  return { scene: root, Hm, floor: y0, order, parentOf, restLocal, restWorld, restPos, hand, jointDir,
            restRoot: wp("root"), restHip: hip,
            eyeLocal: ["L", "R"].map(s => V(...ext.eyes[s]).applyMatrix4(headInv)) };
 }
@@ -784,10 +828,9 @@ function solve(p, mode, o = {}) {
   } else {
     const breathe = REDUCE ? 0 : Math.sin(t * TAU * .25) * .002 * H;
     yaw = 0; lean = .02;
-    // standing straight like a mannequin: legs fully extended, each a straight line from the hip joint
-    // to an ankle close to the midline, feet nearly together, toes forward
-    drop = .004 * H + breathe;
-    feet[LEFT] = [V(.05 * H, 0, .01 * H), .08]; feet[RIGHT] = [V(-.05 * H, 0, .01 * H), -.08];   // shins vertical
+    // standing straight: legs extended from the hip joints to ankles a little inside them, toes forward
+    drop = .003 * H + breathe;
+    feet[LEFT] = [V(.045 * H, 0, .01 * H), .08]; feet[RIGHT] = [V(-.045 * H, 0, .01 * H), -.08];
     for (const sd of [LEFT, RIGHT]) baseYaw[sd] = feet[sd][1];
   }
   // footwork: the moving foot leads, the other follows; feet stay planted while the body travels
@@ -860,11 +903,7 @@ function solve(p, mode, o = {}) {
       ankle.lerp(V(f.x * .9, .3 * H, f.z - .03 * H), check);
       pole = pole.lerp(V(side * .8, .2, 1), check);
     }
-    let { joint, end } = ik(J.hip[side], ankle, d.thigh, d.shin, pole);
-    if (mode === "stand") {                             // standing: straight leg, knee sitting a little in
-      joint = J.hip[side].clone().lerp(end, d.thigh / (d.thigh + d.shin));   // toward the midline (natural
-      joint.x -= side * .016 * H;                       // carrying angle), so the legs don't bow out
-    }
+    const { joint, end } = ik(J.hip[side], ankle, d.thigh, d.shin, pole);
     if (joint.y < .035 * H) joint.y = .035 * H;
     J.knee[side] = joint; J.ankle[side] = end;
     if (footAim) {
@@ -1113,7 +1152,7 @@ class Fighter {
     this.mats.ring.opacity = this.opacity * clamp(.6 + .2 * pulse + .3 * fb - 2.5 * lift, .1, 1);
     // arm length for this fighter's reach
     for (const s of ["L", "R"]) for (const n of ["upperarm02", "lowerarm01", "lowerarm02", "wrist"])
-      this.bones[n + s].position.copy(M.restPos[n + s]).multiplyScalar(n === "upperarm02" || n === "lowerarm01" ? d.sa : 1);
+      this.bones[n + s].position.copy(M.restPos[n + s]).multiplyScalar(d.sa);   // stretch upper arm and forearm alike
 
     const sideKey = { L: LEFT, R: RIGHT };
     const wq = {};
@@ -1121,13 +1160,19 @@ class Fighter {
       const cur = Y1.clone().applyQuaternion(inh);
       return new THREE.Quaternion().setFromUnitVectors(cur, dir.clone().normalize()).multiply(inh);
     };
+    // arms: turn the bone so its rest shoulder-to-elbow (elbow-to-wrist) line points down the limb,
+    // keeping the inherited twist
+    const aimJoint = (n, inh, dir) => {
+      const cur = M.jointDir[n].clone().applyQuaternion(inh);
+      return new THREE.Quaternion().setFromUnitVectors(cur, dir.clone().normalize()).multiply(inh);
+    };
     // legs: aim the bone down the limb AND turn it so the kneecap faces where the knee bends
     // (a shortest-arc aim leaves the twist free, which rolls the thigh and caves the knee in)
     const aimLeg = (n, dir, kneeFwd) => {
       const y = dir.clone().normalize(), z = kneeFwd.clone().addScaledVector(y, -kneeFwd.dot(y)).normalize();
       const Bt = new THREE.Matrix4().makeBasis(y.clone().cross(z), y, z);
-      // in the bone's own frame the limb runs along +y; its rest-pose "front" is world +z
-      const yl = Y1.clone(), zl = ZAX.clone().applyQuaternion(M.restWorld[n].clone().invert());
+      // in the bone's own frame the limb runs along jointDir; its rest-pose "front" is world +z
+      const yl = M.jointDir[n].clone(), zl = ZAX.clone().applyQuaternion(M.restWorld[n].clone().invert());
       zl.addScaledVector(yl, -zl.dot(yl)).normalize();
       const Bl = new THREE.Matrix4().makeBasis(yl.clone().cross(zl), yl, zl);
       return new THREE.Quaternion().setFromRotationMatrix(Bt.multiply(Bl.transpose()));
@@ -1167,8 +1212,8 @@ class Fighter {
       else if (base === "upperleg01") w = aimLeg(n, J.knee[sd].clone().sub(J.hip[sd]), kneeFwd[sd]);
       else if (base === "lowerleg01") w = aimLeg(n, J.ankle[sd].clone().sub(J.knee[sd]), kneeFwd[sd]);
       else if (base === "foot") w = J.footQ[sd].clone().multiply(M.restWorld[n]);
-      else if (base === "upperarm01") w = aimTo(inh, J.elbow[sd].clone().sub(J.sh[sd]));
-      else if (base === "lowerarm01") w = aimTo(inh, J.wrist[sd].clone().sub(J.elbow[sd]));
+      else if (base === "upperarm01") w = aimJoint(n, inh, J.elbow[sd].clone().sub(J.sh[sd]));
+      else if (base === "lowerarm01") w = aimJoint(n, inh, J.wrist[sd].clone().sub(J.elbow[sd]));
       else if (base === "lowerarm02") w = inh.clone().slerp(wristT[s].clone().multiply(M.restLocal["wrist" + s].clone().invert()), .55);
       else if (base === "wrist") w = wristT[s].clone();
       else w = inh;
@@ -1639,11 +1684,39 @@ function frame(dtFixed) {
 if (CAPTURE) {
   window.__step = (dt, steps = 1) => { for (let q = 0; q < steps; q++) frame(dt); return time; };
   window.__cam = (pos, tgt) => { camTween = null; camera.position.set(...pos); controls.target.set(...tgt); controls.update(); };
-  window.__anat = () => ({ ...ANAT });
-  window.__dbg = () => { const b = MODEL.scene.getObjectByName("body"), a = b.geometry.attributes.ao;
-    const F = fighters[0], m = F && F.parts && F.parts.body && F.parts.body.material;
-    return { hasAO: !!a, ao: a ? [Math.min(...a.array), Math.max(...a.array), a.array.filter(x => x < .9).length, a.count] : null,
-             mat: m && m.type, isSkin: m === (F && F.mats.skin), key: m && m.customProgramCacheKey && m.customProgramCacheKey() }; };
+  window.__bones = () => fighters.map(F => {
+    F.group.updateMatrixWorld(true);
+    const w = n => { const v = new THREE.Vector3().setFromMatrixPosition(F.bones[n].matrixWorld); return F.group.worldToLocal(v); };
+    const r = {};
+    for (const [s, sd] of [["L", 1], ["R", -1]]) {
+      r[s] = { kneeBone: w("lowerleg01" + s).toArray().map(x => +x.toFixed(3)), kneeJ: F.J.knee[sd].toArray().map(x => +x.toFixed(3)),
+               footBone: w("foot" + s).toArray().map(x => +x.toFixed(3)), ankleJ: F.J.ankle[sd].toArray().map(x => +x.toFixed(3)),
+               hipBone: w("upperleg01" + s).toArray().map(x => +x.toFixed(3)), hipJ: F.J.hip[sd].toArray().map(x => +x.toFixed(3)) };
+    }
+    for (const [s, sd] of [["L", 1], ["R", -1]]) {
+      r["arm" + s] = { elbowBone: w("lowerarm01" + s).toArray().map(x => +x.toFixed(3)), elbowJ: F.J.elbow[sd].toArray().map(x => +x.toFixed(3)),
+                       wristBone: w("wrist" + s).toArray().map(x => +x.toFixed(3)), wristJ: F.J.wrist[sd].toArray().map(x => +x.toFixed(3)),
+                       shBone: w("upperarm01" + s).toArray().map(x => +x.toFixed(3)), shJ: F.J.sh[sd].toArray().map(x => +x.toFixed(3)) };
+    }
+    return r;
+  });
+  // lowest skinned foot vertex (world y, metres) per fighter and side; < 0 means under the canvas
+  window.__feet = () => fighters.map(F => {
+    const m = F.parts && F.parts.body; if (!m) return null;
+    if (!m.userData.footIdx) {
+      const P = m.geometry.attributes.position, idx = [];
+      for (let i = 0; i < P.count; i++) if (P.getY(i) < MODEL.floor + .09) idx.push(i);
+      m.userData.footIdx = idx;
+    }
+    F.group.updateMatrixWorld(true); m.skeleton.update();
+    const v = new THREE.Vector3(), out = { L: 9, R: 9 };
+    for (const i of m.userData.footIdx) {
+      m.getVertexPosition(i, v); m.localToWorld(v);
+      const P = m.geometry.attributes.position, side = P.getX(i) > 0 ? "L" : "R";
+      out[side] = Math.min(out[side], v.y);
+    }
+    return { name: F.info.label, hand: F.info.hand, foot: F.info.foot, stance: F.info.stance, ...out };
+  });
   window.__plan = () => PLAN && PLAN.ev.map(e => ({ kind: e.kind, m: e.m, who: e.who, t0: e.t0, dur: e.dur, combo: e.combo }));
   window.__set = (o) => {
     if (o.strike) setStrike(o.strike === "combo" ? "spar" : o.strike);
