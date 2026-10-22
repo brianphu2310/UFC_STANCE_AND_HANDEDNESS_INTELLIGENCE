@@ -227,7 +227,7 @@ def region(pred):
 
 hipY = (head["upperleg01.L"][1] + head["upperleg01.R"][1]) / 2
 kneeY = (head["lowerleg01.L"][1] + head["lowerleg01.R"][1]) / 2
-hemY = hipY - 0.8 * (hipY - kneeY)               # MMA fight shorts end just above the knee
+hemY = hipY - 0.5 * (hipY - kneeY)               # tight vale-tudo fight shorts end mid-thigh
 waistY = head["spine04"][1]
 crotchY = hipY - 0.35 * (hipY - kneeY)
 short_bones = {B[b] for b in ["root", "spine05", "pelvis.L", "pelvis.R", "upperleg01.L", "upperleg01.R",
@@ -235,9 +235,9 @@ short_bones = {B[b] for b in ["root", "spine05", "pelvis.L", "pelvis.R", "upperl
 
 shells = {}
 shells["shorts"] = (region(lambda i: dominant[i] in short_bones and hemY <= posed[i][1] <= waistY),
-                    lambda i: 0.14 + 0.36 * np.clip((crotchY - posed[i][1]) / (crotchY - hemY), 0, 1) ** 1.2)
-shells["waist"] = (region(lambda i: dominant[i] in short_bones and waistY - 0.55 <= posed[i][1] <= waistY + 0.05),
-                   lambda i: 0.2)
+                    lambda i: 0.06)                 # compression fit: ~6 mm off the skin, moves with it
+shells["waist"] = (region(lambda i: dominant[i] in short_bones and waistY - 0.4 <= posed[i][1] <= waistY + 0.05),
+                   lambda i: 0.1)
 # --- 4oz MMA gloves: padded knuckle shell, thin leather palm, open fingers, wide wrist strap
 orig_dom = [max(d, key=d.get) if d else "" for d in vw]
 adj = [set() for _ in range(N)]
@@ -346,15 +346,7 @@ for s in "LR":
                             lambda i: 0.09)
 
 
-def follow(b, only):
-    """Nearest ancestor of bone index b that is in `only`."""
-    name = order[b]
-    while bidx[name] not in only and kparent[name]:
-        name = kparent[name]
-    return bidx[name]
-
-
-def submesh(vidx, offset=None, face_ok=None, relax=0, only=None):
+def submesh(vidx, offset=None, face_ok=None, relax=0):
     vidx = np.asarray(vidx, dtype=int)
     remap = -np.ones(N, dtype=int)
     remap[vidx] = np.arange(len(vidx))
@@ -379,12 +371,7 @@ def submesh(vidx, offset=None, face_ok=None, relax=0, only=None):
     J = np.zeros((len(vidx), 4), dtype=np.uint16)
     W = np.zeros((len(vidx), 4), dtype=np.float32)
     for r, i in enumerate(vidx):
-        bw = merged[i]
-        if only is not None:                    # loose cloth: drop weights from bones it should not follow
-            kept_ = [(b, w) for b, w in bw if b in only] or [(follow(bw[0][0], only), 1.0)]
-            tot = sum(w for _, w in kept_)
-            bw = [(b, w / tot) for b, w in kept_]
-        for c, (b, w) in enumerate(bw):
+        for c, (b, w) in enumerate(merged[i]):
             J[r, c], W[r, c] = b, w
     mt = {k: (v[vidx] * S).astype(np.float32) for k, v in morphs.items()}
     return dict(P=(P * S).astype(np.float32), N=normals(P, t).astype(np.float32), J=J, W=W,
@@ -393,7 +380,7 @@ def submesh(vidx, offset=None, face_ok=None, relax=0, only=None):
 
 meshes = {"body": submesh(used)}
 for name, (vidx, off) in shells.items():
-    meshes[name] = submesh(vidx, off, only=short_bones if name in ("shorts", "waist") else None)
+    meshes[name] = submesh(vidx, off)
     print(f"{name:12s} {len(vidx):6d} verts")
 for name, (vidx, off, ok, rl) in glove_parts.items():
     meshes[name] = submesh(vidx, off, ok, rl)

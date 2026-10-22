@@ -165,7 +165,7 @@ controls.maxPolarAngle = Math.PI * 0.52;
 controls.autoRotate = !REDUCE;
 
 scene.fog = new THREE.Fog("#0C0C0E", 6.5, 17);
-scene.add(new THREE.HemisphereLight("#d6d8de", "#2a0d0b", 0.55));
+scene.add(new THREE.HemisphereLight("#d6d8de", "#1c1716", 0.7));   // arena rig: neutral light into the shadows
 const spot = new THREE.SpotLight("#fff6ee", 6, 0, 0.55, 0.85, 0);
 spot.position.set(0.8, 7, 1.4);
 spot.target.position.set(0, 0.9, 0);
@@ -174,55 +174,110 @@ spot.shadow.mapSize.set(2048, 2048);
 spot.shadow.bias = -0.0004;
 spot.shadow.camera.near = 2; spot.shadow.camera.far = 14;
 scene.add(spot, spot.target);
-const rimA = new THREE.DirectionalLight("#FF3B2F", 3.4); rimA.position.set(-3, 2.4, -4.5); scene.add(rimA);
-const rimB = new THREE.DirectionalLight("#FF4A36", 2.6); rimB.position.set(-3, 2.4, 4.5); scene.add(rimB);
+const rimA = new THREE.DirectionalLight("#FF5A48", 2.2); rimA.position.set(-3, 2.4, -4.5); scene.add(rimA);
+const rimB = new THREE.DirectionalLight("#FF6A56", 1.5); rimB.position.set(-3, 2.4, 4.5); scene.add(rimB);
 const fill = new THREE.DirectionalLight("#b8c4d8", 0.85); fill.position.set(5, 2, 1); scene.add(fill);
-const glow = new THREE.PointLight("#FF2A1A", 0.8, 5, 1.8); glow.position.set(0, 0.25, 0); scene.add(glow);
 
-// ---- stage: black floor with a red neon grid that fades into the dark
-const MAT_R = 3.0;
-// glowing grid drawn into a texture so the lines stay crisp at grazing angles
-function gridTexture() {
-  const c = document.createElement("canvas"); c.width = c.height = 256;
-  const g = c.getContext("2d");
-  g.fillStyle = "#000"; g.fillRect(0, 0, 256, 256);
-  for (const [w, a] of [[18, .10], [9, .22], [4, .55], [2, 1]]) {
-    g.strokeStyle = `rgba(255, 62, 44, ${a})`; g.lineWidth = w;
-    g.beginPath(); g.moveTo(0, 0); g.lineTo(256, 0); g.moveTo(0, 0); g.lineTo(0, 256);
-    g.moveTo(0, 256); g.lineTo(256, 256); g.moveTo(256, 0); g.lineTo(256, 256); g.stroke();
-  }
-  const t = new THREE.CanvasTexture(c);
-  t.wrapS = t.wrapT = THREE.RepeatWrapping;
-  t.repeat.set(60 / 0.8, 60 / 0.8);                  // 80 cm cells
-  t.anisotropy = renderer.capabilities.getMaxAnisotropy();
-  t.colorSpace = THREE.SRGBColorSpace;
-  return t;
-}
+// ---- stage: a UFC-size Octagon. 30 ft across the flats, canvas mat, eight padded posts,
+// black chain-link fence with a padded top rail, on a dark arena floor
+const MAT_R = 3.0;                                    // radius used for camera framing and labels
+const OCT_A = 4.57;                                   // apothem: centre to the middle of a fence side (m)
+const OCT_R = OCT_A / Math.cos(Math.PI / 8);          // centre to a post
+const FENCE_H = 1.75, SKIRT_H = .22;
+const octAngle = k => Math.PI / 8 + k * Math.PI / 4;  // post k sits at this angle
+const CORNER_POST = { 5: COL.a, 1: "#1F4FD1" };      // red and blue corner posts
 const floor = new THREE.Mesh(new THREE.PlaneGeometry(60, 60),
-  new THREE.MeshStandardMaterial({ color: "#0E0E10", roughness: 0.95, metalness: 0,
-    emissive: "#ffffff", emissiveMap: gridTexture(), emissiveIntensity: 0.9 }));
+  new THREE.MeshStandardMaterial({ color: "#0a0a0b", roughness: 0.95, metalness: 0 }));
 floor.rotation.x = -Math.PI / 2;
 floor.receiveShadow = true;
 scene.add(floor);
-function octLoop(r, color, opacity = 1) {
-  const pts = [];
-  for (let k = 0; k <= 8; k++) {
-    const a = Math.PI / 8 + k * Math.PI / 4;
-    pts.push(V(r * Math.cos(a), 0.004, r * Math.sin(a)));
+function canvasTexture() {                             // the mat: worn light canvas, dark border by the fence
+  const N = 1024, c = document.createElement("canvas"); c.width = c.height = N;
+  const g = c.getContext("2d"), px = N / (2 * OCT_R);
+  const oct = (r) => { g.beginPath(); for (let k = 0; k < 8; k++) { const a = octAngle(k);
+    const x = N / 2 + r * px * Math.cos(a), y = N / 2 - r * px * Math.sin(a); k ? g.lineTo(x, y) : g.moveTo(x, y); } g.closePath(); };
+  g.fillStyle = "#1a1a1c"; g.fillRect(0, 0, N, N);
+  oct(OCT_R); g.fill();
+  g.fillStyle = "#c9c5bc"; oct(OCT_R - .62 / Math.cos(Math.PI / 8)); g.fill();
+  g.strokeStyle = "#a31a12"; g.lineWidth = .05 * px; oct(OCT_R - .7 / Math.cos(Math.PI / 8)); g.stroke();
+  const img = g.getImageData(0, 0, N, N), d = img.data;   // canvas weave and scuffs
+  for (let i = 0; i < d.length; i += 4) {
+    const n = (Math.random() - .5) * 14;
+    d[i] += n; d[i + 1] += n; d[i + 2] += n;
   }
-  return new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),
-    new THREE.LineBasicMaterial({ color, transparent: true, opacity }));
+  g.putImageData(img, 0, 0);
+  g.globalAlpha = .05; g.fillStyle = "#3a2f28";
+  for (let k = 0; k < 160; k++) { g.beginPath(); g.ellipse(N * Math.random(), N * Math.random(), 4 + 30 * Math.random(), 2 + 10 * Math.random(), Math.PI * Math.random(), 0, 7); g.fill(); }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  return t;
 }
-scene.add(octLoop(MAT_R, "#FF6A4D", 0.9));
-const postGeo = new THREE.CylinderGeometry(0.05, 0.05, 0.3, 16);
+const octShape = new THREE.Shape();
+for (let k = 0; k <= 8; k++) { const a = octAngle(k); k ? octShape.lineTo(OCT_R * Math.cos(a), OCT_R * Math.sin(a)) : octShape.moveTo(OCT_R * Math.cos(a), OCT_R * Math.sin(a)); }
+const matGeo = new THREE.ShapeGeometry(octShape);
+{ const uv = matGeo.attributes.uv, P = matGeo.attributes.position;
+  for (let i = 0; i < uv.count; i++) uv.setXY(i, P.getX(i) / (2 * OCT_R) + .5, P.getY(i) / (2 * OCT_R) + .5); }
+const canvasMat = new THREE.Mesh(matGeo, new THREE.MeshStandardMaterial({ map: canvasTexture(), roughness: .92 }));
+canvasMat.rotation.x = -Math.PI / 2;
+canvasMat.scale.set(1, -1, 1);                        // keep the shape's +y as the world's -z after the turn
+canvasMat.position.y = .003;
+canvasMat.receiveShadow = true;
+scene.add(canvasMat);
+function chainLink() {                                // black vinyl-coated chain link, about 5 cm diamonds
+  const c = document.createElement("canvas"); c.width = c.height = 64;
+  const g = c.getContext("2d");
+  g.strokeStyle = "#fff"; g.lineWidth = 5; g.lineCap = "round";
+  g.beginPath(); g.moveTo(0, 32); g.lineTo(32, 0); g.lineTo(64, 32); g.lineTo(32, 64); g.closePath(); g.stroke();
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  return t;
+}
+const side = 2 * OCT_A * Math.tan(Math.PI / 8);
+const linkTex = chainLink();
+linkTex.repeat.set(side / .055, FENCE_H / .055);
+const fenceMat = new THREE.MeshStandardMaterial({ color: "#151517", alphaMap: linkTex, transparent: true,
+  roughness: .45, metalness: .3, side: THREE.DoubleSide, depthWrite: false });
+const padMat = new THREE.MeshPhysicalMaterial({ color: "#0f0f11", roughness: .38, clearcoat: .5, clearcoatRoughness: .3 });
+// cut-away: fence sections between the camera and the centre are hidden, like a broadcast cage cam
+const cageParts = [];                                 // { objs, dir }: hide objs when the camera is past dir
+function updateCage() {
+  const c = camera.position;
+  for (const p of cageParts) {
+    const show = c.x * p.dir.x + c.z * p.dir.z < OCT_A - .15;
+    for (const o of p.objs) o.visible = show;
+  }
+}
+const fenceGeo = new THREE.PlaneGeometry(side, FENCE_H);
+const railGeo = new THREE.CylinderGeometry(.085, .085, side, 20);
+const skirtGeo = new THREE.BoxGeometry(side, SKIRT_H, .1);
 for (let k = 0; k < 8; k++) {
-  const a = Math.PI / 8 + k * Math.PI / 4;
-  const isA = k === 5, isB = k === 1;
-  const c = isA ? COL.a : isB ? COL.b : "#2A2A2F";
-  const post = new THREE.Mesh(postGeo, new THREE.MeshStandardMaterial({
-    color: c, roughness: 0.5, emissive: c, emissiveIntensity: isA || isB ? 0.9 : 0.05 }));
-  post.position.set(MAT_R * Math.cos(a), 0.15, MAT_R * Math.sin(a));
-  scene.add(post);
+  const a = Math.PI / 4 * (k + 1), mid = V(OCT_A * Math.cos(a), 0, -OCT_A * Math.sin(a));
+  const yaw = Math.atan2(mid.x, mid.z);                // each panel faces the centre
+  const fence = new THREE.Mesh(fenceGeo, fenceMat);
+  fence.position.copy(mid).setY(SKIRT_H + FENCE_H / 2); fence.rotation.y = yaw; fence.renderOrder = 1;
+  const rail = new THREE.Mesh(railGeo, padMat);
+  rail.position.copy(mid).setY(SKIRT_H + FENCE_H + .06); rail.rotation.set(0, yaw, Math.PI / 2, "YXZ");
+  const skirt = new THREE.Mesh(skirtGeo, padMat);
+  skirt.position.copy(mid).setY(SKIRT_H / 2); skirt.rotation.y = yaw;
+  rail.castShadow = skirt.castShadow = true;
+  scene.add(fence, rail, skirt);
+  cageParts.push({ objs: [fence, rail, skirt], dir: mid.clone().normalize() });
+}
+const postGeo = new THREE.CylinderGeometry(.11, .11, SKIRT_H + FENCE_H + .18, 24);
+const postTopGeo = new THREE.SphereGeometry(.11, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2);
+for (let k = 0; k < 8; k++) {
+  const a = octAngle(k), c = CORNER_POST[k];
+  const m = c ? new THREE.MeshPhysicalMaterial({ color: c, roughness: .4, clearcoat: .5, clearcoatRoughness: .3 }) : padMat;
+  const post = new THREE.Mesh(postGeo, m);
+  const h = SKIRT_H + FENCE_H + .18;
+  post.position.set(OCT_R * Math.cos(a), h / 2, OCT_R * Math.sin(a));
+  const cap = new THREE.Mesh(postTopGeo, m);
+  cap.position.set(post.position.x, h, post.position.z);
+  post.castShadow = true;
+  scene.add(post, cap);
+  cageParts.push({ objs: [post, cap], dir: V(Math.cos(a), 0, Math.sin(a)) });
 }
 
 // ------------------------------------------------------------------ body model
@@ -287,7 +342,7 @@ function buildModel(gltf) {
 
 // ------------------------------------------------------------------ fight kit
 // UFC-style kit drawn from per-vertex data computed once from the bind pose (the mesh has no UVs):
-// black fight shorts with corner-colour side panels, hem band, white piping and a side slit;
+// tight black fight shorts with corner-colour side panels, hem band and white piping;
 // wrist straps with white piping along their edges.
 function openEdges(g) {
   const ix = g.index.array, count = new Map(), nb = new Map();
@@ -356,10 +411,9 @@ function shortsMaterial(corner) {
       .replace("#include <common>", "#include <common>\nvarying vec3 vKit;\nuniform vec3 uBase, uCorner, uTrim;")
       .replace("#include <color_fragment>", `#include <color_fragment>
         float outer = vKit.x, hd = vKit.y, fz = vKit.z;
-        if (outer > .55 && hd < .075 * (1. - abs(fz) / .2)) discard;       // side slit on the outer seam
-        float edge = mix(.5, .78, clamp(hd / .28, 0., 1.));                // panel flares out toward the hem
+        float edge = mix(.42, .72, clamp(hd / .2, 0., 1.));                 // side panel widens toward the hem
         float panel = step(edge, outer), pipe = step(edge - .07, outer) * (1. - panel);
-        float band = step(hd, .028), bandPipe = step(hd, .036) * (1. - band);
+        float band = step(hd, .022), bandPipe = step(hd, .029) * (1. - band);
         vec3 col = mix(uBase, uCorner, max(panel, band));
         col = mix(col, uTrim, max(pipe, bandPipe) * (1. - band));
         diffuseColor.rgb = col;`);
@@ -1257,6 +1311,7 @@ function frame(dtFixed) {
     if (camTween.t >= 1) camTween = null;
   }
   controls.update(dt);
+  updateCage();
   renderer.render(scene, camera);
   annotate(fo, st, k);
 }
