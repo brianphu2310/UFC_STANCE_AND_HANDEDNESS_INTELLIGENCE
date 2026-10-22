@@ -649,11 +649,10 @@ function solve(p, mode, o = {}) {
   } else {
     const breathe = REDUCE ? 0 : Math.sin(t * TAU * .25) * .002 * H;
     yaw = 0; lean = .02;
-    // standing like a person: the hip joints are wide, so the thighs slope in to knees that nearly
-    // meet, the shins drop almost vertical to ankles a hand apart, and the toes turn out ~8 degrees.
-    // The hips sit a couple of millimetres low so the knee can move in off the hip-ankle line.
-    drop = .0022 * H + breathe;
-    feet[LEFT] = [V(.032 * H, 0, .012 * H), .14]; feet[RIGHT] = [V(-.032 * H, 0, .012 * H), -.14];
+    // standing straight like a mannequin: legs fully extended, each a straight line from the hip joint
+    // to an ankle close to the midline, feet nearly together, toes forward
+    drop = .004 * H + breathe;
+    feet[LEFT] = [V(.034 * H, 0, .01 * H), .06]; feet[RIGHT] = [V(-.034 * H, 0, .01 * H), -.06];
     for (const sd of [LEFT, RIGHT]) baseYaw[sd] = feet[sd][1];
   }
   // footwork: the moving foot leads, the other follows; feet stay planted while the body travels
@@ -726,8 +725,9 @@ function solve(p, mode, o = {}) {
       ankle.lerp(V(f.x * .9, .3 * H, f.z - .03 * H), check);
       pole = pole.lerp(V(side * .8, .2, 1), check);
     }
-    if (mode === "stand") pole = V(-side, 0, .3);      // standing: the knee sits in toward the midline, kneecap forward
-    const { joint, end } = ik(J.hip[side], ankle, d.thigh, d.shin, pole);
+    let { joint, end } = ik(J.hip[side], ankle, d.thigh, d.shin, pole);
+    if (mode === "stand")                               // standing: knee locked on the straight hip-ankle line
+      joint = J.hip[side].clone().lerp(end, d.thigh / (d.thigh + d.shin));
     if (joint.y < .035 * H) joint.y = .035 * H;
     J.knee[side] = joint; J.ankle[side] = end;
     if (footAim) {
