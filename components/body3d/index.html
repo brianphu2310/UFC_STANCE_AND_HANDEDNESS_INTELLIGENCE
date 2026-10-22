@@ -726,8 +726,10 @@ function solve(p, mode, o = {}) {
       pole = pole.lerp(V(side * .8, .2, 1), check);
     }
     let { joint, end } = ik(J.hip[side], ankle, d.thigh, d.shin, pole);
-    if (mode === "stand")                               // standing: knee locked on the straight hip-ankle line
-      joint = J.hip[side].clone().lerp(end, d.thigh / (d.thigh + d.shin));
+    if (mode === "stand") {                             // standing: straight leg, knee sitting a little in
+      joint = J.hip[side].clone().lerp(end, d.thigh / (d.thigh + d.shin));   // toward the midline (natural
+      joint.x -= side * .012 * H;                       // carrying angle), so the legs don't bow out
+    }
     if (joint.y < .035 * H) joint.y = .035 * H;
     J.knee[side] = joint; J.ankle[side] = end;
     if (footAim) {
