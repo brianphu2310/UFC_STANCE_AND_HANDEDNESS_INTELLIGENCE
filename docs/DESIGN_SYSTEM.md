@@ -1,11 +1,14 @@
 # Stance Intelligence design system
 
-The app is built to look like fight night: charcoal black, a red corner and a steel corner, and
-red neon light on the 3D stage. A gold rule marks reference lines and the dominant hand and foot.
-The one signature shape is the octagon: it appears in the logo mark, the hero panels and the 3D mat.
+The app is built to look like a future fight night: a violet-black arena, a violet corner and a
+cyan corner, and violet neon light on the 3D stage. A gold rule marks reference lines and the
+dominant hand and foot. The signature shape is the octagon: it appears in the logo mark, the hero
+panels and the 3D mat. A faint chain-link diamond from the cage fence sits in the page background.
 
-All tokens live in `ui.py`. Views import them as `ui.ACCENT`, `ui.INK_2` and so on. The only
-hex values outside `ui.py` are inside the two three.js components, and those mirror these tokens.
+All tokens live in `ui.py`; Streamlit's own widgets (sliders, toggles, radios, inputs) take the same
+colours from `.streamlit/config.toml`. Views import tokens as `ui.ACCENT`, `ui.INK_2` and so on.
+The only hex values outside `ui.py` are in `.streamlit/config.toml` and the two three.js
+components, and those mirror these tokens.
 
 ## Tokens
 
@@ -13,24 +16,24 @@ hex values outside `ui.py` are inside the two three.js components, and those mir
 
 | Token | Hex | Use | Contrast on BG |
 |---|---|---|---|
-| `BG` | `#0C0C0E` | Page canvas | — |
-| `SURFACE` | `#141416` | Panels, charts | — |
-| `SURFACE_2` | `#1C1C20` | Raised areas, hover | — |
-| `BORDER` | `#2A2A2F` | Decorative hairlines only | decorative |
-| `FIELD_BORDER` | `#727078` | Input and select outlines | 3.5:1 on SURFACE_2 |
-| `INK` | `#F2F0ED` | Headings, values | 17.2:1 |
-| `INK_2` | `#C4C1BC` | Body text | 10.9:1 |
-| `INK_MUTED` | `#8F8C88` | Labels, captions | 5.8:1 |
-| `ACCENT` | `#F04A3E` | Red corner: marks, lines and text | 5.3:1 (4.7:1 on SURFACE_2) |
-| `ACCENT_FILL` | `#C42A20` | Filled buttons, selected pills, chips | white text 5.7:1 |
-| `ACCENT_2` | `#A7ADB8` | Steel corner: marks, lines and text | 8.7:1 |
-| `ON_ACCENT` | `#FFFFFF` | Text on `ACCENT_FILL` | 5.7:1 |
-| `RULE` | `#E9B44C` | Reference lines, dominant side, focus ring | 10.3:1 |
-| `MUTED_FILL` | `#2E2E34` | Bars outside a selection | — |
+| `BG` | `#0B0A12` | Page canvas | — |
+| `SURFACE` | `#14121E` | Panels, charts | — |
+| `SURFACE_2` | `#1D1A2A` | Raised areas, inputs, hover | — |
+| `BORDER` | `#2B2740` | Decorative hairlines only | decorative |
+| `FIELD_BORDER` | `#6F6890` | Input and select outlines | 3.3:1 on SURFACE_2 |
+| `INK` | `#F1EEF8` | Headings, values | 17.6:1 |
+| `INK_2` | `#C6C0D8` | Body text | 11.4:1 |
+| `INK_MUTED` | `#958EAD` | Labels, captions | 6.3:1 |
+| `ACCENT` | `#A77BFF` | Violet corner: marks, lines and text | 6.4:1 |
+| `ACCENT_FILL` | `#7C4DFF` | Filled buttons, selected pills, sliders | white text 4.8:1 |
+| `ACCENT_2` | `#48D1E0` | Cyan corner: marks, lines and text | 10.6:1 |
+| `ON_ACCENT` | `#FFFFFF` | Text on `ACCENT_FILL` | 4.8:1 |
+| `RULE` | `#E9B44C` | Reference lines, dominant side, focus ring | 10.4:1 |
+| `MUTED_FILL` | `#2A2640` | Bars outside a selection | — |
 
 Categorical palette (dark surface, assigned in a fixed order):
-`#F04A3E`, `#A7ADB8`, `#D9963A`, `#2BA59A`, `#8C93F0`, `#6E6B70`.
-Sequential scale (globe, bubbles): charcoal `#2A1A1A` → red `#9E2A22` → coral `#FF7A6E`.
+`#A77BFF`, `#48D1E0`, `#E9B44C`, `#F062A8`, `#6BDB9A`, `#7D7896`.
+Sequential scale (globe, bubbles): violet-black `#1E1733` → violet `#5B34B8` → lavender `#C9A9FF`.
 
 Helpers:
 - `ui.text_color(c)`: use whenever a series colour is drawn as text (returns a text-safe variant where one exists).
@@ -47,7 +50,7 @@ Helpers:
 | Body | Instrument Sans | 1rem / 400, line-height 1.5, max 70ch |
 | Label, caption | Instrument Sans | 0.78–0.88rem / 500 |
 
-Both fonts are self-hosted in `static/fonts` (OFL licensed). The app makes no font requests to third parties.
+Both fonts are self-hosted in `static/fonts` (OFL licensed) and served by Streamlit's static file serving (`enableStaticServing` in `.streamlit/config.toml`); `ui.inject_css()` declares the `@font-face` rules. The app makes no font requests to third parties.
 
 Writing rules: sentence case everywhere, no all-caps labels, no middle-dot meta strings, and
 numbers come with their unit ("4 cm short", not "−4").
@@ -60,7 +63,7 @@ numbers come with their unit ("4 cm short", not "−4").
 
 ## Iconography
 
-`static/mark.svg` / `mark.png` is an octagon split down the middle into red and steel, the two corner colours. It
+`static/mark.svg` / `mark.png` is an octagon split down the middle into violet and cyan, the two corner colours. It
 is the favicon and sits beside the wordmark in the top bar. It is an original mark and is
 deliberately not the UFC logo: the app uses public fight data, but it is not affiliated with UFC.
 
@@ -84,15 +87,16 @@ The app uses no other icons. Words label every control.
 
 | Control | Type | States | Keyboard |
 |---|---|---|---|
-| Face-off / Height / Reach | Segmented, `aria-pressed` | Selected = deep-red fill, white text | Tab, Enter or Space |
+| Face-off / Height / Reach | Segmented, `aria-pressed` | Selected = violet fill, white text | Tab, Enter or Space |
 | Spar / Jab / Cross / Kick | Segmented, Face-off only | Same | Same |
 | Pause / Play | Toggle | Label and `aria-pressed` follow the state | Same |
 | Rotate | Toggle | `aria-pressed` | Same |
 | Reset | Button | — | Same |
 | 3D canvas | `role="img"`, focusable | Accessible name follows the on-screen headline | Arrow keys turn, + and − zoom |
 
-Stage: black floor with a glowing red grid (drawn into a texture so lines stay crisp), red rim lights
-and fog that fades the grid into the dark. Fighters have graphite skin with a red sheen.
+Stage: a full-size Octagon (30 ft across) with a lilac-grey canvas, purple boundary and centre
+markings, a metallic chain-link fence with violet neon strips, violet and cyan corner posts, violet
+rim lights and fog. Fighters have graphite skin; the Neon button switches them to a glowing violet.
 
 Body: a skinned human mesh (MakeHuman CC0 base mesh shaped into an athletic male, about 13,000
 vertices, 36 bones), built by `scripts/build_body_model.py`. The joint solver computes hips, knees,

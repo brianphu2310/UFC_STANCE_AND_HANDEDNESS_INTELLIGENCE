@@ -1,8 +1,9 @@
-"""Design system: the "fight night" look.
+"""Design system: future-purple fight night.
 
-Charcoal black with a red corner and a steel corner; a gold rule marks references.
-Display type is Big Shoulders Display (condensed, scoreboard-like), body is Instrument Sans.
-One signature device: the primary panel on each page has an octagon-cut corner.
+Violet-black arena with a violet corner and a cyan corner; a gold rule marks references and the
+dominant side. Display type is Big Shoulders Display (condensed, scoreboard-like), body is
+Instrument Sans, both self-hosted. Signature devices: the octagon-cut primary panel on each page
+and a faint chain-link diamond in the page background, taken from the cage fence.
 """
 from html import escape
 
@@ -12,31 +13,31 @@ import streamlit as st
 import ufc_core as core
 
 # ---------------------------------------------------------------- tokens
-BG = "#0C0C0E"          # canvas: charcoal black
-SURFACE = "#141416"     # panels
-SURFACE_2 = "#1C1C20"   # raised / hover
-BORDER = "#2A2A2F"      # decorative hairlines only
-INK = "#F2F0ED"         # bone
-INK_2 = "#C4C1BC"
-INK_MUTED = "#8F8C88"   # 5.8:1 on BG, 5.1:1 on SURFACE_2
-ACCENT = "#F04A3E"      # red corner: lines, marks and text (5.3:1 on BG)
-ACCENT_FILL = "#C42A20" # red for filled buttons and chips (white text 5.7:1)
-ACCENT_2 = "#A7ADB8"    # steel corner (8.7:1 on BG)
-ACCENT_2_TEXT = "#A7ADB8"
+BG = "#0B0A12"          # canvas: violet-black arena
+SURFACE = "#14121E"     # panels
+SURFACE_2 = "#1D1A2A"   # raised / hover, inputs
+BORDER = "#2B2740"      # decorative hairlines only
+INK = "#F1EEF8"         # near-white with a violet cast
+INK_2 = "#C6C0D8"
+INK_MUTED = "#958EAD"   # 6.3:1 on BG, 5.3:1 on SURFACE_2
+ACCENT = "#A77BFF"      # violet corner: lines, marks and text (6.4:1 on BG)
+ACCENT_FILL = "#7C4DFF" # violet for filled buttons, chips, sliders (white text 4.8:1)
+ACCENT_2 = "#48D1E0"    # cyan corner (10.6:1 on BG)
+ACCENT_2_TEXT = "#48D1E0"
 ON_ACCENT = "#FFFFFF"   # text on ACCENT_FILL
-FIELD_BORDER = "#727078"  # input outlines: 3.5:1 on SURFACE_2 (WCAG 1.4.11)
+FIELD_BORDER = "#6F6890"  # input outlines: 3.3:1 on SURFACE_2 (WCAG 1.4.11)
 RULE = "#E9B44C"        # gold: reference lines, dominant side, focus ring
-ACCENT_SOFT = "rgba(240, 74, 62, 0.14)"
-MUTED_FILL = "#2E2E34"   # de-emphasised bars (outside a selection)
+ACCENT_SOFT = "rgba(167, 123, 255, 0.14)"
+MUTED_FILL = "#2A2640"   # de-emphasised bars (outside a selection)
 SHADOW = "none"
 
 DISPLAY = "'Big Shoulders Display', 'Oswald', 'Arial Narrow', sans-serif"
 BODY = "'Instrument Sans', 'Segoe UI', system-ui, sans-serif"
 
 # Categorical palette (dark surface), assigned in a fixed order per dimension.
-PALETTE = ["#F04A3E", "#A7ADB8", "#D9963A", "#2BA59A", "#8C93F0", "#6E6B70"]
-SEQ_BLUE = [[0, "#2A1A1A"], [0.5, "#9E2A22"], [1, "#FF7A6E"]]   # charcoal -> red
-GRAD_BAR = ["#A7ADB8", "#F04A3E"]
+PALETTE = ["#A77BFF", "#48D1E0", "#E9B44C", "#F062A8", "#6BDB9A", "#7D7896"]
+SEQ_BLUE = [[0, "#1E1733"], [0.5, "#5B34B8"], [1, "#C9A9FF"]]   # violet-black -> lavender
+GRAD_BAR = ["#48D1E0", "#A77BFF"]
 STYLE_COLORS = dict(zip(core.STYLES, PALETTE))
 
 PLOTLY_CONFIG = {"displaylogo": False, "displayModeBar": False, "topojsonURL": "app/static/"}
@@ -64,12 +65,30 @@ def colors_for(dim_label: str) -> dict:
 def inject_css():
     st.markdown(f"""
 <style>
+  @font-face {{ font-family: "Instrument Sans"; font-weight: 400; font-display: swap;
+               src: url("/app/static/fonts/instrument-sans-latin-400-normal.woff2") format("woff2"); }}
+  @font-face {{ font-family: "Instrument Sans"; font-weight: 500; font-display: swap;
+               src: url("/app/static/fonts/instrument-sans-latin-500-normal.woff2") format("woff2"); }}
+  @font-face {{ font-family: "Instrument Sans"; font-weight: 600; font-display: swap;
+               src: url("/app/static/fonts/instrument-sans-latin-600-normal.woff2") format("woff2"); }}
+  @font-face {{ font-family: "Instrument Sans"; font-weight: 700; font-display: swap;
+               src: url("/app/static/fonts/instrument-sans-latin-700-normal.woff2") format("woff2"); }}
+  @font-face {{ font-family: "Big Shoulders Display"; font-weight: 500; font-display: swap;
+               src: url("/app/static/fonts/big-shoulders-display-latin-500-normal.woff2") format("woff2"); }}
+  @font-face {{ font-family: "Big Shoulders Display"; font-weight: 700; font-display: swap;
+               src: url("/app/static/fonts/big-shoulders-display-latin-700-normal.woff2") format("woff2"); }}
+  @font-face {{ font-family: "Big Shoulders Display"; font-weight: 800; font-display: swap;
+               src: url("/app/static/fonts/big-shoulders-display-latin-800-normal.woff2") format("woff2"); }}
 
   .stApp {{ font-family: {BODY}; }}
+  /* arena light from above, and the cage's chain-link diamond at 3% in the background */
   .stApp {{ background:
-      radial-gradient(1100px 620px at 92% -12%, rgba(240, 74, 62, .13), transparent 62%),
-      radial-gradient(900px 560px at -6% 108%, rgba(167, 173, 184, .06), transparent 60%), {BG}; }}
-  .block-container {{ padding-top: 4.9rem; max-width: 1440px; }}
+      radial-gradient(1000px 560px at 88% -14%, rgba(124, 77, 255, .20), transparent 62%),
+      radial-gradient(800px 520px at -8% 110%, rgba(72, 209, 224, .07), transparent 60%),
+      repeating-linear-gradient(45deg, rgba(167, 123, 255, .03) 0 1px, transparent 1px 22px),
+      repeating-linear-gradient(-45deg, rgba(167, 123, 255, .03) 0 1px, transparent 1px 22px), {BG}; }}
+  .block-container {{ padding-top: 4.5rem; max-width: 1440px; }}
+  .stApp p, .stApp li, .stApp label, .stApp input, .stApp textarea, .stApp button {{ font-family: {BODY}; }}
   h1, h2, h3, h4 {{ font-family: {DISPLAY}; color: {INK}; letter-spacing: .005em; }}
   p, li {{ color: {INK_2}; }}
   :focus-visible {{ outline: 2px solid {RULE} !important; outline-offset: 2px; }}
@@ -81,14 +100,14 @@ def inject_css():
 
   /* ---------- top bar: wordmark + underline tabs ---------- */
   header[data-testid="stHeader"] {{
-    background: rgba(12, 12, 14, .94); backdrop-filter: blur(10px); height: 3.7rem;
+    background: rgba(11, 10, 18, .9); backdrop-filter: blur(10px); height: 3.7rem;
     border-bottom: 1px solid {BORDER};
   }}
   header[data-testid="stHeader"]::before {{
     content: "Stance Intelligence"; position: absolute; left: 28px; top: 50%;
     transform: translateY(-50%); font-family: {DISPLAY}; font-weight: 800; font-size: 1.45rem;
     color: {INK}; letter-spacing: .01em; padding-left: 36px; line-height: 28px;
-    background: url("data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2064%2064%22%20role%3D%22img%22%20aria-label%3D%22Stance%20Intelligence%20mark%22%3E%3Cdefs%3E%3CclipPath%20id%3D%22o%22%3E%3Cpolygon%20points%3D%2259.72%2C43.48%2043.48%2C59.72%2020.52%2C59.72%204.28%2C43.48%204.28%2C20.52%2020.52%2C4.28%2043.48%2C4.28%2059.72%2C20.52%22/%3E%3C/clipPath%3E%3C/defs%3E%3Cg%20clip-path%3D%22url%28%23o%29%22%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%2230.5%22%20height%3D%2264%22%20fill%3D%22%23F04A3E%22/%3E%3Crect%20x%3D%2233.5%22%20y%3D%220%22%20width%3D%2230.5%22%20height%3D%2264%22%20fill%3D%22%23A7ADB8%22/%3E%3C/g%3E%3C/svg%3E") no-repeat left center / 26px 26px;
+    background: url("data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2064%2064%22%20role%3D%22img%22%20aria-label%3D%22Stance%20Intelligence%20mark%22%3E%3Cdefs%3E%3CclipPath%20id%3D%22o%22%3E%3Cpolygon%20points%3D%2259.72%2C43.48%2043.48%2C59.72%2020.52%2C59.72%204.28%2C43.48%204.28%2C20.52%2020.52%2C4.28%2043.48%2C4.28%2059.72%2C20.52%22/%3E%3C/clipPath%3E%3C/defs%3E%3Cg%20clip-path%3D%22url%28%23o%29%22%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%2230.5%22%20height%3D%2264%22%20fill%3D%22%23A77BFF%22/%3E%3Crect%20x%3D%2233.5%22%20y%3D%220%22%20width%3D%2230.5%22%20height%3D%2264%22%20fill%3D%22%2348D1E0%22/%3E%3C/g%3E%3C/svg%3E") no-repeat left center / 26px 26px;
   }}
   header[data-testid="stHeader"]::after {{
     content: none;
@@ -111,7 +130,7 @@ def inject_css():
 
   /* ---------- sidebar: a quiet rail, not a floating card ---------- */
   section[data-testid="stSidebar"] {{ width: 248px !important; min-width: 248px !important;
-    background: rgba(20, 20, 23, .72); border-right: 1px solid {BORDER}; }}
+    background: rgba(20, 18, 30, .78); border-right: 1px solid {BORDER}; }}
   section[data-testid="stSidebar"] > div:first-child {{ background: transparent; padding-top: 3.7rem; }}
   [data-testid="stSidebarHeader"] {{ height: .6rem !important; min-height: 0 !important; padding: 0 !important; }}
   section[data-testid="stSidebar"] label p {{ color: {INK_MUTED}; font-size: .8rem; }}
@@ -119,11 +138,11 @@ def inject_css():
 
   /* ---------- page header ---------- */
   .ph {{ margin: 0 0 18px; max-width: 980px; }}
-  .ph h1 {{ font-family: {DISPLAY}; font-weight: 800; font-size: 3.1rem; line-height: .98;
+  .ph h1 {{ font-family: {DISPLAY}; font-weight: 800; font-size: 2.45rem; line-height: 1; text-wrap: balance;
             margin: 0; padding: 0; color: {INK}; }}
   .ph p {{ font-size: 1.02rem; color: {INK_2}; margin: 8px 0 0; max-width: 70ch; line-height: 1.5; }}
   .eyebrow {{ display: none; }}
-  .title {{ font-family: {DISPLAY}; font-weight: 800; font-size: 3.1rem; line-height: .98; color: {INK}; }}
+  .title {{ font-family: {DISPLAY}; font-weight: 800; font-size: 2.45rem; line-height: 1; color: {INK}; }}
   .sub {{ color: {INK_2}; font-size: 1.02rem; margin-top: 8px; max-width: 70ch; }}
 
   /* ---------- sections ---------- */
@@ -158,7 +177,7 @@ def inject_css():
 
   /* keyed hero containers: st.container(key="oct_...") */
   [class*="st-key-oct_"] {{ padding: 18px 22px; background:
-      radial-gradient(700px 360px at 50% 30%, rgba(240,74,62,.10), transparent 70%), {SURFACE};
+      radial-gradient(700px 360px at 50% 30%, rgba(124,77,255,.14), transparent 70%), {SURFACE};
       clip-path: polygon(0 0, calc(100% - 30px) 0, 100% 30px, 100% 100%, 30px 100%, 0 calc(100% - 30px)); }}
   [class*="st-key-oct_"] .card {{ background: transparent; border: none; padding: 4px 0; }}
   [class*="st-key-oct_"] [data-testid="stPlotlyChart"] {{ border: none; background: transparent; }}
