@@ -72,7 +72,9 @@ T = lambda name: load_target(fetch(MACRO + name + ".target"), N)
 shape = (verts0
          + 0.5 * T("caucasian-male-young") + 0.5 * T("african-male-young")
          + 1.0 * T("proportions/male-young-averagemuscle-averageweight-idealproportions")
-         + 1.0 * T("universal-male-young-maxmuscle-averageweight"))
+         + 1.0 * T("universal-male-young-maxmuscle-averageweight")
+         # lean it out a little so the muscle shows, like a fighter on weigh-in day
+         + 0.35 * (T("universal-male-young-maxmuscle-minweight") - T("universal-male-young-maxmuscle-averageweight")))
 morphs = {
     "heavy": T("universal-male-young-maxmuscle-maxweight") - T("universal-male-young-maxmuscle-averageweight"),
     "lean": T("universal-male-young-maxmuscle-minweight") - T("universal-male-young-maxmuscle-averageweight"),
@@ -227,7 +229,7 @@ def region(pred):
 
 hipY = (head["upperleg01.L"][1] + head["upperleg01.R"][1]) / 2
 kneeY = (head["lowerleg01.L"][1] + head["lowerleg01.R"][1]) / 2
-hemY = hipY - 0.78 * (hipY - kneeY)              # vale-tudo compression shorts end just above the knee
+hemY = hipY - 0.78 * (hipY - kneeY)              # fight shorts end just above the knee
 waistY = head["spine04"][1]
 crotchY = hipY - 0.35 * (hipY - kneeY)
 short_bones = {B[b] for b in ["root", "spine05", "pelvis.L", "pelvis.R", "upperleg01.L", "upperleg01.R",
@@ -235,7 +237,8 @@ short_bones = {B[b] for b in ["root", "spine05", "pelvis.L", "pelvis.R", "upperl
 
 shells = {}
 shells["shorts"] = (region(lambda i: dominant[i] in short_bones and hemY <= posed[i][1] <= waistY),
-                    lambda i: 0.06)                 # compression fit: ~6 mm off the skin, moves with it
+                    lambda i: 0.07 + 0.17 * np.clip((crotchY - posed[i][1]) / (crotchY - hemY), 0, 1) ** 1.3)
+                    # MMA fight shorts: snug at the hips, ~2.4 cm off the thigh at the hem; skinned like the body
 shells["waist"] = (region(lambda i: dominant[i] in short_bones and waistY - 0.4 <= posed[i][1] <= waistY + 0.05),
                    lambda i: 0.1)
 # --- 4oz MMA gloves: padded knuckle shell, thin leather palm, open fingers, wide wrist strap

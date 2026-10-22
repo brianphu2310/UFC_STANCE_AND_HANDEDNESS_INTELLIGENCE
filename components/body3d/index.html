@@ -443,22 +443,51 @@ function muscleShading(root) {
   for (let i = 0; i < n; i++) ao[i] = 1 - .7 * clamp((broad[i] - mid) / (hi - mid), 0, 1);
   g.setAttribute("ao", new THREE.BufferAttribute(ao, 1));
 }
+// Carved torso detail on the bind-pose surface (metres, model space; measured on fighter.glb):
+// six-pack with the centre line and three cross grooves, outer ab edges, the chest's lower edge and
+// centre groove, and the V-lines toward the hips. Drawn as a bump, so the silhouette is unchanged.
+const ABS_GLSL = `
+varying vec3 vObj;
+float gr(float d, float w) { return exp(-(d * d) / (w * w)); }
+float torsoH(vec3 p) {
+  float x = abs(p.x), y = p.y;
+  if (p.z < .07) return 0.;
+  float h = 0.;
+  float absZone = smoothstep(.2, .23, y) * (1. - smoothstep(.435, .45, y)) * (1. - smoothstep(.066, .078, x));
+  h -= absZone * gr(x, .011);                                         // centre line
+  for (int k = 0; k < 3; k++) {                                       // cross grooves between the blocks
+    float yk = .343 + .045 * float(k) + .006 * x / .07;
+    h -= .55 * absZone * smoothstep(.29, .32, y) * gr(y - yk, .011);
+  }
+  h -= .9 * smoothstep(.22, .26, y) * (1. - smoothstep(.43, .46, y)) * gr(x - .072 - .03 * (y - .3), .013);   // outer ab edge
+  float pecY = .438 + 2.2 * (x - .02) * (x - .02);                    // chest lower edge, curving up toward the arm
+  h -= 1.0 * smoothstep(.005, .02, x) * (1. - smoothstep(.12, .15, x)) * gr(y - pecY, .014);
+  h -= .7 * smoothstep(.44, .46, y) * (1. - smoothstep(.56, .58, y)) * gr(x, .012);  // chest centre groove
+  float vx = .085 - .55 * (.27 - y);                                  // V-lines from the hip bones inward
+  h -= .8 * smoothstep(.15, .18, y) * (1. - smoothstep(.27, .29, y)) * gr(x - vx, .012);
+  return h;
+}`;
 function muscled(mat) {                          // skin material that reads the "ao" attribute
   mat.onBeforeCompile = (sh) => {
     sh.vertexShader = sh.vertexShader
-      .replace("#include <common>", "#include <common>\nattribute float ao;\nvarying float vAO;")
-      .replace("#include <begin_vertex>", "#include <begin_vertex>\nvAO = ao;");
+      .replace("#include <common>", "#include <common>\nattribute float ao;\nvarying float vAO;\nvarying vec3 vObj;")
+      .replace("#include <begin_vertex>", "#include <begin_vertex>\nvAO = ao;\nvObj = position;");
     sh.fragmentShader = sh.fragmentShader
-      .replace("#include <common>", "#include <common>\nvarying float vAO;")
+      .replace("#include <common>", "#include <common>\nvarying float vAO;\n" + ABS_GLSL)
+      .replace("#include <normal_fragment_maps>", `#include <normal_fragment_maps>
+        float th = torsoH(vObj) * .0045;
+        vec3 sx = dFdx(-vViewPosition), sy = dFdy(-vViewPosition);
+        vec3 r1 = cross(sy, normal), r2 = cross(normal, sx);
+        float det = dot(sx, r1);
+        vec3 bumped = normalize(abs(det) * normal - sign(det) * (dFdx(th) * r1 + dFdy(th) * r2));
+        normal = mix(normal, bumped, step(1e-9, abs(det)));
+        float carve = 1. + .3 * torsoH(vObj);                       // a little shadow in each groove`)
       // the dummy's dark skin is lit mostly by its sheen and clearcoat, so darken the final light
-      .replace("#include <opaque_fragment>", "outgoingLight *= mix(1., vAO, .85);\n#include <opaque_fragment>");
+      .replace("#include <opaque_fragment>", "outgoingLight *= mix(1., vAO, .85) * clamp(carve, .6, 1.);\n#include <opaque_fragment>");
   };
   mat.customProgramCacheKey = () => "muscled";
   return mat;
 }
-// Vale-tudo compression shorts in black and white: black base, a tone-on-tone grey wave print on the
-// outer panel, a white diagonal seam from the outer hip to the inner hem with white flecks beside it,
-// and a plain black inner panel. No logos.
 // gold leather for the dominant hand's glove, with its own small studio reflection so the metal reads
 let GOLD_ENV = null;
 function goldEnv() {
@@ -478,59 +507,32 @@ function goldLeather(rough) {
     clearcoatRoughness: .25, envMap: goldEnv(), envMapIntensity: 1.1, emissive: "#E9B44C", emissiveIntensity: 0,
     side: THREE.DoubleSide });
 }
+// MMA fight shorts: black, with a white panel down the outside of each thigh that sweeps wider toward
+// the hem (white piping-free, like a stock fight short). No logos.
 function shortsMaterial() {
-  const m = new THREE.MeshPhysicalMaterial({ color: "#ffffff", roughness: .55, sheen: .7, sheenRoughness: .4,
+  const m = new THREE.MeshPhysicalMaterial({ color: "#ffffff", roughness: .62, sheen: .6, sheenRoughness: .45,
     sheenColor: new THREE.Color("#4a4a52"), side: THREE.DoubleSide });
-  const u = { uBase: { value: new THREE.Color("#0f0f11") }, uPrint: { value: new THREE.Color("#2e2e33") },
-              uTrim: { value: new THREE.Color("#ecebe8") } };
+  const u = { uBase: { value: new THREE.Color("#121214") }, uPanel: { value: new THREE.Color("#e4e3df") } };
   m.onBeforeCompile = (sh) => {
     Object.assign(sh.uniforms, u);
     sh.vertexShader = sh.vertexShader
-      .replace("#include <common>", "#include <common>\nattribute vec3 kit;\nattribute vec2 kit2;\nvarying vec3 vKit;\nvarying vec2 vKit2;\nvarying vec3 vPos;")
-      .replace("#include <begin_vertex>", "#include <begin_vertex>\nvKit = kit;\nvKit2 = kit2;\nvPos = position;");
+      .replace("#include <common>", "#include <common>\nattribute vec3 kit;\nattribute vec2 kit2;\nvarying vec3 vKit;\nvarying vec2 vKit2;")
+      .replace("#include <begin_vertex>", "#include <begin_vertex>\nvKit = kit;\nvKit2 = kit2;");
     sh.fragmentShader = sh.fragmentShader
-      .replace("#include <common>", `#include <common>
-        varying vec3 vKit; varying vec2 vKit2; varying vec3 vPos;
-        uniform vec3 uBase, uPrint, uTrim;
-        float h21(vec2 p) { p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }`)
+      .replace("#include <common>", "#include <common>\nvarying vec3 vKit; varying vec2 vKit2;\nuniform vec3 uBase, uPanel;")
       .replace("#include <color_fragment>", `#include <color_fragment>
         float ax = vKit2.x, t = vKit2.y, fz = vKit.z;
-        float lineX = mix(.075, .165, t);                          // diagonal seam: inner hem -> outer hip
-        float d = ax - lineX;                                      // > 0: outer side of the seam
-        vec3 col = uBase;
-        // wave print on the outer panel (front, side and back of the outer thigh)
-        float wave = sin(vPos.y * 260. + 2.2 * sin(ax * 90. + vPos.z * 60.));
-        float onPrint = step(0., d) * smoothstep(.2, .6, wave) * .85;
-        col = mix(col, uPrint, onPrint);
-        // white seam line and white flecks just outside it
-        float seam = 1. - smoothstep(.0022, .0042, abs(d));
-        vec2 cell = floor(vec2(vPos.y, ax + vPos.z * .5) * 520.);
-        float fleck = step(.86, h21(cell)) * step(0., d) * (1. - smoothstep(.006, .03, d));
-        col = mix(col, uTrim, max(seam, fleck * .9) * step(-.35, fz + .6));
-        diffuseColor.rgb = col;`);
+        // curved boundary: a narrow stripe on the outer hip that sweeps wider across the front of the hem
+        float edge = mix(.135, .192, pow(t, .6)) - .025 * max(fz, 0.) * (1. - t);
+        float panel = smoothstep(edge - .003, edge + .003, ax) * step(-.2, fz);   // outer side and front, not the seat
+        diffuseColor.rgb = mix(uBase, uPanel, panel);`);
   };
-  m.customProgramCacheKey = () => "shorts-bw";
+  m.customProgramCacheKey = () => "shorts-fight";
   return m;
 }
-function waistbandMaterial() {                   // black waistband, white squares on the sides
-  const m = new THREE.MeshPhysicalMaterial({ color: "#0f0f11", roughness: .5, sheen: .5, sheenColor: new THREE.Color("#4a4a52"),
+function waistbandMaterial() {                   // plain black waistband
+  return new THREE.MeshPhysicalMaterial({ color: "#0f0f11", roughness: .5, sheen: .5, sheenColor: new THREE.Color("#4a4a52"),
     side: THREE.DoubleSide });
-  m.onBeforeCompile = (sh) => {
-    sh.uniforms.uTrim = { value: new THREE.Color("#ecebe8") };
-    sh.vertexShader = sh.vertexShader
-      .replace("#include <common>", "#include <common>\nvarying vec3 vPos;")
-      .replace("#include <begin_vertex>", "#include <begin_vertex>\nvPos = position;");
-    sh.fragmentShader = sh.fragmentShader
-      .replace("#include <common>", "#include <common>\nvarying vec3 vPos;\nuniform vec3 uTrim;")
-      .replace("#include <color_fragment>", `#include <color_fragment>
-        float ang = atan(vPos.x, vPos.z);                          // around the waist, 0 at the front
-        vec2 g = vec2(ang * 9., vPos.y * 110.);
-        float sq = step(abs(fract(g.x) - .5), .3) * step(abs(fract(g.y) - .5), .26);
-        float sides = step(.55, abs(ang)) * step(abs(ang), 2.6);   // plain panels front and back
-        diffuseColor.rgb = mix(diffuseColor.rgb, uTrim, sq * sides);`);
-  };
-  m.customProgramCacheKey = () => "waistband";
-  return m;
 }
 function piped(mat, trim = "#e9e7e2") {          // white piping along a wrist-strap edge
   mat.onBeforeCompile = (sh) => {
