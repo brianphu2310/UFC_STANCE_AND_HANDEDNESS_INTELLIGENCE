@@ -235,11 +235,21 @@ crotchY = hipY - 0.35 * (hipY - kneeY)
 short_bones = {B[b] for b in ["root", "spine05", "pelvis.L", "pelvis.R", "upperleg01.L", "upperleg01.R",
                               "upperleg02.L", "upperleg02.R", "spine04"] if b in B}
 
+def crotch_front(i):
+    x, y, _ = posed[i]
+    near_mid = np.exp(-(x / 0.75) ** 2)                      # dm: within ~7 cm of the midline
+    front = np.clip(NRM[i][2], 0, 1) ** 0.5
+    band = np.clip((y - (crotchY - 0.9)) / 0.5, 0, 1) * np.clip((hipY + 0.3 - y) / 0.5, 0, 1)   # stays below the waistband
+    return near_mid * front * band
+
+
 shells = {}
 shells["shorts"] = (region(lambda i: dominant[i] in short_bones and hemY <= posed[i][1] <= waistY),
-                    lambda i: 0.04)                 # compression fit: ~4 mm off the skin, moves with it
-shells["waist"] = (region(lambda i: dominant[i] in short_bones and waistY - 0.5 <= posed[i][1] <= waistY + 0.06),
-                   lambda i: 0.075)                 # taller, snug elastic waistband
+                    lambda i: 0.04 + 0.16 * crotch_front(i))
+                    # compression fit ~4 mm off the skin; the front of the crotch stands off up to ~2 cm
+                    # so the fabric bridges smoothly between the thighs like real fight shorts
+shells["waist"] = (region(lambda i: dominant[i] in short_bones and waistY - 0.4 <= posed[i][1] <= waistY + 0.05),
+                   lambda i: 0.1)
 # --- 4oz MMA gloves: padded knuckle shell, thin leather palm, open fingers, wide wrist strap
 orig_dom = [max(d, key=d.get) if d else "" for d in vw]
 adj = [set() for _ in range(N)]

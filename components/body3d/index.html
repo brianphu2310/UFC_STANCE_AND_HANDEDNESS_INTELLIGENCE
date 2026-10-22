@@ -587,6 +587,34 @@ function shortsMaterial(base, panel) {
         float st = fract((hd - .045) / .012);
         float stripes = step(.045, hd) * step(hd, .081) * step(abs(st - .5), .14) * panel;
         col = mix(col, uBase, stripes);
+        // vale-tudo front, after the reference: a contoured pouch panel with seams converging at the crotch
+        // and a centre seam, a dark V-shaped waistband dip at the front, snakeskin on the side panels
+        float front = smoothstep(.25, .45, fz);
+        float pw = .068 * pow(smoothstep(.4, .92, t), .75);           // pouch half-width, 0 at the crotch
+        float dp = ax - pw;
+        float pouch = (1. - smoothstep(-AA(dp), AA(dp), dp)) * front * step(.4, t);
+        col = mix(col, mix(col, uPanel, .22), pouch);                // slightly deeper shade inside the pouch
+        float seamP = (1. - smoothstep(.0022, .0022 + AA(dp), abs(dp))) * front * step(.42, t);
+        float seamC = (1. - smoothstep(.0016, .0016 + AA(sx), abs(sx))) * front * step(.25, t);   // centre seam
+        col = mix(col, uGold, seamP);
+        col = mix(col, uPanel, seamC * .8);
+        // dark V dip of the waistband over the top of the pouch, gold edged
+        float vBot = .9 - 2.2 * max(.055 - ax, 0.);                  // lowest at the middle
+        float dv = t - vBot;
+        float dip = smoothstep(-AA(dv), AA(dv), dv) * step(ax, .075) * front;
+        float dipEdge = (1. - smoothstep(.004, .004 + AA(dv), abs(dv))) * step(ax, .075) * front;
+        col = mix(col, uPanel, dip);
+        col = mix(col, uGold, dipEdge);
+        // snakeskin scales on the black side panel
+        vec2 sc = vec2(hm * 70., (ax + fz * .05) * 70.);
+        sc.x += .5 * floor(sc.y);
+        vec2 f = fract(sc) - .5;
+        float scale = smoothstep(.5, .32, length(f * vec2(1., 1.5)));
+        col = mix(col, col + vec3(.07), scale * panel * (1. - stripes) * step(.09, hd));
+        // diagonal pinstripes across the lower front
+        float pin = fract((hm + sx * .6) * 55.);
+        float pins = step(.85, pin) * (1. - smoothstep(.12, .2, hm)) * front * (1. - panel) * step(.035, hd);
+        col = mix(col, mix(col, uPanel, .5), pins);
         // gold octagon badge on the front of the left thigh (no lettering)
         vec2 q = vec2((sx - .1) / .028, (hm - .2) / .028);
         float od = max(max(abs(q.x), abs(q.y)), (abs(q.x) + abs(q.y)) * .7071);
@@ -595,14 +623,14 @@ function shortsMaterial(base, panel) {
         col = mix(col, uPanel, (1. - smoothstep(.9, .9 + AA(od), od)) * step(.55, fz) * step(0., sx) * .85);
         col = mix(col, uGold, max(ring, core));
         diffuseColor.rgb = col;
-        float goldAmt = max(max(pipe * back, bandLine), max(ring, core));`)
+        float goldAmt = max(max(max(pipe * back, bandLine), max(ring, core)), max(seamP, dipEdge));`)
       .replace("#include <roughnessmap_fragment>", `#include <roughnessmap_fragment>
         roughnessFactor = mix(roughnessFactor, .3, goldAmt);         // satin-gold trim catches the light`);
   };
   m.customProgramCacheKey = () => "shorts-fight";   // colours are uniforms, so both corners share one program
   return m;
 }
-function waistbandMaterial() {                   // black elastic waistband: gold edges, diamonds, white drawstring
+function waistbandMaterial() {                   // black waistband: gold edges and slanted gold hash bars
   const m = new THREE.MeshPhysicalMaterial({ color: "#0f0f11", roughness: .5, sheen: .5, sheenColor: new THREE.Color("#4a4a52"),
     side: THREE.DoubleSide });
   m.onBeforeCompile = (sh) => {
@@ -613,18 +641,16 @@ function waistbandMaterial() {                   // black elastic waistband: gol
     sh.fragmentShader = sh.fragmentShader
       .replace("#include <common>", "#include <common>\nvarying float vY, vX, vZ;\nuniform vec3 uGold;")
       .replace("#include <color_fragment>", `#include <color_fragment>
-        // waistband on fighter.glb spans y ~ .19 to .247 m: gold edge lines top and bottom,
-        // a row of gold diamonds round the middle, and a white drawstring tied at the front
+        // waistband on fighter.glb spans y ~ .201 to .246 m: gold edge lines top and bottom,
+        // slanted gold hash bars on the sides
         float aa = max(fwidth(vY), 1e-5);
-        float edges = (1. - smoothstep(.0022, .0022 + aa, abs(vY - .2415))) + (1. - smoothstep(.0022, .0022 + aa, abs(vY - .1965)));
+        float edges = (1. - smoothstep(.0022, .0022 + aa, abs(vY - .2415))) + (1. - smoothstep(.0022, .0022 + aa, abs(vY - .2055)));
         float ang = atan(vX, vZ);
-        float cell = fract(ang * 7.) - .5, dv = (vY - .219) / .0085;
-        float dia = abs(cell) * 2.3 + abs(dv);
-        float diamonds = (1. - smoothstep(.55, .55 + max(fwidth(dia), 1e-4), dia)) * step(.28, abs(ang));
-        float cord = step(abs(ang), .2) * (1. - smoothstep(.0016, .0016 + aa, abs(vY - .229)))
-                   + step(abs(abs(ang) - .06), .012) * step(.205, vY) * step(vY, .229);   // knot ends hanging down
+        // slanted hash bars on the sides, like the reference waistband
+        float bar = fract(ang * 9. + (vY - .2235) * 55. * sign(ang)) - .5;
+        float diamonds = step(abs(bar), .14) * step(abs(vY - .2235), .0115) * step(.45, abs(ang)) * step(abs(ang), 1.9);
         diffuseColor.rgb = mix(diffuseColor.rgb, uGold, clamp(edges + diamonds, 0., 1.));
-        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(.92), clamp(cord, 0., 1.));`);
+`);
   };
   m.customProgramCacheKey = () => "waistband-gold";
   return m;
