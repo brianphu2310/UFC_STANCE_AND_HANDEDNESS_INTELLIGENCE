@@ -9,12 +9,12 @@
   @font-face { font-family: "Big Shoulders Display"; src: url("/app/static/fonts/big-shoulders-display-latin-700-normal.woff2") format("woff2"); font-weight: 700; }
   @font-face { font-family: "Big Shoulders Display"; src: url("/app/static/fonts/big-shoulders-display-latin-800-normal.woff2") format("woff2"); font-weight: 800; }
   :root { --bg:#0C0C0E; --ink:#F2F0ED; --ink2:#C4C1BC; --mute:#8F8C88; --line:#2A2A2F;
-          --a:#F04A3E; --afill:#C42A20; --b:#A7ADB8; --rule:#E9B44C; }
+          --a:#F04A3E; --afill:#7A3CF0; --b:#A7ADB8; --rule:#E9B44C; --neon:#A879FF; }
   html, body { margin:0; height:100%; background:var(--bg); overflow:hidden; color:var(--ink);
                font-family:"Instrument Sans", "Segoe UI", system-ui, sans-serif; }
   #wrap { position:relative; width:100%; height:100%; overflow:hidden; box-sizing:border-box;
           border:1px solid var(--line); border-radius:6px;
-          background: radial-gradient(120% 85% at 50% 8%, #1C1C20 0%, #111113 52%, #0A0A0B 100%); }
+          background: radial-gradient(120% 85% at 50% 8%, #221A33 0%, #120E1C 52%, #08070C 100%); }
   canvas { display:block; position:absolute; inset:0; }
   #labels { position:absolute; inset:0; pointer-events:none; overflow:hidden; }
   .lab { position:absolute; left:0; top:0; white-space:nowrap; will-change:transform; transition:opacity .2s; }
@@ -88,8 +88,9 @@
     <button class="tool on" id="bPlay" aria-pressed="true">Pause</button>
     <button class="tool on" id="bSpin" aria-pressed="true">Rotate</button>
     <button class="tool" id="bReset">Reset</button>
+    <button class="tool" id="bNeon" aria-pressed="false">Neon</button>
     <span class="spacer"></span>
-    <span class="key"><i></i>Gold strap patch and ankle band mark the dominant hand and foot</span>
+    <span class="key"><i></i>Gold glove and gold ring: dominant hand and foot</span>
   </div>
 </div>
 <script type="module">
@@ -104,7 +105,6 @@ const send = (type, data = {}) =>
 let frameHeight = 520;
 
 const COL = { a: "#F04A3E", b: "#A7ADB8", rule: "#E9B44C", skin: "#404047", ink: "#F2F0ED", hit: "#FF6A4D" };
-const KIT = { "#F04A3E": "#C8291C", "#A7ADB8": "#B4B9C2" };   // fight-kit fabric per corner
 const REDUCE = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const V = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
 const UP = V(0, 1, 0), ZAX = V(0, 0, 1);
@@ -164,8 +164,10 @@ controls.maxDistance = 14;
 controls.maxPolarAngle = Math.PI * 0.52;
 controls.autoRotate = !REDUCE;
 
-scene.fog = new THREE.Fog("#0C0C0E", 6.5, 17);
-scene.add(new THREE.HemisphereLight("#d6d8de", "#2a0d0b", 0.55));
+// future-purple arena: violet rims and fog, neutral key light so skin and kit keep their colours
+const NEON = "#A879FF", NEON_DEEP = "#6B2FE0";
+scene.fog = new THREE.Fog("#0D0A14", 6.5, 17);
+scene.add(new THREE.HemisphereLight("#d9d4e6", "#1a1426", 0.7));
 const spot = new THREE.SpotLight("#fff6ee", 6, 0, 0.55, 0.85, 0);
 spot.position.set(0.8, 7, 1.4);
 spot.target.position.set(0, 0.9, 0);
@@ -174,55 +176,144 @@ spot.shadow.mapSize.set(2048, 2048);
 spot.shadow.bias = -0.0004;
 spot.shadow.camera.near = 2; spot.shadow.camera.far = 14;
 scene.add(spot, spot.target);
-const rimA = new THREE.DirectionalLight("#FF3B2F", 3.4); rimA.position.set(-3, 2.4, -4.5); scene.add(rimA);
-const rimB = new THREE.DirectionalLight("#FF4A36", 2.6); rimB.position.set(-3, 2.4, 4.5); scene.add(rimB);
-const fill = new THREE.DirectionalLight("#b8c4d8", 0.85); fill.position.set(5, 2, 1); scene.add(fill);
-const glow = new THREE.PointLight("#FF2A1A", 0.8, 5, 1.8); glow.position.set(0, 0.25, 0); scene.add(glow);
+const rimA = new THREE.DirectionalLight("#9B6BFF", 2.4); rimA.position.set(-3, 2.4, -4.5); scene.add(rimA);
+const rimB = new THREE.DirectionalLight("#C77DFF", 1.6); rimB.position.set(-3, 2.4, 4.5); scene.add(rimB);
+const fill = new THREE.DirectionalLight("#c3c8f0", 0.85); fill.position.set(5, 2, 1); scene.add(fill);
 
-// ---- stage: black floor with a red neon grid that fades into the dark
-const MAT_R = 3.0;
-// glowing grid drawn into a texture so the lines stay crisp at grazing angles
-function gridTexture() {
-  const c = document.createElement("canvas"); c.width = c.height = 256;
-  const g = c.getContext("2d");
-  g.fillStyle = "#000"; g.fillRect(0, 0, 256, 256);
-  for (const [w, a] of [[18, .10], [9, .22], [4, .55], [2, 1]]) {
-    g.strokeStyle = `rgba(255, 62, 44, ${a})`; g.lineWidth = w;
-    g.beginPath(); g.moveTo(0, 0); g.lineTo(256, 0); g.moveTo(0, 0); g.lineTo(0, 256);
-    g.moveTo(0, 256); g.lineTo(256, 256); g.moveTo(256, 0); g.lineTo(256, 256); g.stroke();
-  }
-  const t = new THREE.CanvasTexture(c);
-  t.wrapS = t.wrapT = THREE.RepeatWrapping;
-  t.repeat.set(60 / 0.8, 60 / 0.8);                  // 80 cm cells
-  t.anisotropy = renderer.capabilities.getMaxAnisotropy();
-  t.colorSpace = THREE.SRGBColorSpace;
-  return t;
-}
+// ---- stage: a UFC-size Octagon. 30 ft across the flats, canvas mat, eight padded posts,
+// black chain-link fence with a padded top rail, on a dark arena floor
+const MAT_R = 3.0;                                    // radius used for camera framing and labels
+const OCT_A = 4.57;                                   // apothem: centre to the middle of a fence side (m)
+const OCT_R = OCT_A / Math.cos(Math.PI / 8);          // centre to a post
+const FENCE_H = 1.75, SKIRT_H = .22;
+const octAngle = k => Math.PI / 8 + k * Math.PI / 4;  // post k sits at this angle
+const CORNER_POST = { 5: COL.a, 1: "#1F4FD1" };      // red and blue corner posts
 const floor = new THREE.Mesh(new THREE.PlaneGeometry(60, 60),
-  new THREE.MeshStandardMaterial({ color: "#0E0E10", roughness: 0.95, metalness: 0,
-    emissive: "#ffffff", emissiveMap: gridTexture(), emissiveIntensity: 0.9 }));
+  new THREE.MeshStandardMaterial({ color: "#0b0912", roughness: 0.9, metalness: 0 }));
 floor.rotation.x = -Math.PI / 2;
 floor.receiveShadow = true;
 scene.add(floor);
-function octLoop(r, color, opacity = 1) {
-  const pts = [];
-  for (let k = 0; k <= 8; k++) {
-    const a = Math.PI / 8 + k * Math.PI / 4;
-    pts.push(V(r * Math.cos(a), 0.004, r * Math.sin(a)));
+function canvasTexture() {                             // the mat: worn light canvas, dark border by the fence
+  const N = 1024, c = document.createElement("canvas"); c.width = c.height = N;
+  const g = c.getContext("2d"), px = N / (2 * OCT_R);
+  const oct = (r) => { g.beginPath(); for (let k = 0; k < 8; k++) { const a = octAngle(k);
+    const x = N / 2 + r * px * Math.cos(a), y = N / 2 - r * px * Math.sin(a); k ? g.lineTo(x, y) : g.moveTo(x, y); } g.closePath(); };
+  const k8 = 1 / Math.cos(Math.PI / 8), cx = N / 2;
+  g.fillStyle = "#16111f"; g.fillRect(0, 0, N, N);
+  oct(OCT_R); g.fill();                                       // dark apron by the fence
+  g.fillStyle = "#cfcad8"; oct(OCT_R - .62 * k8); g.fill();   // lilac-grey canvas
+  // apron: hash marks round the edge, like a dial
+  g.strokeStyle = "#3b2d57"; g.lineWidth = .025 * px;
+  for (let k = 0; k < 96; k++) {
+    const a = k / 96 * Math.PI * 2, r0 = (OCT_A - .55) * px, r1 = (OCT_A - (k % 4 ? .45 : .32)) * px;
+    g.beginPath(); g.moveTo(cx + r0 * Math.cos(a), cx - r0 * Math.sin(a)); g.lineTo(cx + r1 * Math.cos(a), cx - r1 * Math.sin(a)); g.stroke();
   }
-  return new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),
-    new THREE.LineBasicMaterial({ color, transparent: true, opacity }));
+  g.strokeStyle = "#7A3CF0"; g.lineWidth = .05 * px; oct(OCT_R - .7 * k8); g.stroke();      // purple boundary line
+  g.strokeStyle = "rgba(122,60,240,.35)"; g.lineWidth = .02 * px; oct(OCT_R - .82 * k8); g.stroke();
+  // centre: double octagon with spokes and a filled core
+  g.globalAlpha = .9;
+  g.strokeStyle = "#7A3CF0"; g.lineWidth = .04 * px; oct(1.25 * k8); g.stroke();
+  g.lineWidth = .02 * px; oct(1.05 * k8); g.stroke();
+  g.globalAlpha = .35; g.lineWidth = .015 * px;
+  for (let k = 0; k < 8; k++) {
+    const a = octAngle(k), r0 = 1.25 * k8 * px, r1 = (OCT_R - .82 * k8) * px;
+    g.beginPath(); g.moveTo(cx + r0 * Math.cos(a), cx - r0 * Math.sin(a)); g.lineTo(cx + r1 * Math.cos(a), cx - r1 * Math.sin(a)); g.stroke();
+  }
+  g.globalAlpha = .18; g.fillStyle = "#7A3CF0"; oct(1.05 * k8); g.fill();
+  g.globalAlpha = .55; g.fillStyle = "#4c1fa8"; oct(.35 * k8); g.fill();
+  g.globalAlpha = 1;
+  // corner quarters: faint arcs in front of the red and blue corners
+  for (const [k, col] of [[5, "rgba(210,40,40,.28)"], [1, "rgba(31,79,209,.28)"]]) {
+    const a = octAngle(k), r = (OCT_R - 1.2) * px;
+    g.strokeStyle = col; g.lineWidth = .05 * px;
+    g.beginPath(); g.arc(cx + r * Math.cos(a), cx - r * Math.sin(a), .7 * px, 0, Math.PI * 2); g.stroke();
+  }
+  const img = g.getImageData(0, 0, N, N), d = img.data;   // canvas weave and scuffs
+  for (let i = 0; i < d.length; i += 4) {
+    const n = (Math.random() - .5) * 14;
+    d[i] += n; d[i + 1] += n; d[i + 2] += n;
+  }
+  g.putImageData(img, 0, 0);
+  g.globalAlpha = .05; g.fillStyle = "#3a2f48";
+  for (let k = 0; k < 160; k++) { g.beginPath(); g.ellipse(N * Math.random(), N * Math.random(), 4 + 30 * Math.random(), 2 + 10 * Math.random(), Math.PI * Math.random(), 0, 7); g.fill(); }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  return t;
 }
-scene.add(octLoop(MAT_R, "#FF6A4D", 0.9));
-const postGeo = new THREE.CylinderGeometry(0.05, 0.05, 0.3, 16);
+const octShape = new THREE.Shape();
+for (let k = 0; k <= 8; k++) { const a = octAngle(k); k ? octShape.lineTo(OCT_R * Math.cos(a), OCT_R * Math.sin(a)) : octShape.moveTo(OCT_R * Math.cos(a), OCT_R * Math.sin(a)); }
+const matGeo = new THREE.ShapeGeometry(octShape);
+{ const uv = matGeo.attributes.uv, P = matGeo.attributes.position;
+  for (let i = 0; i < uv.count; i++) uv.setXY(i, P.getX(i) / (2 * OCT_R) + .5, P.getY(i) / (2 * OCT_R) + .5); }
+const canvasMat = new THREE.Mesh(matGeo, new THREE.MeshStandardMaterial({ map: canvasTexture(), roughness: .92 }));
+canvasMat.rotation.x = -Math.PI / 2;
+canvasMat.scale.set(1, -1, 1);                        // keep the shape's +y as the world's -z after the turn
+canvasMat.position.y = .003;
+canvasMat.receiveShadow = true;
+scene.add(canvasMat);
+function chainLink() {                                // vinyl-coated chain link, about 5 cm diamonds
+  const c = document.createElement("canvas"); c.width = c.height = 64;
+  const g = c.getContext("2d");
+  g.strokeStyle = "#fff"; g.lineWidth = 7; g.lineCap = "round";
+  g.beginPath(); g.moveTo(0, 32); g.lineTo(32, 0); g.lineTo(64, 32); g.lineTo(32, 64); g.closePath(); g.stroke();
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  return t;
+}
+const side = 2 * OCT_A * Math.tan(Math.PI / 8);
+const linkTex = chainLink();
+linkTex.repeat.set(side / .055, FENCE_H / .055);
+const fenceMat = new THREE.MeshStandardMaterial({ color: "#6e6880", alphaMap: linkTex, transparent: true,
+  roughness: .35, metalness: .55, emissive: NEON_DEEP, emissiveIntensity: .18, side: THREE.DoubleSide, depthWrite: false });
+const padMat = new THREE.MeshPhysicalMaterial({ color: "#0f0f11", roughness: .38, clearcoat: .5, clearcoatRoughness: .3 });
+// cut-away: fence sections between the camera and the centre are hidden, like a broadcast cage cam
+const cageParts = [];                                 // { objs, dir }: hide objs when the camera is past dir
+function updateCage() {
+  const c = camera.position;
+  for (const p of cageParts) {
+    const show = c.x * p.dir.x + c.z * p.dir.z < OCT_A - .15;
+    for (const o of p.objs) o.visible = show;
+  }
+}
+const fenceGeo = new THREE.PlaneGeometry(side, FENCE_H);
+const railGeo = new THREE.CylinderGeometry(.085, .085, side, 20);
+const skirtGeo = new THREE.BoxGeometry(side, SKIRT_H, .1);
+const neonGeo = new THREE.CylinderGeometry(.012, .012, side - .2, 8);
+const neonMat = new THREE.MeshBasicMaterial({ color: NEON });
 for (let k = 0; k < 8; k++) {
-  const a = Math.PI / 8 + k * Math.PI / 4;
-  const isA = k === 5, isB = k === 1;
-  const c = isA ? COL.a : isB ? COL.b : "#2A2A2F";
-  const post = new THREE.Mesh(postGeo, new THREE.MeshStandardMaterial({
-    color: c, roughness: 0.5, emissive: c, emissiveIntensity: isA || isB ? 0.9 : 0.05 }));
-  post.position.set(MAT_R * Math.cos(a), 0.15, MAT_R * Math.sin(a));
-  scene.add(post);
+  const a = Math.PI / 4 * (k + 1), mid = V(OCT_A * Math.cos(a), 0, -OCT_A * Math.sin(a));
+  const yaw = Math.atan2(mid.x, mid.z);                // each panel faces the centre
+  const fence = new THREE.Mesh(fenceGeo, fenceMat);
+  fence.position.copy(mid).setY(SKIRT_H + FENCE_H / 2); fence.rotation.y = yaw; fence.renderOrder = 1;
+  const rail = new THREE.Mesh(railGeo, padMat);
+  rail.position.copy(mid).setY(SKIRT_H + FENCE_H + .06); rail.rotation.set(0, yaw, Math.PI / 2, "YXZ");
+  const skirt = new THREE.Mesh(skirtGeo, padMat);
+  skirt.position.copy(mid).setY(SKIRT_H / 2); skirt.rotation.y = yaw;
+  rail.castShadow = skirt.castShadow = true;
+  // neon strips: under the top rail and along the top of the skirt
+  const neonTop = new THREE.Mesh(neonGeo, neonMat), neonLow = new THREE.Mesh(neonGeo, neonMat);
+  neonTop.position.copy(mid).setY(SKIRT_H + FENCE_H - .03); neonTop.rotation.set(0, yaw, Math.PI / 2, "YXZ");
+  neonLow.position.copy(mid).setY(SKIRT_H + .01); neonLow.rotation.set(0, yaw, Math.PI / 2, "YXZ");
+  scene.add(fence, rail, skirt, neonTop, neonLow);
+  cageParts.push({ objs: [fence, rail, skirt, neonTop, neonLow], dir: mid.clone().normalize() });
+}
+const postGeo = new THREE.CylinderGeometry(.11, .11, SKIRT_H + FENCE_H + .18, 24);
+const postTopGeo = new THREE.SphereGeometry(.11, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2);
+for (let k = 0; k < 8; k++) {
+  const a = octAngle(k), c = CORNER_POST[k];
+  const m = c ? new THREE.MeshPhysicalMaterial({ color: c, roughness: .4, clearcoat: .5, clearcoatRoughness: .3 }) : padMat;
+  const post = new THREE.Mesh(postGeo, m);
+  const h = SKIRT_H + FENCE_H + .18;
+  post.position.set(OCT_R * Math.cos(a), h / 2, OCT_R * Math.sin(a));
+  const cap = new THREE.Mesh(postTopGeo, m);
+  cap.position.set(post.position.x, h, post.position.z);
+  post.castShadow = true;
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(.118, .012, 8, 32), new THREE.MeshBasicMaterial({ color: c || NEON }));
+  ring.rotation.x = Math.PI / 2; ring.position.set(post.position.x, h - .08, post.position.z);
+  scene.add(post, cap, ring);
+  cageParts.push({ objs: [post, cap, ring], dir: V(Math.cos(a), 0, Math.sin(a)) });
 }
 
 // ------------------------------------------------------------------ body model
@@ -270,6 +361,14 @@ function buildModel(gltf) {
     restPos[o.name] = o.position.clone();
     restWorld[o.name] = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().extractRotation(o.matrixWorld));
   });
+  // rest direction from each limb bone to the next joint, in that bone's own frame (the short hip and
+  // shoulder bones' own axes do not point at the knee or elbow, so aiming those axes swings the limb off)
+  const jointDir = {};
+  for (const s of ["L", "R"]) for (const [a, b] of [["upperleg01", "lowerleg01"], ["lowerleg01", "foot"],
+                                                    ["upperarm01", "lowerarm01"], ["lowerarm01", "wrist"]]) {
+    const n = nm(a + "." + s);
+    jointDir[n] = wp(b + "." + s).sub(wp(a + "." + s)).normalize().applyQuaternion(restWorld[n].clone().invert());
+  }
   const hand = {};
   for (const s of ["L", "R"]) {
     const w = bone("wrist." + s);
@@ -279,9 +378,371 @@ function buildModel(gltf) {
     hand[s] = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(b0.clone().cross(f0), b0, f0));
   }
   const headInv = new THREE.Matrix4().copy(bone("head").matrixWorld).invert();
-  return { scene: root, Hm, floor: y0, order, parentOf, restLocal, restWorld, restPos, hand,
+  fightKit(root);
+  muscleShading(root);
+  return { scene: root, Hm, floor: y0, order, parentOf, restLocal, restWorld, restPos, hand, jointDir,
            restRoot: wp("root"), restHip: hip,
            eyeLocal: ["L", "R"].map(s => V(...ext.eyes[s]).applyMatrix4(headInv)) };
+}
+
+// ------------------------------------------------------------------ fight kit
+// UFC-style kit drawn from per-vertex data computed once from the bind pose (the mesh has no UVs):
+// tight black fight shorts with corner-colour side panels, hem band and white piping;
+// wrist straps with white piping along their edges.
+function openEdges(g) {
+  const ix = g.index.array, count = new Map(), nb = new Map();
+  const key = (a, b) => a < b ? a * 1e6 + b : b * 1e6 + a;
+  for (let i = 0; i < ix.length; i += 3)
+    for (const [a, b] of [[ix[i], ix[i + 1]], [ix[i + 1], ix[i + 2]], [ix[i + 2], ix[i]]])
+      count.set(key(a, b), (count.get(key(a, b)) || 0) + 1);
+  for (const [k, c] of count) {
+    if (c !== 1) continue;
+    const a = Math.floor(k / 1e6), b = k % 1e6;
+    if (!nb.has(a)) nb.set(a, []);
+    if (!nb.has(b)) nb.set(b, []);
+    nb.get(a).push(b); nb.get(b).push(a);
+  }
+  return nb;                                            // boundary vertex -> boundary neighbours
+}
+function fightKit(root) {
+  const shorts = root.getObjectByName("shorts");
+  if (shorts && shorts.geometry.index) {
+    const g = shorts.geometry, P = g.attributes.position, Nr = g.attributes.normal, n = P.count;
+    let y0 = Infinity, y1 = -Infinity;
+    for (let i = 0; i < n; i++) { y0 = Math.min(y0, P.getY(i)); y1 = Math.max(y1, P.getY(i)); }
+    const hem = [...openEdges(g)].filter(([v]) => P.getY(v) < (y0 + y1) / 2);
+    // straighten the ragged hem: pull each leg's hem loop toward a clean, level line
+    const hemY = {};
+    for (const sgn of [1, -1]) {
+      const loop = hem.filter(([v]) => Math.sign(P.getX(v)) === sgn);
+      if (!loop.length) continue;
+      const mean = loop.reduce((s, [v]) => s + P.getY(v), 0) / loop.length;
+      for (let it = 0; it < 8; it++) {
+        const ny = loop.map(([v, nbs]) => .5 * P.getY(v) + .5 * nbs.reduce((s, w) => s + P.getY(w), 0) / nbs.length);
+        loop.forEach(([v], j) => P.setY(v, THREE.MathUtils.lerp(ny[j], mean, .25)));
+      }
+      hemY[sgn] = mean;
+    }
+    P.needsUpdate = true;
+    const kit = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) {
+      const sgn = Math.sign(P.getX(i)) || 1;
+      kit[i * 3] = Nr.getX(i) * sgn;                    // 1 on the outer seam of each leg
+      kit[i * 3 + 1] = P.getY(i) - (hemY[sgn] ?? y0);   // metres above the hem
+      kit[i * 3 + 2] = Nr.getZ(i);                      // front (+) / back (-) across the seam
+    }
+    g.setAttribute("kit", new THREE.BufferAttribute(kit, 3));
+    const kit2 = new Float32Array(n * 3);                // |x| from the midline, height hem -> waist (0..1), metres above the hem
+    for (let i = 0; i < n; i++) {
+      const h0 = hemY[Math.sign(P.getX(i)) || 1] ?? y0;
+      kit2[i * 3] = P.getX(i);
+      kit2[i * 3 + 1] = clamp((P.getY(i) - h0) / (y1 - h0), 0, 1);
+      kit2[i * 3 + 2] = P.getY(i) - h0;
+    }
+    g.setAttribute("kit2", new THREE.BufferAttribute(kit2, 3));
+  }
+  // glove pads: edge distance (in mesh hops, smoothed by interpolation) for the trim and stitching
+  for (const name of ["gloveL", "gloveR"]) {
+    const m = root.getObjectByName(name);
+    if (!m || !m.geometry.index) continue;
+    const g = m.geometry, n = g.attributes.position.count, ix = g.index.array;
+    const nb = Array.from({ length: n }, () => new Set());
+    for (let i = 0; i < ix.length; i += 3) {
+      const a = ix[i], b = ix[i + 1], c = ix[i + 2];
+      nb[a].add(b).add(c); nb[b].add(a).add(c); nb[c].add(a).add(b);
+    }
+    const rim = new Float32Array(n).fill(99);
+    let front = [...openEdges(g).keys()];
+    for (const v of front) rim[v] = 0;
+    for (let d = 1; front.length && d < 8; d++) {
+      const nx = [];
+      for (const v of front) for (const w of nb[v]) if (rim[w] > d) { rim[w] = d; nx.push(w); }
+      front = nx;
+    }
+    g.setAttribute("rim", new THREE.BufferAttribute(rim, 1));
+  }
+  for (const name of ["strapL", "strapR"]) {
+    const m = root.getObjectByName(name);
+    if (!m || !m.geometry.index) continue;
+    const edge = new Float32Array(m.geometry.attributes.position.count);
+    for (const [v] of openEdges(m.geometry)) edge[v] = 1;
+    m.geometry.setAttribute("edge", new THREE.BufferAttribute(edge, 1));
+  }
+}
+// Muscle definition without changing the body's shape: occlusion from surface curvature, so the
+// separations between muscles (pecs, abs, delts, quads, calves) sit in a little shadow.
+function muscleShading(root) {
+  const body = root.getObjectByName("body");
+  if (!body || !body.geometry.index) return;
+  const g = body.geometry, P = g.attributes.position, Nr = g.attributes.normal, n = P.count, ix = g.index.array;
+  const nb = Array.from({ length: n }, () => new Set());
+  for (let i = 0; i < ix.length; i += 3) {
+    const a = ix[i], b = ix[i + 1], c = ix[i + 2];
+    nb[a].add(b).add(c); nb[b].add(a).add(c); nb[c].add(a).add(b);
+  }
+  let cav = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    if (!nb[i].size) continue;
+    let ax = 0, ay = 0, az = 0, edge = 0;
+    const px = P.getX(i), py = P.getY(i), pz = P.getZ(i);
+    for (const j of nb[i]) {
+      const qx = P.getX(j), qy = P.getY(j), qz = P.getZ(j);
+      ax += qx; ay += qy; az += qz; edge += Math.hypot(qx - px, qy - py, qz - pz);
+    }
+    const k = 1 / nb[i].size;
+    cav[i] = ((ax * k - px) * Nr.getX(i) + (ay * k - py) * Nr.getY(i) + (az * k - pz) * Nr.getZ(i)) / (edge * k + 1e-6);
+  }
+  const blur = (a, it) => {
+    for (let r = 0; r < it; r++) {
+      const b = new Float32Array(n);
+      for (let i = 0; i < n; i++) { let t = a[i]; for (const j of nb[i]) t += a[j]; b[i] = t / (nb[i].size + 1); }
+      a = b;
+    }
+    return a;
+  };
+  const broad = blur(cav, 6);
+  // the body mesh is smooth, so judge each point against the body's typical curvature rather than
+  // its deepest creases: the gentle grooves between pecs, abs, delts and quads then read too
+  const sorted = Array.from(broad).sort((x, y) => x - y), q = f => sorted[Math.floor(sorted.length * f)];
+  const mid = q(.5), hi = q(.9);
+  const ao = new Float32Array(n);
+  for (let i = 0; i < n; i++) ao[i] = 1 - .7 * clamp((broad[i] - mid) / (hi - mid), 0, 1);
+  g.setAttribute("ao", new THREE.BufferAttribute(ao, 1));
+}
+// Carved torso detail on the bind-pose surface (metres, model space; measured on fighter.glb):
+// six-pack with the centre line and three cross grooves, outer ab edges, the chest's lower edge and
+// centre groove, and the V-lines toward the hips. Drawn as a bump, so the silhouette is unchanged.
+const NEON_T = { value: 0 };
+const NEON_SKIN = new THREE.Color("#1A0B33");                     // shared clock for the neon pulse
+let NEON_MODE = false;
+const ABS_GLSL = `
+varying vec3 vObj;
+float gr(float d, float w) { return exp(-(d * d) / (w * w)); }
+float torsoH(vec3 p) {
+  float x = abs(p.x), y = p.y;
+  if (p.z < .07) return 0.;
+  float h = 0.;
+  float absZone = smoothstep(.2, .23, y) * (1. - smoothstep(.435, .45, y)) * (1. - smoothstep(.066, .078, x));
+  h -= absZone * gr(x, .011);                                         // centre line
+  for (int k = 0; k < 3; k++) {                                       // cross grooves between the blocks
+    float yk = .343 + .045 * float(k) + .006 * x / .07;
+    h -= .55 * absZone * smoothstep(.29, .32, y) * gr(y - yk, .011);
+  }
+  h -= .9 * smoothstep(.22, .26, y) * (1. - smoothstep(.43, .46, y)) * gr(x - .072 - .03 * (y - .3), .013);   // outer ab edge
+  float pecY = .438 + 2.2 * (x - .02) * (x - .02);                    // chest lower edge, curving up toward the arm
+  h -= 1.0 * smoothstep(.005, .02, x) * (1. - smoothstep(.12, .15, x)) * gr(y - pecY, .014);
+  h -= .7 * smoothstep(.44, .46, y) * (1. - smoothstep(.56, .58, y)) * gr(x, .012);  // chest centre groove
+  float vx = .085 - .55 * (.27 - y);                                  // V-lines from the hip bones inward
+  h -= .8 * smoothstep(.15, .18, y) * (1. - smoothstep(.27, .29, y)) * gr(x - vx, .012);
+  return h;
+}`;
+function muscled(mat) {                          // skin material that reads the "ao" attribute
+  // neon look (the Neon button): rim glow, glowing muscle lines and a violet emissive skin
+  mat.userData.neon = { value: 0 };
+  mat.userData.neonCol = { value: new THREE.Color("#B37BFF") };
+  mat.onBeforeCompile = (sh) => {
+    sh.uniforms.uNeon = mat.userData.neon;
+    sh.uniforms.uNeonCol = mat.userData.neonCol;
+    sh.vertexShader = sh.vertexShader
+      .replace("#include <common>", "#include <common>\nattribute float ao;\nvarying float vAO;\nvarying vec3 vObj;")
+      .replace("#include <begin_vertex>", "#include <begin_vertex>\nvAO = ao;\nvObj = position;");
+    sh.fragmentShader = sh.fragmentShader
+      .replace("#include <common>", "#include <common>\nvarying float vAO;\nuniform float uNeon, uNeonT;\nuniform vec3 uNeonCol;\n" + ABS_GLSL)
+      .replace("#include <normal_fragment_maps>", `#include <normal_fragment_maps>
+        float th = torsoH(vObj) * .0045;
+        vec3 sx = dFdx(-vViewPosition), sy = dFdy(-vViewPosition);
+        vec3 r1 = cross(sy, normal), r2 = cross(normal, sx);
+        float det = dot(sx, r1);
+        vec3 bumped = normalize(abs(det) * normal - sign(det) * (dFdx(th) * r1 + dFdy(th) * r2));
+        normal = mix(normal, bumped, step(1e-9, abs(det)));
+        float carve = 1. + .3 * torsoH(vObj);                       // a little shadow in each groove`)
+      // the dummy's dark skin is lit mostly by its sheen and clearcoat, so darken the final light
+      .replace("#include <opaque_fragment>", `outgoingLight *= mix(1., vAO, .85) * clamp(carve, .6, 1.);
+        if (uNeon > 0.) {
+          float fres = pow(1. - clamp(abs(dot(normal, normalize(vViewPosition))), 0., 1.), 3.);
+          float lines = smoothstep(.5, .95, -torsoH(vObj)) + .45 * smoothstep(.3, .75, 1. - vAO);
+          float pulse = .8 + .2 * sin(vObj.y * 14. - uNeonT * 2.2);       // light running up the body
+          vec3 glow = uNeonCol * (1.6 * fres + .9 * lines * pulse);
+          outgoingLight = mix(outgoingLight, outgoingLight * .35 + glow, uNeon);
+        }
+        #include <opaque_fragment>`);
+    sh.uniforms.uNeonT = NEON_T;
+  };
+  mat.customProgramCacheKey = () => "muscled";
+  return mat;
+}
+// gold leather for the dominant hand's glove, with its own small studio reflection so the metal reads
+let GOLD_ENV = null;
+function goldEnv() {
+  if (GOLD_ENV) return GOLD_ENV;
+  const env = new THREE.Scene();
+  env.add(new THREE.Mesh(new THREE.BoxGeometry(20, 12, 20), new THREE.MeshBasicMaterial({ color: "#1a1a1c", side: THREE.BackSide })));
+  for (const [w, h, c, k, pos] of [[6, 6, "#fff4e8", 5, [0, 5.8, 0]], [3, 4, "#ffffff", 2.2, [-8, 2.5, -4]], [4, 3, "#ffffff", 1.5, [9, 2, 3]]]) {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color: new THREE.Color(c).multiplyScalar(k), side: THREE.DoubleSide }));
+    m.position.set(...pos); m.lookAt(0, 1, 0); env.add(m);
+  }
+  const pm = new THREE.PMREMGenerator(renderer);
+  GOLD_ENV = pm.fromScene(env, .04).texture; pm.dispose();
+  return GOLD_ENV;
+}
+function goldLeather(rough) {
+  return new THREE.MeshPhysicalMaterial({ color: "#C99A3B", metalness: .75, roughness: rough, clearcoat: .6,
+    clearcoatRoughness: .25, envMap: goldEnv(), envMapIntensity: 1.1, emissive: "#E9B44C", emissiveIntensity: 0,
+    side: THREE.DoubleSide });
+}
+// MMA fight shorts: black, with a white panel down the outside of each thigh that sweeps wider toward
+// the hem (white piping-free, like a stock fight short). No logos.
+// glove pad trim: a contrast border round the edge of the padding and a row of stitches inside it
+function gloveTrim(mat, trim, key) {
+  mat.onBeforeCompile = (sh) => {
+    sh.uniforms.uTrimC = { value: new THREE.Color(trim) };
+    sh.vertexShader = sh.vertexShader
+      .replace("#include <common>", "#include <common>\nattribute float rim;\nvarying float vRim;\nvarying vec3 vGP;")
+      .replace("#include <begin_vertex>", "#include <begin_vertex>\nvRim = rim;\nvGP = position;");
+    sh.fragmentShader = sh.fragmentShader
+      .replace("#include <common>", "#include <common>\nvarying float vRim;\nvarying vec3 vGP;\nuniform vec3 uTrimC;")
+      .replace("#include <color_fragment>", `#include <color_fragment>
+        float aa = max(fwidth(vRim), 1e-3);
+        float border = 1. - smoothstep(.45, .45 + aa, vRim);         // thin contrast binding along the edge
+        float dash = step(.45, fract(dot(vGP, vec3(1., .8, .6)) * 260.));
+        float stitch = (1. - smoothstep(.12, .12 + aa, abs(vRim - 1.6))) * dash;  // a row of stitches just inside
+        // embossed honeycomb across the padding, like the official fight glove
+        vec2 hp = vec2(vGP.x + vGP.z * .6, vGP.y) * 110.;
+        vec2 hr = vec2(1., 1.732), hh = hr * .5;
+        vec2 ha = mod(hp, hr) - hh, hb = mod(hp - hh, hr) - hh;
+        vec2 hg = dot(ha, ha) < dot(hb, hb) ? ha : hb;
+        float hexD = max(abs(hg.x) * .866 + abs(hg.y) * .5, abs(hg.y));
+        float hexLine = smoothstep(.34, .44, hexD) * (1. - border);
+        diffuseColor.rgb *= 1. - .3 * hexLine;
+        diffuseColor.rgb = mix(diffuseColor.rgb, uTrimC, max(border * .85, stitch * .6));`);
+  };
+  mat.customProgramCacheKey = () => key;
+  return mat;
+}
+function shortsMaterial(base, panel) {
+  const m = new THREE.MeshPhysicalMaterial({ color: "#ffffff", roughness: .62, sheen: .6, sheenRoughness: .45,
+    sheenColor: new THREE.Color("#4a4a52"), side: THREE.DoubleSide });
+  const u = { uBase: { value: new THREE.Color(base) }, uPanel: { value: new THREE.Color(panel) },
+              uGold: { value: new THREE.Color("#D9A93E") } };
+  m.onBeforeCompile = (sh) => {
+    Object.assign(sh.uniforms, u);
+    sh.vertexShader = sh.vertexShader
+      .replace("#include <common>", "#include <common>\nattribute vec3 kit;\nattribute vec3 kit2;\nvarying vec3 vKit;\nvarying vec3 vKit2;")
+      .replace("#include <begin_vertex>", "#include <begin_vertex>\nvKit = kit;\nvKit2 = kit2;");
+    sh.fragmentShader = sh.fragmentShader
+      .replace("#include <common>", "#include <common>\nvarying vec3 vKit; varying vec3 vKit2;\nuniform vec3 uBase, uPanel, uGold;")
+      .replace("#include <color_fragment>", `#include <color_fragment>
+        float sx = vKit2.x, ax = abs(sx), t = vKit2.y, fz = vKit.z, hd = vKit.y, hm = vKit2.z;
+        // anti-aliased band helpers: crisp edges at any zoom
+        #define AA(v) max(fwidth(v), 1e-5)
+        // curved boundary: a narrow stripe on the outer hip that sweeps wider across the front of the hem
+        float edge = mix(.135, .192, pow(t, .6)) - .025 * max(fz, 0.) * (1. - t);
+        float back = smoothstep(-.24, -.16, fz);                    // panel on the outer side and front, not the seat
+        float de = ax - edge;
+        float panel = smoothstep(-AA(de), AA(de), de) * back;
+        // tone-on-tone chevrons sublimated into the base fabric
+        float chev = fract(t * 9. + abs(fz) * 1.6);
+        float chevL = smoothstep(.0, .06, chev) * (1. - smoothstep(.42, .48, chev));
+        vec3 base = uBase * mix(.9, 1.07, chevL);
+        vec3 col = mix(base, uPanel, panel);
+        // gold piping along the panel edge
+        float pipe = 1. - smoothstep(.0028, .0028 + AA(de), abs(de));
+        col = mix(col, uGold, pipe * back);
+        // hem band in the panel colour, with a gold line above it
+        float band = 1. - smoothstep(.022, .022 + AA(hd), hd);
+        float bandLine = (1. - smoothstep(.0025, .0025 + AA(hd), abs(hd - .028)));
+        col = mix(col, uPanel, band);
+        col = mix(col, uGold, bandLine);
+        // gold flecks scattered just inside the base side of the piping, thinning out away from it
+        vec2 fc = floor(vec2(hm, ax + fz * .03) * 420.);
+        float rnd = fract(sin(dot(fc, vec2(12.9898, 78.233))) * 43758.5453);
+        float near = 1. - smoothstep(.004, .03, -de);
+        float flecks = step(1. - .55 * near, rnd) * step(de, -.004) * near * back * step(.03, hd);
+        col = mix(col, uGold, flecks);
+        // three thin stripes on the side panel just above the hem
+        float st = fract((hd - .045) / .012);
+        float stripes = step(.045, hd) * step(hd, .081) * step(abs(st - .5), .14) * panel;
+        col = mix(col, uBase, stripes);
+        // vale-tudo front, after the reference: a contoured pouch panel with seams converging at the crotch
+        // and a centre seam, a dark V-shaped waistband dip at the front, snakeskin on the side panels
+        float front = smoothstep(.25, .45, fz);
+        float pw = .068 * pow(smoothstep(.4, .92, t), .75);           // pouch half-width, 0 at the crotch
+        float dp = ax - pw;
+        float pouch = (1. - smoothstep(-AA(dp), AA(dp), dp)) * front * step(.4, t);
+        col = mix(col, mix(col, uPanel, .22), pouch);                // slightly deeper shade inside the pouch
+        float seamP = (1. - smoothstep(.0022, .0022 + AA(dp), abs(dp))) * front * step(.42, t);
+        float seamC = (1. - smoothstep(.0016, .0016 + AA(sx), abs(sx))) * front * step(.25, t);   // centre seam
+        col = mix(col, uGold, seamP);
+        col = mix(col, uPanel, seamC * .8);
+        // dark V dip of the waistband over the top of the pouch, gold edged
+        float vBot = .9 - 2.2 * max(.055 - ax, 0.);                  // lowest at the middle
+        float dv = t - vBot;
+        float dip = smoothstep(-AA(dv), AA(dv), dv) * step(ax, .075) * front;
+        float dipEdge = (1. - smoothstep(.004, .004 + AA(dv), abs(dv))) * step(ax, .075) * front;
+        col = mix(col, uPanel, dip);
+        col = mix(col, uGold, dipEdge);
+        // snakeskin scales on the black side panel
+        vec2 sc = vec2(hm * 70., (ax + fz * .05) * 70.);
+        sc.x += .5 * floor(sc.y);
+        vec2 f = fract(sc) - .5;
+        float scale = smoothstep(.5, .32, length(f * vec2(1., 1.5)));
+        col = mix(col, col + vec3(.07), scale * panel * (1. - stripes) * step(.09, hd));
+        // diagonal pinstripes across the lower front
+        float pin = fract((hm + sx * .6) * 55.);
+        float pins = step(.85, pin) * (1. - smoothstep(.12, .2, hm)) * front * (1. - panel) * step(.035, hd);
+        col = mix(col, mix(col, uPanel, .5), pins);
+        // gold octagon badge on the front of the left thigh (no lettering)
+        vec2 q = vec2((sx - .1) / .028, (hm - .2) / .028);
+        float od = max(max(abs(q.x), abs(q.y)), (abs(q.x) + abs(q.y)) * .7071);
+        float ring = (1. - smoothstep(.13, .13 + AA(od), abs(od - 1.))) * step(.55, fz) * step(0., sx);
+        float core = (1. - smoothstep(.45, .45 + AA(od), od)) * step(.55, fz) * step(0., sx);
+        col = mix(col, uPanel, (1. - smoothstep(.9, .9 + AA(od), od)) * step(.55, fz) * step(0., sx) * .85);
+        col = mix(col, uGold, max(ring, core));
+        diffuseColor.rgb = col;
+        float goldAmt = max(max(max(pipe * back, bandLine), max(ring, core)), max(max(seamP, dipEdge), flecks));`)
+      .replace("#include <roughnessmap_fragment>", `#include <roughnessmap_fragment>
+        roughnessFactor = mix(roughnessFactor, .3, goldAmt);         // satin-gold trim catches the light`);
+  };
+  m.customProgramCacheKey = () => "shorts-fight";   // colours are uniforms, so both corners share one program
+  return m;
+}
+function waistbandMaterial() {                   // black waistband: gold edges and slanted gold hash bars
+  const m = new THREE.MeshPhysicalMaterial({ color: "#0f0f11", roughness: .5, sheen: .5, sheenColor: new THREE.Color("#4a4a52"),
+    side: THREE.DoubleSide });
+  m.onBeforeCompile = (sh) => {
+    sh.uniforms.uGold = { value: new THREE.Color("#D9A93E") };
+    sh.vertexShader = sh.vertexShader
+      .replace("#include <common>", "#include <common>\nvarying float vY, vX, vZ;")
+      .replace("#include <begin_vertex>", "#include <begin_vertex>\nvY = position.y; vX = position.x; vZ = position.z;");
+    sh.fragmentShader = sh.fragmentShader
+      .replace("#include <common>", "#include <common>\nvarying float vY, vX, vZ;\nuniform vec3 uGold;")
+      .replace("#include <color_fragment>", `#include <color_fragment>
+        // waistband on fighter.glb spans y ~ .201 to .246 m: gold edge lines top and bottom,
+        // slanted gold hash bars on the sides
+        float aa = max(fwidth(vY), 1e-5);
+        float edges = (1. - smoothstep(.0022, .0022 + aa, abs(vY - .2415))) + (1. - smoothstep(.0022, .0022 + aa, abs(vY - .2055)));
+        float ang = atan(vX, vZ);
+        // slanted hash bars on the sides, like the reference waistband
+        float bar = fract(ang * 9. + (vY - .2235) * 55. * sign(ang)) - .5;
+        float diamonds = step(abs(bar), .14) * step(abs(vY - .2235), .0115) * step(.45, abs(ang)) * step(abs(ang), 1.9);
+        diffuseColor.rgb = mix(diffuseColor.rgb, uGold, clamp(edges + diamonds, 0., 1.));
+`);
+  };
+  m.customProgramCacheKey = () => "waistband-gold";
+  return m;
+}
+function piped(mat, trim = "#e9e7e2") {          // white piping along a wrist-strap edge
+  mat.onBeforeCompile = (sh) => {
+    sh.uniforms.uTrim = { value: new THREE.Color(trim) };
+    sh.vertexShader = sh.vertexShader
+      .replace("#include <common>", "#include <common>\nattribute float edge;\nvarying float vEdge;")
+      .replace("#include <begin_vertex>", "#include <begin_vertex>\nvEdge = edge;");
+    sh.fragmentShader = sh.fragmentShader
+      .replace("#include <common>", "#include <common>\nvarying float vEdge;\nuniform vec3 uTrim;")
+      .replace("#include <color_fragment>", "#include <color_fragment>\ndiffuseColor.rgb = mix(diffuseColor.rgb, uTrim, step(.6, vEdge));");
+  };
+  mat.customProgramCacheKey = () => "piped";
+  return mat;
 }
 
 // ------------------------------------------------------------------ fighter
@@ -319,8 +780,9 @@ function ik(a, target, l1, l2, pole) {
 
 // Pose solver: joint positions in the fighter's local frame (faces +z, +x = own left).
 // Strike amounts 0..1: ej jab, ec cross, eh lead hook, eu rear uppercut, ek rear body kick,
-// elk rear leg kick, et lead teep. Defence: slip (-1..1 sideways), cover, check, roll.
-// Targets (local): jabT, crossT, hookT, upperT, ribs, thigh, belly. o.step: footwork in progress.
+// elk rear calf kick, et lead teep, sh double-leg shot. Defence: slip (-1..1 sideways), cover, check,
+// roll, sprawl.
+// Targets (local): jabT, crossT, hookT, upperT, hipsT, ribs, calf, belly. o.step: footwork in progress.
 function solve(p, mode, o = {}) {
   const d = dims(p), H = d.H, s = p.lead;
   const t = o.t || 0;
@@ -328,42 +790,66 @@ function solve(p, mode, o = {}) {
   const A = k => (guard ? clamp(o[k] || 0, 0, 1) : 0);
   const ej = A("ej"), ec = A("ec"), eh = A("eh"), eu = A("eu"), ek = A("ek"), elk = A("elk"), et = A("et");
   const cover = A("cover"), check = A("check"), rl = A("roll");
+  const shot = A("sh"), spr = A("sprawl");              // wrestling: double-leg shot and the sprawl against it
+  const mat = Math.max(shot, spr);
   const slip = guard ? clamp(o.slip || 0, -1, 1) : 0;
   const kickAmt = Math.max(ek, elk);
-  const busy = Math.min(1, ej + ec + eh + eu + ek + elk + et + cover + check + rl + Math.abs(slip));
+  const busy = Math.min(1, ej + ec + eh + eu + ek + elk + et + cover + check + rl + Math.abs(slip) + shot + spr);
   const J = { d, footQ: {} };
   const wl = (1 + s) / 2, S = 2 * wl - 1;            // +1 orthodox, -1 southpaw (continuous)
   const rearX = -S;                                    // x sign of the rear side
   const leadSide = S >= 0 ? LEFT : RIGHT, rearSide = -leadSide;
   const live = REDUCE ? 0 : 1, calm = (1 - busy) * live;
   const TAU = Math.PI * 2;
-  let drop, yaw, lean, roll = 0;
+  let drop, yaw, lean, roll = 0, pump = 0;
   const shift = V();
-  const feet = {};
+  const feet = {}, baseYaw = {}, heel = {};
   if (fight) {
-    const bounce = Math.sin(t * TAU * 1.55) * .009 * H * calm;           // light bounce on the balls of the feet
+    const bounce = Math.sin(t * TAU * 1.75) * .013 * H * calm;           // MMA bounce on the balls of the feet
     const rock = Math.sin(t * TAU * .5) * .014 * H * calm;               // weight rocks front to back
     const sway = Math.sin(t * TAU * .37 + 1) * .011 * H * calm;          // head and hips drift off the centre line
     const dip = Math.sin(Math.PI * eu);                                   // uppercut: sink, then drive up
     const bob = Math.sin(Math.PI * rl);
-    drop = .058 * H + bounce + .012 * H * ej + .024 * H * ec + .02 * H * eh + .05 * H * dip * (1 - eu * .5)
+    // feints every few seconds while nothing else is happening: a shoulder-and-hand pump,
+    // every other one a level change that sells the takedown
+    const fph = (t * .31) % 1, fe = fph < .14 ? Math.sin(Math.PI * fph / .14) * calm : 0;
+    const levelFeint = Math.floor(t * .31) % 2 === 1;
+    pump = levelFeint ? 0 : fe;
+    drop = .038 * H + bounce + (levelFeint ? .075 : .025) * H * fe + .16 * H * shot + .2 * H * spr + .012 * H * ej + .024 * H * ec + .02 * H * eh + .05 * H * dip * (1 - eu * .5)
          - .03 * H * ek - .015 * H * elk - .02 * H * et + .035 * H * cover + .09 * H * bob
          + .025 * H * Math.abs(slip);
     yaw = -S * (.52 + .2 * ej) + S * .9 * ec + S * 1.3 * ek + S * 1.05 * elk - S * .55 * eh + S * .55 * eu
         + .05 * Math.sin(t * TAU * .3) * calm;
-    lean = .11 + .06 * ej + .1 * ec + .06 * eh - .03 * eu - .34 * ek - .2 * elk - .3 * et + .14 * cover + .3 * bob;
+    lean = .13 + .06 * ej + .1 * ec + .06 * eh - .03 * eu - .34 * ek - .2 * elk - .3 * et + .14 * cover + .3 * bob
+         + (levelFeint ? .22 : .1) * fe + .5 * shot + .8 * spr;
+    yaw *= 1 - .85 * mat;                                 // square up to shoot or sprawl
     roll = -S * .28 * ek - S * .16 * elk + slip * .3 + bob * .2 * (o.rollDir || 1);
     shift.set(S * .02 * H * ek + slip * .075 * H + sway + bob * .05 * H * (o.rollDir || 1), 0,
-              .035 * H * ec + .1 * H * ek + .05 * H * elk + .02 * H * eh + rock - .04 * H * et);
-    feet[LEFT] = [V(.062 * H, 0, .17 * H).lerp(V(.088 * H, 0, -.15 * H), 1 - wl), -.2 * wl + .8 * (1 - wl)];
-    feet[RIGHT] = [V(-.088 * H, 0, -.15 * H).lerp(V(-.062 * H, 0, .17 * H), 1 - wl), -.8 * wl + .2 * (1 - wl)];
+              .035 * H * ec + .1 * H * ek + .05 * H * elk + .02 * H * eh + rock - .04 * H * et
+              + .2 * H * shot - .22 * H * spr);
+    // MMA stance: about shoulder width, a natural step long, knees only softly bent
+    feet[LEFT] = [V(.062 * H, 0, .15 * H).lerp(V(.084 * H, 0, -.13 * H), 1 - wl), -.15 * wl + .7 * (1 - wl)];
+    feet[RIGHT] = [V(-.084 * H, 0, -.13 * H).lerp(V(-.062 * H, 0, .15 * H), 1 - wl), -.7 * wl + .15 * (1 - wl)];
+    if (shot > 0) {                                       // penetration step: lead foot drives deep between the legs
+      feet[leadSide][0].z += .2 * H * shot;
+      feet[rearSide][0].z -= .06 * H * shot;
+    }
+    if (spr > 0) for (const sd of [LEFT, RIGHT]) {        // sprawl: both legs shoot back and wide, hips to the mat
+      feet[sd][0].z = THREE.MathUtils.lerp(feet[sd][0].z, -.52 * H, spr);
+      feet[sd][0].x *= 1 + .7 * spr;
+    }
+    for (const sd of [LEFT, RIGHT]) baseYaw[sd] = feet[sd][1];
+    heel[rearSide] = .15 * (1 - mat) * (1 - kickAmt);     // rear heel up: weight on the ball of the back foot
     feet[rearSide][1] += S * .6 * ec + S * .4 * eu;   // rear heel turns out on the cross and uppercut
     feet[leadSide][1] += S * 1.35 * ek + S * 1.1 * elk - S * .5 * eh;   // lead foot turns to plant kicks, pivots on the hook
     if (down) { drop = .21 * H; yaw = -S * .25; lean = .58; roll = 0; shift.set(0, 0, -.05 * H); }
   } else {
     const breathe = REDUCE ? 0 : Math.sin(t * TAU * .25) * .002 * H;
-    drop = .004 * H + breathe; yaw = 0; lean = .02;
-    feet[LEFT] = [V(.07 * H, 0, .01 * H), .14]; feet[RIGHT] = [V(-.07 * H, 0, .01 * H), -.14];
+    yaw = 0; lean = .02;
+    // standing straight: legs extended from the hip joints to ankles a little inside them, toes forward
+    drop = .003 * H + breathe;
+    feet[LEFT] = [V(.045 * H, 0, .01 * H), .08]; feet[RIGHT] = [V(-.045 * H, 0, .01 * H), -.08];
+    for (const sd of [LEFT, RIGHT]) baseYaw[sd] = feet[sd][1];
   }
   // footwork: the moving foot leads, the other follows; feet stay planted while the body travels
   const lift = {};
@@ -396,10 +882,16 @@ function solve(p, mode, o = {}) {
   const legLen = d.thigh + d.shin;
   const bez = (p0, p1, p2, u) => p0.clone().multiplyScalar((1 - u) * (1 - u)).addScaledVector(p1, 2 * u * (1 - u)).addScaledVector(p2, u * u);
   for (const side of [LEFT, RIGHT]) {
-    const [f, fy] = feet[side];
-    let ankle = V(f.x, ANAT.ankle * H + (lift[side] || 0), f.z);
-    let pole = V(Math.sin(fy), 0, Math.cos(fy)).add(V(side * .15, 0, 0));
-    const fq = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, fy, 0));
+    const [f0, fy] = feet[side];
+    // pivots turn the foot on its ball, not its ankle, so the toes stay put on the canvas;
+    // a raised heel rotates about the same point, so the ball never leaves or sinks into the floor
+    const BALL = .085 * H, toeDir = a => V(Math.sin(a), 0, Math.cos(a));
+    const pitch = down ? 0 : heel[side] || 0;
+    const ball = f0.clone().addScaledVector(toeDir(baseYaw[side] ?? fy), BALL);
+    const f = ball.clone().addScaledVector(toeDir(fy), -BALL * Math.cos(pitch));
+    let ankle = V(f.x, ANAT.ankle * H + BALL * Math.sin(pitch) + (lift[side] || 0), f.z);
+    let pole = toeDir(fy).add(V(side * .04, 0, 0));      // knee tracks over the toes
+    const fq = new THREE.Quaternion().setFromEuler(new THREE.Euler(pitch, fy, 0, "YXZ"));
     const kicking = kickAmt > 0 && side === rearSide, teeping = et > 0 && side === leadSide;
     if (down && side === rearSide) {                  // rear knee drops to the canvas
       ankle = V(rearX * .1 * H, .05 * H, -.27 * H);
@@ -408,7 +900,7 @@ function solve(p, mode, o = {}) {
     let footAim = null;
     if (kicking) {
       const low = elk > ek, hip = J.hip[side];
-      const tgt = (low ? o.thigh : o.ribs) || hip.clone().add(V(-rearX * .06 * H, low ? -.16 * H : .16 * H, .45 * H));
+      const tgt = (low ? o.calf : o.ribs) || hip.clone().add(V(-rearX * .06 * H, low ? -.3 * H : .16 * H, .45 * H));
       const dir = tgt.clone().sub(hip); const dist = dir.length(); dir.normalize();
       const hit = hip.clone().addScaledVector(dir, Math.min(legLen * .9995, dist - d.foot));
       const chamber = hip.clone().add(low ? V(rearX * .2 * H, -.22 * H, .08 * H) : V(rearX * .22 * H, -.05 * H, .12 * H));
@@ -452,7 +944,7 @@ function solve(p, mode, o = {}) {
     let wrist, pole;
     if (fight) {
       const wLead = clamp((1 + side * s) / 2, 0, 1), isLead = wLead > .5;
-      const leadT = chin.clone().add(V(side * .028 * H, .012 * H, .17 * H));
+      const leadT = chin.clone().add(V(side * .036 * H, -.006 * H, .21 * H + .06 * H * pump));   // long MMA lead hand
       const rearT = chin.clone().add(V(side * .056 * H, -.004 * H, .05 * H));
       wrist = rearT.lerp(leadT, wLead);
       if (isLead)                                       // the lead hand paws and measures
@@ -488,10 +980,24 @@ function solve(p, mode, o = {}) {
         pole.lerp(V(side * .35, -1, -.2), Math.min(1, eu * 1.6));
       }
       if (kickAmt > 0) {
-        if (!isLead) wrist.lerp(sh.clone().add(V(side * .16 * H, -(d.upper + d.fore) * .75, -.22 * H)), kickAmt);
-        else wrist.lerp(chin.clone().add(V(side * .04 * H, .012 * H, .07 * H)), kickAmt * .7);
+        // the kicking-side arm drops beside the hip for balance, elbow soft (not flung out behind);
+        // the other glove stays on the chin
+        if (!isLead) {
+          wrist.lerp(sh.clone().add(V(side * .09 * H, -(d.upper + d.fore) * .82, -.04 * H)), kickAmt * .85);
+          pole.lerp(V(side * .3, 0, -1), kickAmt);
+        } else wrist.lerp(chin.clone().add(V(side * .04 * H, .012 * H, .07 * H)), kickAmt * .8);
       }
       if (et > 0) wrist.lerp(chin.clone().add(V(side * .06 * H, -.02 * H, .1 * H)), et * .5);
+      if (shot > 0) {                                   // both hands reach for the hips behind the knees
+        const tgt = (o.hipsT ? o.hipsT.clone() : J.crotch.clone().add(V(0, .05 * H, .42 * H))).add(V(side * .13 * H, -.02 * H, -.03 * H));
+        const dir = tgt.clone().sub(sh); const dist = dir.length(); dir.normalize();
+        wrist.lerp(sh.clone().addScaledVector(dir, Math.min((d.upper + d.fore) * .97, dist)), shot);
+        pole.lerp(V(side * .8, -.4, -.2), shot);
+      }
+      if (spr > 0) {                                    // sprawl: palms drive down on the opponent's back and head
+        wrist.lerp(J.crotch.clone().add(V(side * .14 * H, .06 * H, .36 * H)), spr);
+        pole.lerp(V(side * .9, .2, -.3), spr);
+      }
       if (down && isLead) { wrist = V(side * .17 * H, .07 * H, .2 * H); pole = V(side * .6, .2, -1); }   // posts a glove on the mat
     } else if (mode === "stand") {
       wrist = sh.clone().add(V(side * .045 * H, -(d.upper + d.fore) * .965, .03 * H));
@@ -529,25 +1035,37 @@ class Fighter {
     this.group = new THREE.Group();
     scene.add(this.group);
     this.opacity = 1;
-    const kit = KIT[corner] || corner;
     this.mats = {
-      skin: new THREE.MeshPhysicalMaterial({ color: COL.skin, roughness: .46, metalness: 0, sheen: .5,
-        sheenRoughness: .45, sheenColor: new THREE.Color("#ff6a55"), clearcoat: .25, clearcoatRoughness: .5 }),
-      kit: new THREE.MeshStandardMaterial({ color: kit, roughness: .62, emissive: kit, emissiveIntensity: .05,
-        side: THREE.DoubleSide }),
-      pad: new THREE.MeshPhysicalMaterial({ color: "#121214", roughness: .34, clearcoat: .7, clearcoatRoughness: .28,
-        sheen: .4, sheenColor: new THREE.Color("#8a8a92"), side: THREE.DoubleSide }),     // black fight-glove leather
-      patch: new THREE.MeshStandardMaterial({ color: kit, roughness: .5, emissive: kit, emissiveIntensity: .08,
-        side: THREE.DoubleSide }),
-      band: new THREE.MeshStandardMaterial({ color: "#121214", roughness: .55, side: THREE.DoubleSide }),
+      skin: muscled(new THREE.MeshPhysicalMaterial({ color: COL.skin, roughness: .46, metalness: 0, sheen: .5,
+        sheenRoughness: .45, sheenColor: new THREE.Color("#ff6a55"), clearcoat: .25, clearcoatRoughness: .5 })),
+      // red corner wears red shorts, the other corner white; both with a black outer panel
+      kit: corner === COL.a ? shortsMaterial("#B3121A", "#121214") : shortsMaterial("#e6e5e1", "#121214"),
+      // non-dominant hand: white 4 oz MMA glove leather
+      pad: gloveTrim(new THREE.MeshPhysicalMaterial({ color: "#e8e6e1", roughness: .38, clearcoat: .6, clearcoatRoughness: .3,
+        sheen: .3, sheenColor: new THREE.Color("#ffffff"), side: THREE.DoubleSide }), "#2a2a2e", "glove-white"),
+      patch: new THREE.MeshStandardMaterial({ color: "#0d0d0f", roughness: .5, side: THREE.DoubleSide }),   // cuff label
+      band: waistbandMaterial(),
       gold: new THREE.MeshStandardMaterial({ color: COL.rule, roughness: .35, emissive: COL.rule,
         emissiveIntensity: .6, side: THREE.DoubleSide }),
+      // dominant side: gold leather glove on the dominant hand (black on the other), and a gold ring on
+      // the canvas under the dominant foot
+      padDom: gloveTrim(goldLeather(.3), "#111113", "glove-gold"),
+      palmDom: goldLeather(.42),
+      strapDom: goldLeather(.36),
+      ring: new THREE.MeshBasicMaterial({ color: "#D4961C", transparent: true, opacity: .85, depthWrite: false,
+        side: THREE.DoubleSide }),
       eye: new THREE.MeshStandardMaterial({ color: "#0b0b0c", roughness: .15 }),
-      leather: new THREE.MeshPhysicalMaterial({ color: "#141416", roughness: .42, clearcoat: .35,
+      leather: new THREE.MeshPhysicalMaterial({ color: "#dedcd6", roughness: .45, clearcoat: .3,
         clearcoatRoughness: .4, side: THREE.DoubleSide }),
+      strap: piped(new THREE.MeshPhysicalMaterial({ color: "#e2e0db", roughness: .42, clearcoat: .35,
+        clearcoatRoughness: .4, side: THREE.DoubleSide }), "#1a1a1c"),
     };
     this.meshes = [];
     this.rig = null;
+    this.footRing = new THREE.Mesh(new THREE.RingGeometry(.062, .078, 48), this.mats.ring);
+    this.footRing.rotation.x = -Math.PI / 2;
+    this.footRing.renderOrder = 3;
+    this.group.add(this.footRing);
     // floor range arc (face-off)
     this.arc = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshBasicMaterial({
       color: corner, transparent: true, opacity: .95, depthWrite: false, side: THREE.DoubleSide }));
@@ -563,7 +1081,7 @@ class Fighter {
     const rig = SkeletonUtils.clone(MODEL.scene);
     const pick = { body: "skin", shorts: "kit", waist: "band", gloveL: "pad", gloveR: "pad",
                    glovePalmL: "leather", glovePalmR: "leather",
-                   strapL: "leather", strapR: "leather", strapPatchL: "patch", strapPatchR: "patch",
+                   strapL: "strap", strapR: "strap", strapPatchL: "patch", strapPatchR: "patch",
                    ankleL: "gold", ankleR: "gold" };
     this.parts = {};
     rig.traverse(o => {
@@ -598,6 +1116,7 @@ class Fighter {
   setOpacity(o) {
     this.opacity = o;
     for (const mat of Object.values(this.mats)) {
+      if (mat === this.mats.ring) continue;          // the foot ring stays see-through; place() sets its opacity
       mat.transparent = o < .995;
       mat.opacity = o;
       mat.depthWrite = true;          // ghost shows only its outer surface
@@ -631,13 +1150,31 @@ class Fighter {
       m.morphTargetInfluences[0] = heavy; m.morphTargetInfluences[1] = lean;
     }
     // dominant-side markers
-    this.parts.strapPatchL.material = this.hand === LEFT ? this.mats.gold : this.mats.patch;
-    this.parts.strapPatchR.material = this.hand === RIGHT ? this.mats.gold : this.mats.patch;
+    for (const [sfx, sd] of [["L", LEFT], ["R", RIGHT]]) {
+      const dom = this.hand === sd;
+      this.parts["glove" + sfx].material = dom ? this.mats.padDom : this.mats.pad;
+      this.parts["glovePalm" + sfx].material = dom ? this.mats.palmDom : this.mats.leather;
+      this.parts["strap" + sfx].material = dom ? this.mats.strapDom : this.mats.strap;
+      this.parts["strapPatch" + sfx].material = this.mats.patch;
+    }
     this.parts.ankleL.visible = this.foot === LEFT;
     this.parts.ankleR.visible = this.foot === RIGHT;
+    // Neon button: violet glowing skin (eases in and out)
+    const nu = this.mats.skin.userData.neon;
+    nu.value += ((NEON_MODE ? 1 : 0) - nu.value) * .12;
+    this.mats.skin.color.set(COL.skin).lerp(NEON_SKIN, nu.value);
+    // glow: a slow breathing pulse, flaring when that hand or foot throws
+    const pulse = REDUCE ? .5 : .5 + .5 * Math.sin(time * 3.2);
+    const hb = this.domHand || 0, fb = this.domFoot || 0;
+    this.mats.padDom.emissiveIntensity = .5 * hb;           // the gold glove flares as it lands
+    const fs = this.foot, ank = J.ankle[fs], toe = ZAX.clone().applyQuaternion(J.footQ[fs]);
+    const lift = Math.max(0, ank.y - ANAT.ankle * d.H);
+    this.footRing.position.set(ank.x + toe.x * .045 * d.H, .007, ank.z + toe.z * .045 * d.H);
+    this.footRing.scale.setScalar(d.H * (1 + .06 * pulse + .35 * fb));
+    this.mats.ring.opacity = this.opacity * clamp(.6 + .2 * pulse + .3 * fb - 2.5 * lift, .1, 1);
     // arm length for this fighter's reach
     for (const s of ["L", "R"]) for (const n of ["upperarm02", "lowerarm01", "lowerarm02", "wrist"])
-      this.bones[n + s].position.copy(M.restPos[n + s]).multiplyScalar(n === "upperarm02" || n === "lowerarm01" ? d.sa : 1);
+      this.bones[n + s].position.copy(M.restPos[n + s]).multiplyScalar(d.sa);   // stretch upper arm and forearm alike
 
     const sideKey = { L: LEFT, R: RIGHT };
     const wq = {};
@@ -645,6 +1182,33 @@ class Fighter {
       const cur = Y1.clone().applyQuaternion(inh);
       return new THREE.Quaternion().setFromUnitVectors(cur, dir.clone().normalize()).multiply(inh);
     };
+    // arms: turn the bone so its rest shoulder-to-elbow (elbow-to-wrist) line points down the limb,
+    // keeping the inherited twist
+    const aimJoint = (n, inh, dir) => {
+      const cur = M.jointDir[n].clone().applyQuaternion(inh);
+      return new THREE.Quaternion().setFromUnitVectors(cur, dir.clone().normalize()).multiply(inh);
+    };
+    // legs: aim the bone down the limb AND turn it so the kneecap faces where the knee bends
+    // (a shortest-arc aim leaves the twist free, which rolls the thigh and caves the knee in)
+    const aimLeg = (n, dir, kneeFwd) => {
+      const y = dir.clone().normalize(), z = kneeFwd.clone().addScaledVector(y, -kneeFwd.dot(y)).normalize();
+      const Bt = new THREE.Matrix4().makeBasis(y.clone().cross(z), y, z);
+      // in the bone's own frame the limb runs along jointDir; its rest-pose "front" is world +z
+      const yl = M.jointDir[n].clone(), zl = ZAX.clone().applyQuaternion(M.restWorld[n].clone().invert());
+      zl.addScaledVector(yl, -zl.dot(yl)).normalize();
+      const Bl = new THREE.Matrix4().makeBasis(yl.clone().cross(zl), yl, zl);
+      return new THREE.Quaternion().setFromRotationMatrix(Bt.multiply(Bl.transpose()));
+    };
+    const kneeFwd = {};
+    for (const sd of [LEFT, RIGHT]) {
+      const h = J.hip[sd], kn = J.knee[sd], an = J.ankle[sd], axis = an.clone().sub(h).normalize();
+      const perp = kn.clone().sub(h); perp.addScaledVector(axis, -perp.dot(axis));
+      const toe = ZAX.clone().applyQuaternion(J.footQ[sd]);   // straight leg: the kneecap follows the foot
+      // nearly straight leg: the kneecap faces the toes even when the knee sits in toward the midline
+      const straightness = clamp(1 - perp.length() / (.06 * d.H), 0, 1);
+      perp.x *= 1 - straightness;
+      kneeFwd[sd] = perp.add(toe.multiplyScalar(.04));
+    }
     const hipMid = J.hip[LEFT].clone().add(J.hip[RIGHT]).multiplyScalar(.5);
     const neck1 = J.Q.clone().slerp(J.QH, .35), neck2 = J.Q.clone().slerp(J.QH, .7);
     const wristT = {};
@@ -667,11 +1231,11 @@ class Fighter {
       else if (n === "neck01") w = neck1.clone().multiply(M.restWorld[n]);
       else if (n === "neck02" || n === "neck03") w = neck2.clone().multiply(M.restWorld[n]);
       else if (n === "head") w = J.QH.clone().multiply(M.restWorld[n]);
-      else if (base === "upperleg01") w = aimTo(inh, J.knee[sd].clone().sub(J.hip[sd]));
-      else if (base === "lowerleg01") w = aimTo(inh, J.ankle[sd].clone().sub(J.knee[sd]));
+      else if (base === "upperleg01") w = aimLeg(n, J.knee[sd].clone().sub(J.hip[sd]), kneeFwd[sd]);
+      else if (base === "lowerleg01") w = aimLeg(n, J.ankle[sd].clone().sub(J.knee[sd]), kneeFwd[sd]);
       else if (base === "foot") w = J.footQ[sd].clone().multiply(M.restWorld[n]);
-      else if (base === "upperarm01") w = aimTo(inh, J.elbow[sd].clone().sub(J.sh[sd]));
-      else if (base === "lowerarm01") w = aimTo(inh, J.wrist[sd].clone().sub(J.elbow[sd]));
+      else if (base === "upperarm01") w = aimJoint(n, inh, J.elbow[sd].clone().sub(J.sh[sd]));
+      else if (base === "lowerarm01") w = aimJoint(n, inh, J.wrist[sd].clone().sub(J.elbow[sd]));
       else if (base === "lowerarm02") w = inh.clone().slerp(wristT[s].clone().multiply(M.restLocal["wrist" + s].clone().invert()), .55);
       else if (base === "wrist") w = wristT[s].clone();
       else w = inh;
@@ -818,15 +1382,17 @@ const MOVES = {
   eh:  { dur: .6,  a: .4,  b: .5,  name: "Hook" },
   eu:  { dur: .58, a: .44, b: .54, name: "Uppercut" },
   ek:  { dur: 1.0, a: .36, b: .52, name: "Body kick" },
-  elk: { dur: .84, a: .4,  b: .55, name: "Leg kick" },
+  elk: { dur: .84, a: .4,  b: .55, name: "Calf kick" },
+  sh:  { dur: 1.15, a: .36, b: .62, name: "Double-leg" },
   et:  { dur: .84, a: .4,  b: .56, name: "Teep" },
   slip:  { dur: .5,  a: .3, b: .55 },
   cover: { dur: .62, a: .2, b: .72 },
   check: { dur: .72, a: .3, b: .66 },
   roll:  { dur: .64, a: .5, b: .5 },
+  sprawl: { dur: 1.2, a: .3, b: .64 },
 };
 const STRIKES = { ej: "Jab", ec: "Cross", ek: "Kick" };
-const STRIKE_KEYS = ["ej", "ec", "eh", "eu", "ek", "elk", "et"];
+const STRIKE_KEYS = ["ej", "ec", "eh", "eu", "ek", "elk", "et", "sh"];
 function envelope(m, u) {
   if (u <= 0 || u >= 1) return 0;
   if (u < m.a) return easeOut(u / m.a);
@@ -837,14 +1403,16 @@ function envelope(m, u) {
 const COMBOS = [
   { name: "1-2", seq: [["ej", 0], ["ec", .3]], react: ["", "slip"] },
   { name: "1-2-3", seq: [["ej", 0], ["ec", .3], ["eh", .66]], react: ["cover", "", "roll"] },
-  { name: "1-2, leg kick", seq: [["ej", 0], ["ec", .3], ["elk", .7]], react: ["slip", "cover", "check"] },
+  { name: "1-2, calf kick", seq: [["ej", 0], ["ec", .3], ["elk", .7]], react: ["slip", "cover", "check"] },
+  { name: "Jab, double-leg", seq: [["ej", 0], ["sh", .3]], react: ["slip", "sprawl"] },
   { name: "Jab, body cross, hook", seq: [["ej", 0], ["ec", .34, "body"], ["eh", .76]], react: ["", "", "cover"] },
   { name: "Double jab, cross", seq: [["ej", 0], ["ej", .27], ["ec", .56]], react: ["", "slip", ""] },
   { name: "1-6-3", seq: [["ej", 0], ["eu", .32], ["eh", .72]], react: ["cover", "", "cover"] },
+  { name: "Jab, calf kick", seq: [["ej", 0], ["elk", .32]], react: ["cover", ""] },
   { name: "Teep", seq: [["et", 0]], react: [""] },
   { name: "1-2, body kick", seq: [["ej", 0], ["ec", .3], ["ek", .72]], react: ["slip", "cover", ""], ko: true },
 ];
-const TARGET_OF = { ej: "head", ec: "head", eh: "hook", eu: "chin", ek: "ribs", elk: "thigh", et: "belly" };
+const TARGET_OF = { ej: "head", ec: "head", eh: "hook", eu: "chin", ek: "ribs", elk: "calf", et: "belly", sh: "hips" };
 let strikeSel = "spar";
 let PLAN = null;
 function buildPlan(sel, n) {
@@ -862,7 +1430,7 @@ function buildPlan(sel, n) {
   COMBOS.forEach((C, x) => {
     if (n > 1) { ev.push({ kind: "circle", t0: t, dur: .95, ang: .34 * dir }); t += 1.1; dir = -dir; }
     else t += .5;
-    const close = C.seq.some(([m]) => m === "eh" || m === "eu");
+    const close = C.seq.some(([m]) => m === "eh" || m === "eu" || m === "sh");
     ev.push({ kind: "step", who: att, t0: t, dur: .34, dir: 1, depth: close ? .22 : .1 }); t += .3;
     let end = t;
     C.seq.forEach(([m, off, body], j) => {
@@ -890,7 +1458,7 @@ function stage(t, fo, n) {
   let theta = 0;
   const sAx = [n > 1 ? -rN / 2 : 0, rN / 2];
   const steps = [null, null];
-  const out = [0, 1].map(() => ({ amt: {}, tgt: {}, def: { slip: 0, cover: 0, check: 0, roll: 0, rollDir: 1 }, events: [] }));
+  const out = [0, 1].map(() => ({ amt: {}, tgt: {}, def: { slip: 0, cover: 0, check: 0, roll: 0, sprawl: 0, rollDir: 1 }, events: [] }));
   for (const e of P.ev) {
     if (e.t0 > tt) break;
     const u = (tt - e.t0) / e.dur;
@@ -1005,12 +1573,14 @@ function targetsFor(F, O, OJ) {
   const belly = toLocal(F, w(OJ.crotch.clone().add(V(0, .1 * H, .075 * H).applyQuaternion(oQ))));
   const ol = leadOf(O.p);
   const thigh = toLocal(F, w(OJ.hip[ol].clone().lerp(OJ.knee[ol], .55).add(V(ol * .05 * H, 0, 0))));
+  const calf = toLocal(F, w(OJ.knee[ol].clone().lerp(OJ.ankle[ol], .38).add(V(ol * .04 * H, 0, 0))));
+  const hips = toLocal(F, w(OJ.crotch.clone().add(V(0, .02 * H, 0))));
   const leadX = leadOf(F.p);
   return { head: face, hook: face.clone().add(V(leadX * .05 * H, 0, -.02 * H)), chin: face.clone().add(V(0, -.05 * H, 0)),
-           ribs: ribs.add(V(-leadX * .045 * H, 0, 0)), belly, thigh };
+           ribs: ribs.add(V(-leadX * .045 * H, 0, 0)), belly, thigh, calf, hips };
 }
-const DEF_VS = { slip: ["ej", "ec"], roll: ["eh"], cover: ["ej", "ec", "eh", "eu"], check: ["elk"] };
-const DEF_WORD = { slip: "slipped", roll: "rolled under", cover: "blocked", check: "checked" };
+const DEF_VS = { slip: ["ej", "ec"], roll: ["eh"], cover: ["ej", "ec", "eh", "eu"], check: ["elk"], sprawl: ["sh"] };
+const DEF_WORD = { slip: "slipped", roll: "rolled under", cover: "blocked", check: "checked", sprawl: "stuffed" };
 
 function frame(dtFixed) {
   const dt = typeof dtFixed === "number" ? dtFixed : Math.min(clock.getDelta(), .1);
@@ -1019,6 +1589,7 @@ function frame(dtFixed) {
   const k = ease(modeT);
   const n = fighters.length;
   fighters.forEach(F => F.step(dt));
+  NEON_T.value += dt;
   if (!PLAN || PLAN.n !== n || PLAN.sel !== strikeSel) { PLAN = buildPlan(strikeSel, n); PLAN.n = n; PLAN.sel = strikeSel; }
 
   const fo = n ? faceoff() : null;
@@ -1053,10 +1624,16 @@ function frame(dtFixed) {
     const aim = key => tg ? tg[so.tgt[key] || TARGET_OF[key]] : null;
     const opts = { t: time + i * .37, step: F.stepOpt, recoil: F.recoil, flinch: F.flinch,
                    jabT: aim("ej"), crossT: aim("ec"), hookT: aim("eh"), upperT: aim("eu"),
-                   ribs: tg && tg.ribs, thigh: tg && tg.thigh, belly: tg && tg.belly,
+                   ribs: tg && tg.ribs, thigh: tg && tg.thigh, calf: tg && tg.calf, belly: tg && tg.belly,
+                   hipsT: aim("sh"), sprawl: so.def.sprawl * faceW,
                    slip: so.def.slip * faceW, cover: so.def.cover * faceW, check: so.def.check * faceW,
                    roll: so.def.roll * faceW, rollDir: so.def.rollDir };
     for (const key of STRIKE_KEYS) opts[key] = (so.amt[key] || 0) * faceW;
+    // is the dominant hand / foot the one throwing? lead hand: jab, hook; rear: cross, uppercut;
+    // rear leg: body and calf kicks; lead leg: teep
+    const leadIsHand = leadOf(F.p) === F.hand, leadIsFoot = leadOf(F.p) === F.foot;
+    F.domHand = Math.max(...(leadIsHand ? ["ej", "eh"] : ["ec", "eu"]).map(k => opts[k] || 0));
+    F.domFoot = Math.max(...(leadIsFoot ? ["et"] : ["ek", "elk"]).map(k => opts[k] || 0));
     const Jp = solve(F.p, MODES[prevMode], opts), Jc = solve(F.p, MODES[mode], opts);
     F.J = blendJ(Jp, Jc, k);
     if (F.kd > 0) F.J = blendJ(F.J, solve(F.p, "down", opts), F.kd * faceW);
@@ -1080,7 +1657,8 @@ function frame(dtFixed) {
       const sd = (m === "ej" || m === "eh" || m === "et") ? lead : -lead;
       const origin = leg ? F.J.hip[sd] : F.J.sh[sd];
       const R = { ej: d.upper + d.fore + d.hand, ec: d.upper + d.fore + d.hand, eh: bent * 1.02 + d.hand,
-                  eu: bent * .98 + d.hand, ek: legL + d.foot, elk: legL + d.foot, et: legL + d.foot * .5 }[m];
+                  eu: bent * .98 + d.hand, ek: legL + d.foot, elk: legL + d.foot, et: legL + d.foot * .5,
+                  sh: d.upper + d.fore + d.hand + .4 * F.p.H }[m];     // the shot travels: arms plus the penetration step
       const gap = Math.max(0, origin.distanceTo(tgt) - R);
       const tip = leg ? F.J.ankle[sd].clone() : F.J.wrist[sd].clone().addScaledVector(F.J.fdir[sd], d.hand);
       const od = st.out[1 - i].def;
@@ -1122,11 +1700,47 @@ function frame(dtFixed) {
     if (camTween.t >= 1) camTween = null;
   }
   controls.update(dt);
+  updateCage();
   renderer.render(scene, camera);
   annotate(fo, st, k);
 }
 if (CAPTURE) {
   window.__step = (dt, steps = 1) => { for (let q = 0; q < steps; q++) frame(dt); return time; };
+  window.__cam = (pos, tgt) => { camTween = null; camera.position.set(...pos); controls.target.set(...tgt); controls.update(); };
+  window.__bones = () => fighters.map(F => {
+    F.group.updateMatrixWorld(true);
+    const w = n => { const v = new THREE.Vector3().setFromMatrixPosition(F.bones[n].matrixWorld); return F.group.worldToLocal(v); };
+    const r = {};
+    for (const [s, sd] of [["L", 1], ["R", -1]]) {
+      r[s] = { kneeBone: w("lowerleg01" + s).toArray().map(x => +x.toFixed(3)), kneeJ: F.J.knee[sd].toArray().map(x => +x.toFixed(3)),
+               footBone: w("foot" + s).toArray().map(x => +x.toFixed(3)), ankleJ: F.J.ankle[sd].toArray().map(x => +x.toFixed(3)),
+               hipBone: w("upperleg01" + s).toArray().map(x => +x.toFixed(3)), hipJ: F.J.hip[sd].toArray().map(x => +x.toFixed(3)) };
+    }
+    for (const [s, sd] of [["L", 1], ["R", -1]]) {
+      r["arm" + s] = { elbowBone: w("lowerarm01" + s).toArray().map(x => +x.toFixed(3)), elbowJ: F.J.elbow[sd].toArray().map(x => +x.toFixed(3)),
+                       wristBone: w("wrist" + s).toArray().map(x => +x.toFixed(3)), wristJ: F.J.wrist[sd].toArray().map(x => +x.toFixed(3)),
+                       shBone: w("upperarm01" + s).toArray().map(x => +x.toFixed(3)), shJ: F.J.sh[sd].toArray().map(x => +x.toFixed(3)) };
+    }
+    return r;
+  });
+  // lowest skinned foot vertex (world y, metres) per fighter and side; < 0 means under the canvas
+  window.__feet = () => fighters.map(F => {
+    const m = F.parts && F.parts.body; if (!m) return null;
+    if (!m.userData.footIdx) {
+      const P = m.geometry.attributes.position, idx = [];
+      for (let i = 0; i < P.count; i++) if (P.getY(i) < MODEL.floor + .09) idx.push(i);
+      m.userData.footIdx = idx;
+    }
+    F.group.updateMatrixWorld(true); m.skeleton.update();
+    const v = new THREE.Vector3(), out = { L: 9, R: 9 };
+    for (const i of m.userData.footIdx) {
+      m.getVertexPosition(i, v); m.localToWorld(v);
+      const P = m.geometry.attributes.position, side = P.getX(i) > 0 ? "L" : "R";
+      out[side] = Math.min(out[side], v.y);
+    }
+    return { name: F.info.label, hand: F.info.hand, foot: F.info.foot, stance: F.info.stance, ...out };
+  });
+  window.__plan = () => PLAN && PLAN.ev.map(e => ({ kind: e.kind, m: e.m, who: e.who, t0: e.t0, dur: e.dur, combo: e.combo }));
   window.__set = (o) => {
     if (o.strike) setStrike(o.strike === "combo" ? "spar" : o.strike);
     if (o.mode) setMode(o.mode);
@@ -1135,6 +1749,7 @@ if (CAPTURE) {
     if (o.time !== undefined) time = o.time;
     if (o.figures) window.postMessage({ type: "streamlit:render",
       args: { height: window.innerHeight, figures: o.figures } }, "*");
+    if (o.neon !== undefined) { NEON_MODE = o.neon; for (const F of fighters) if (F.mats) F.mats.skin.userData.neon.value = o.neon ? 1 : 0; }
     if (o.clearFlashes) { for (const f of flashes) scene.remove(f.m); flashes.length = 0; }
   };
 } else {
@@ -1307,6 +1922,8 @@ bPlay.onclick = () => { paused = !paused; if (paused) controls.autoRotate = fals
 syncPlay();
 bSpin.onclick = () => { controls.autoRotate = !controls.autoRotate; syncSpin(); };
 document.getElementById("bReset").onclick = () => flyTo(mode);
+const bNeon = document.getElementById("bNeon");
+bNeon.onclick = () => { NEON_MODE = !NEON_MODE; bNeon.classList.toggle("on", NEON_MODE); bNeon.setAttribute("aria-pressed", String(NEON_MODE)); };
 controls.addEventListener("start", () => { camTween = null; });
 
 function resize() {

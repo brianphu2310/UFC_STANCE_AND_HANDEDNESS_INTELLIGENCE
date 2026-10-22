@@ -47,10 +47,13 @@ win rates don't.
 
 The fighters are a real human body model (the MakeHuman CC0 base mesh, shaped into an athletic
 male and rigged by `scripts/build_body_model.py`), posed every frame by the app's own joint solver.
-In **Spar** mode the two fighters circle, step in with real footwork (the moving foot leads, the
-other follows), throw eight combos (1-2, 1-2-3, 1-2 and leg kick, jab-body cross-hook, double jab-cross,
-1-6-3, teep, 1-2 and body kick) and step back out, while the other fighter slips, covers, rolls under
-hooks and checks leg kicks. Every strike is judged as it arrives: short of the target, defended, or
+In **Spar** mode the two fighters bounce in an MMA stance, feint, circle, step in with real footwork
+(the moving foot leads, the other follows), throw ten combos (1-2, 1-2-3, 1-2 and calf kick, jab and
+double-leg shot, jab-body cross-hook, double jab-cross, 1-6-3, jab and calf kick, teep, 1-2 and body kick)
+and step back out, while the other fighter slips, covers, rolls under hooks, checks calf kicks and
+sprawls on the takedown. Both wear MMA fight kit: 4 oz gloves with a wide wrist cuff and tight fight
+shorts in black with red- or blue-corner side panels, inside a full-size Octagon (30 ft across, canvas
+mat, padded red and blue corner posts, chain-link fence that cuts away on the camera's side). Every strike is judged as it arrives: short of the target, defended, or
 landed, from the live distance between the two bodies. A body kick that lands drops the opponent
 to one knee. The **Jab / Cross / Kick** buttons instead throw one strike from the measured distance
 in the range table, where the longer jab just lands.

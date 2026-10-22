@@ -16,3 +16,6 @@ warehouse.db
 # Ingestion: cached raw HTML and raw scrape output are never committed
 data/raw_html/
 data/raw/
+
+# MakeHuman assets downloaded by scripts/build_body_model.py
+.mh_cache/
