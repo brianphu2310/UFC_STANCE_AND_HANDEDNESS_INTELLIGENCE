@@ -237,9 +237,9 @@ short_bones = {B[b] for b in ["root", "spine05", "pelvis.L", "pelvis.R", "upperl
 
 shells = {}
 shells["shorts"] = (region(lambda i: dominant[i] in short_bones and hemY <= posed[i][1] <= waistY),
-                    lambda i: 0.06)                 # compression fit: ~6 mm off the skin, moves with it
-shells["waist"] = (region(lambda i: dominant[i] in short_bones and waistY - 0.4 <= posed[i][1] <= waistY + 0.05),
-                   lambda i: 0.1)
+                    lambda i: 0.04)                 # compression fit: ~4 mm off the skin, moves with it
+shells["waist"] = (region(lambda i: dominant[i] in short_bones and waistY - 0.5 <= posed[i][1] <= waistY + 0.06),
+                   lambda i: 0.075)                 # taller, snug elastic waistband
 # --- 4oz MMA gloves: padded knuckle shell, thin leather palm, open fingers, wide wrist strap
 orig_dom = [max(d, key=d.get) if d else "" for d in vw]
 adj = [set() for _ in range(N)]

@@ -387,13 +387,14 @@ function fightKit(root) {
       kit[i * 3 + 2] = Nr.getZ(i);                      // front (+) / back (-) across the seam
     }
     g.setAttribute("kit", new THREE.BufferAttribute(kit, 3));
-    const kit2 = new Float32Array(n * 2);                // distance out from the midline, height hem -> waist (0..1)
+    const kit2 = new Float32Array(n * 3);                // |x| from the midline, height hem -> waist (0..1), metres above the hem
     for (let i = 0; i < n; i++) {
       const h0 = hemY[Math.sign(P.getX(i)) || 1] ?? y0;
-      kit2[i * 2] = Math.abs(P.getX(i));
-      kit2[i * 2 + 1] = clamp((P.getY(i) - h0) / (y1 - h0), 0, 1);
+      kit2[i * 3] = P.getX(i);
+      kit2[i * 3 + 1] = clamp((P.getY(i) - h0) / (y1 - h0), 0, 1);
+      kit2[i * 3 + 2] = P.getY(i) - h0;
     }
-    g.setAttribute("kit2", new THREE.BufferAttribute(kit2, 2));
+    g.setAttribute("kit2", new THREE.BufferAttribute(kit2, 3));
   }
   // glove pads: edge distance (in mesh hops, smoothed by interpolation) for the trim and stitching
   for (const name of ["gloveL", "gloveR"]) {
@@ -556,12 +557,12 @@ function shortsMaterial(base, panel) {
   m.onBeforeCompile = (sh) => {
     Object.assign(sh.uniforms, u);
     sh.vertexShader = sh.vertexShader
-      .replace("#include <common>", "#include <common>\nattribute vec3 kit;\nattribute vec2 kit2;\nvarying vec3 vKit;\nvarying vec2 vKit2;")
+      .replace("#include <common>", "#include <common>\nattribute vec3 kit;\nattribute vec3 kit2;\nvarying vec3 vKit;\nvarying vec3 vKit2;")
       .replace("#include <begin_vertex>", "#include <begin_vertex>\nvKit = kit;\nvKit2 = kit2;");
     sh.fragmentShader = sh.fragmentShader
-      .replace("#include <common>", "#include <common>\nvarying vec3 vKit; varying vec2 vKit2;\nuniform vec3 uBase, uPanel, uGold;")
+      .replace("#include <common>", "#include <common>\nvarying vec3 vKit; varying vec3 vKit2;\nuniform vec3 uBase, uPanel, uGold;")
       .replace("#include <color_fragment>", `#include <color_fragment>
-        float ax = vKit2.x, t = vKit2.y, fz = vKit.z, hd = vKit.y;
+        float sx = vKit2.x, ax = abs(sx), t = vKit2.y, fz = vKit.z, hd = vKit.y, hm = vKit2.z;
         // anti-aliased band helpers: crisp edges at any zoom
         #define AA(v) max(fwidth(v), 1e-5)
         // curved boundary: a narrow stripe on the outer hip that sweeps wider across the front of the hem
@@ -582,28 +583,48 @@ function shortsMaterial(base, panel) {
         float bandLine = (1. - smoothstep(.0025, .0025 + AA(hd), abs(hd - .028)));
         col = mix(col, uPanel, band);
         col = mix(col, uGold, bandLine);
+        // three thin stripes on the side panel just above the hem
+        float st = fract((hd - .045) / .012);
+        float stripes = step(.045, hd) * step(hd, .081) * step(abs(st - .5), .14) * panel;
+        col = mix(col, uBase, stripes);
+        // gold octagon badge on the front of the left thigh (no lettering)
+        vec2 q = vec2((sx - .1) / .028, (hm - .2) / .028);
+        float od = max(max(abs(q.x), abs(q.y)), (abs(q.x) + abs(q.y)) * .7071);
+        float ring = (1. - smoothstep(.13, .13 + AA(od), abs(od - 1.))) * step(.55, fz) * step(0., sx);
+        float core = (1. - smoothstep(.45, .45 + AA(od), od)) * step(.55, fz) * step(0., sx);
+        col = mix(col, uPanel, (1. - smoothstep(.9, .9 + AA(od), od)) * step(.55, fz) * step(0., sx) * .85);
+        col = mix(col, uGold, max(ring, core));
         diffuseColor.rgb = col;
-        float goldAmt = max(pipe * back, bandLine);`)
+        float goldAmt = max(max(pipe * back, bandLine), max(ring, core));`)
       .replace("#include <roughnessmap_fragment>", `#include <roughnessmap_fragment>
         roughnessFactor = mix(roughnessFactor, .3, goldAmt);         // satin-gold trim catches the light`);
   };
   m.customProgramCacheKey = () => "shorts-fight";   // colours are uniforms, so both corners share one program
   return m;
 }
-function waistbandMaterial() {                   // black waistband with a gold stripe round the middle
+function waistbandMaterial() {                   // black elastic waistband: gold edges, diamonds, white drawstring
   const m = new THREE.MeshPhysicalMaterial({ color: "#0f0f11", roughness: .5, sheen: .5, sheenColor: new THREE.Color("#4a4a52"),
     side: THREE.DoubleSide });
   m.onBeforeCompile = (sh) => {
     sh.uniforms.uGold = { value: new THREE.Color("#D9A93E") };
     sh.vertexShader = sh.vertexShader
-      .replace("#include <common>", "#include <common>\nvarying float vY;")
-      .replace("#include <begin_vertex>", "#include <begin_vertex>\nvY = position.y;");
+      .replace("#include <common>", "#include <common>\nvarying float vY, vX, vZ;")
+      .replace("#include <begin_vertex>", "#include <begin_vertex>\nvY = position.y; vX = position.x; vZ = position.z;");
     sh.fragmentShader = sh.fragmentShader
-      .replace("#include <common>", "#include <common>\nvarying float vY;\nuniform vec3 uGold;")
+      .replace("#include <common>", "#include <common>\nvarying float vY, vX, vZ;\nuniform vec3 uGold;")
       .replace("#include <color_fragment>", `#include <color_fragment>
-        float dy = abs(vY - .222);                                   // waistband centre on fighter.glb (m)
-        float stripe = 1. - smoothstep(.0035, .0035 + max(fwidth(vY), 1e-5), dy);
-        diffuseColor.rgb = mix(diffuseColor.rgb, uGold, stripe);`);
+        // waistband on fighter.glb spans y ~ .19 to .247 m: gold edge lines top and bottom,
+        // a row of gold diamonds round the middle, and a white drawstring tied at the front
+        float aa = max(fwidth(vY), 1e-5);
+        float edges = (1. - smoothstep(.0022, .0022 + aa, abs(vY - .2415))) + (1. - smoothstep(.0022, .0022 + aa, abs(vY - .1965)));
+        float ang = atan(vX, vZ);
+        float cell = fract(ang * 7.) - .5, dv = (vY - .219) / .0085;
+        float dia = abs(cell) * 2.3 + abs(dv);
+        float diamonds = (1. - smoothstep(.55, .55 + max(fwidth(dia), 1e-4), dia)) * step(.28, abs(ang));
+        float cord = step(abs(ang), .2) * (1. - smoothstep(.0016, .0016 + aa, abs(vY - .229)))
+                   + step(abs(abs(ang) - .06), .012) * step(.205, vY) * step(vY, .229);   // knot ends hanging down
+        diffuseColor.rgb = mix(diffuseColor.rgb, uGold, clamp(edges + diamonds, 0., 1.));
+        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(.92), clamp(cord, 0., 1.));`);
   };
   m.customProgramCacheKey = () => "waistband-gold";
   return m;
