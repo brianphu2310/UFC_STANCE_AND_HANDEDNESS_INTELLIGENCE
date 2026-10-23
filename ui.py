@@ -304,7 +304,7 @@ def inject_css():
     background: linear-gradient(#E0202B, #A80D1A) !important; border: 1px solid #FF5A62 !important; }}
   .stDownloadButton button p, .stButton button[kind="primary"] p {{ color: #fff !important; font-family: {DISPLAY};
     font-style: italic; font-weight: 800; text-transform: uppercase; font-size: 1.05rem; letter-spacing: .02em; }}
-  .stDownloadButton button p::after {{ content: " \25B8"; }}
+  .stDownloadButton button p::after {{ content: ""; display: inline-block; margin-left: 8px; border: 6px solid transparent; border-left: 9px solid #fff; border-right: 0; vertical-align: 1px; }}
   [data-testid="stMetricDelta"] {{ color: {INK_2} !important; }}
   section[data-testid="stSidebar"] {{ background: linear-gradient(#161616, #0C0C0C) !important; border-right: 1px solid #262628 !important; }}
   .callout {{ border-left-color: {ACCENT} !important; }}
