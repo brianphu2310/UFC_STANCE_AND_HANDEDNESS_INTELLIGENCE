@@ -1,0 +1,11 @@
+# Stance Intelligence: future-purple fight night. Keep in step with the tokens in ui.py.
+[server]
+enableStaticServing = true          # serves static/ (self-hosted fonts, mark, globe topology)
+
+[theme]
+base = "dark"
+primaryColor = "#7C4DFF"            # ACCENT_FILL: sliders, toggles, radios, selected widgets
+backgroundColor = "#0B0A12"         # BG
+secondaryBackgroundColor = "#1D1A2A" # SURFACE_2: inputs, selects, code
+textColor = "#F1EEF8"               # INK
+font = "sans serif"

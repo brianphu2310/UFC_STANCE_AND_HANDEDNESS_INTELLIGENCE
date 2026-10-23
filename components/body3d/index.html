@@ -8,8 +8,8 @@
   @font-face { font-family: "Instrument Sans"; src: url("/app/static/fonts/instrument-sans-latin-600-normal.woff2") format("woff2"); font-weight: 600; }
   @font-face { font-family: "Big Shoulders Display"; src: url("/app/static/fonts/big-shoulders-display-latin-700-normal.woff2") format("woff2"); font-weight: 700; }
   @font-face { font-family: "Big Shoulders Display"; src: url("/app/static/fonts/big-shoulders-display-latin-800-normal.woff2") format("woff2"); font-weight: 800; }
-  :root { --bg:#0C0C0E; --ink:#F2F0ED; --ink2:#C4C1BC; --mute:#8F8C88; --line:#2A2A2F;
-          --a:#F04A3E; --afill:#7A3CF0; --b:#A7ADB8; --rule:#E9B44C; --neon:#A879FF; }
+  :root { --bg:#0B0A12; --ink:#F1EEF8; --ink2:#C6C0D8; --mute:#958EAD; --line:#2B2740;
+          --a:#A77BFF; --afill:#7C4DFF; --b:#48D1E0; --rule:#E9B44C; --neon:#A879FF; }
   html, body { margin:0; height:100%; background:var(--bg); overflow:hidden; color:var(--ink);
                font-family:"Instrument Sans", "Segoe UI", system-ui, sans-serif; }
   #wrap { position:relative; width:100%; height:100%; overflow:hidden; box-sizing:border-box;
@@ -24,13 +24,13 @@
   .tag small { display:block; font-family:"Instrument Sans", sans-serif; font-weight:400; font-size:11.5px;
                color:var(--ink2); margin-top:3px; }
   .chip { font-size:12px; font-weight:600; padding:3px 8px; border-radius:3px; line-height:1.2;
-          background:rgba(12,12,14,.88); border:1px solid currentColor; }
+          background:rgba(11,10,18,.88); border:1px solid currentColor; }
   .val { font-family:"Big Shoulders Display", sans-serif; font-weight:700; font-size:15px;
          text-shadow:0 0 3px #000, 0 0 8px #000; }
   .hud { position:absolute; top:12px; left:14px; right:14px; pointer-events:none; display:flex;
          justify-content:space-between; align-items:flex-start; gap:14px; }
   .head { flex:1 1 auto; min-width:0; }
-  .rt { border-collapse:collapse; font-size:12px; background:rgba(12,12,14,.78); border:1px solid var(--line);
+  .rt { border-collapse:collapse; font-size:12px; background:rgba(11,10,18,.78); border:1px solid var(--line);
         border-radius:4px; }
   .rt th, .rt td { padding:4px 9px; text-align:left; white-space:nowrap; }
   .rt th { font-family:"Big Shoulders Display", sans-serif; font-weight:700; font-size:14px; padding-top:6px; }
@@ -45,21 +45,22 @@
   .bar { position:absolute; left:12px; right:12px; bottom:12px; display:flex; align-items:center;
          gap:6px; flex-wrap:wrap; }
   .seg { display:inline-flex; border:1px solid var(--line); border-radius:4px; overflow:hidden;
-         background:rgba(20,20,23,.9); }
+         background:rgba(20,18,30,.9); }
   .seg button, .tool { all:unset; cursor:pointer; font-size:12px; padding:6px 9px; color:var(--ink2); }
   .seg button + button { border-left:1px solid var(--line); }
   .seg button.on { background:var(--afill); color:#fff; font-weight:600; }
   .seg button, .tool { min-height:28px; box-sizing:border-box; }
   canvas:focus-visible { outline:2px solid var(--rule); outline-offset:-2px; }
   .sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
-  .tool { padding:6px 9px; color:var(--ink2); background:rgba(20,20,23,.9); border:1px solid var(--line); border-radius:4px; }
-  .tool.on { color:var(--ink); border-color:#4A4A52; }
+  .tool { padding:6px 9px; color:var(--ink2); background:rgba(20,18,30,.9); border:1px solid var(--line); border-radius:4px; }
+  .tool.on { color:var(--ink); border-color:#5B4E86; }
   .seg button:focus-visible, .tool:focus-visible { outline:2px solid var(--rule); outline-offset:-2px; }
   .spacer { flex:1; }
   .key { font-size:11.5px; color:var(--ink2); }
   .key i { display:inline-block; width:14px; height:4px; border-radius:2px; margin-right:6px;
            vertical-align:middle; background:var(--rule); box-shadow:0 0 6px var(--rule); }
   @media (max-width: 900px) { .key { display:none; } }
+  @media (max-width: 760px) { .seg button, .tool { padding:5px 7px; font-size:11.5px; } .bar { gap:4px; } }
   @media (max-width: 640px) { .seg button, .tool { padding:5px 7px; font-size:11.5px; } .bar { gap:4px; left:8px; right:8px; } }
   @media (max-width: 600px) { .head { font-size:19px; } .head span { display:none; } .rt { font-size:11px; }
                               .seg button, .tool { padding:5px 8px; font-size:12px; } }
@@ -104,7 +105,7 @@ const send = (type, data = {}) =>
   window.parent.postMessage({ isStreamlitMessage: true, type, ...data }, "*");
 let frameHeight = 520;
 
-const COL = { a: "#F04A3E", b: "#A7ADB8", rule: "#E9B44C", skin: "#404047", ink: "#F2F0ED", hit: "#FF6A4D" };
+const COL = { a: "#A77BFF", b: "#48D1E0", rule: "#E9B44C", skin: "#404047", ink: "#F1EEF8", hit: "#FF8AD8" };   // corners: violet, cyan
 const REDUCE = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const V = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
 const UP = V(0, 1, 0), ZAX = V(0, 0, 1);
@@ -187,7 +188,7 @@ const OCT_A = 4.57;                                   // apothem: centre to the 
 const OCT_R = OCT_A / Math.cos(Math.PI / 8);          // centre to a post
 const FENCE_H = 1.75, SKIRT_H = .22;
 const octAngle = k => Math.PI / 8 + k * Math.PI / 4;  // post k sits at this angle
-const CORNER_POST = { 5: COL.a, 1: "#1F4FD1" };      // red and blue corner posts
+const CORNER_POST = { 5: COL.a, 1: COL.b };          // violet and cyan corner posts
 const floor = new THREE.Mesh(new THREE.PlaneGeometry(60, 60),
   new THREE.MeshStandardMaterial({ color: "#0b0912", roughness: 0.9, metalness: 0 }));
 floor.rotation.x = -Math.PI / 2;
@@ -222,8 +223,8 @@ function canvasTexture() {                             // the mat: worn light ca
   g.globalAlpha = .18; g.fillStyle = "#7A3CF0"; oct(1.05 * k8); g.fill();
   g.globalAlpha = .55; g.fillStyle = "#4c1fa8"; oct(.35 * k8); g.fill();
   g.globalAlpha = 1;
-  // corner quarters: faint arcs in front of the red and blue corners
-  for (const [k, col] of [[5, "rgba(210,40,40,.28)"], [1, "rgba(31,79,209,.28)"]]) {
+  // corner quarters: faint arcs in front of the violet and cyan corners
+  for (const [k, col] of [[5, "rgba(124,77,255,.3)"], [1, "rgba(72,209,224,.3)"]]) {
     const a = octAngle(k), r = (OCT_R - 1.2) * px;
     g.strokeStyle = col; g.lineWidth = .05 * px;
     g.beginPath(); g.arc(cx + r * Math.cos(a), cx - r * Math.sin(a), .7 * px, 0, Math.PI * 2); g.stroke();
