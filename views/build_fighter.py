@@ -1,4 +1,4 @@
-"""Build your fighter: body → 3D model → model fighters → roadmap, classes, coaches."""
+"""Build your fighter: body → 3D model → stance, then tabs for fighters, roadmap, gear, classes."""
 from html import escape
 
 import numpy as np
@@ -93,7 +93,7 @@ def _models(df, p, stance):
         </div>""", unsafe_allow_html=True)
 
     parts = [("s_body", "Body match"), ("s_stance", "Stance"), ("s_hand", "Hand"),
-             ("s_style", "Style"), ("s_quality", "Proven quality"), ("s_foot", "Foot ≈")]
+             ("s_style", "Style"), ("s_quality", "Proven quality"), ("s_foot", "Foot (estimated)")]
     order = top.iloc[::-1]
     fig = go.Figure()
     for i, (col, label) in enumerate(parts):
@@ -138,10 +138,67 @@ def _roadmap(p, stance):
     return rm
 
 
+def _gear(p, rm):
+    """Gear tab: what to buy, in what size, by when, and why, for this person's roadmap."""
+    budget = st.segmented_control("Budget", list(core.BUDGETS), default="Balanced", key="bf_budget",
+                                  help="Where in the usual price range to aim. Sizes don't change.") \
+        or "Balanced"
+    gear = core.recommend_gear(height_cm=p["height_cm"], weight_kg=p["weight_kg"], gender=p["gender"],
+                               goal=p["goal"], style=p["style"], rm=rm, budget=budget)
+    if gear.empty:
+        st.info("Your plan needs no special kit yet.")
+        return gear
+    first = gear[gear["buy_by_month"] == 0]
+    st.markdown(f'''<div class="gearsum"><div><b>A${first["price_aud"].sum():,}</b><span>before day one,
+      {len(first)} items</span></div><div><b>A${gear["price_aud"].sum():,}</b><span>for the whole plan,
+      {len(gear)} items</span></div><div class="gearnote">Sizes come from your height and weight; each item is
+      listed because a class in your roadmap needs it. Prices are typical Australian ranges, not quotes.
+      Try gloves and shin guards on in a shop before buying.</div></div>''', unsafe_allow_html=True)
+    for when, g in gear.groupby("buy_by_month", sort=True):
+        label = g["priority"].iloc[0]
+        phase = g["phase"].iloc[0]
+        st.markdown(f'<div class="gearwhen">{escape(label)}<span>{escape(phase)} phase, '
+                    f'A${g["price_aud"].sum():,}</span></div>', unsafe_allow_html=True)
+        cols = st.columns(min(len(g), 4))
+        for i, (_, r) in enumerate(g.iterrows()):
+            n = r["needed_for"]
+            need = ("Everyone, from week one" if not n else ", ".join(n[:2])
+                    + (f" and {len(n) - 2} more" if len(n) > 2 else ""))
+            cols[i % len(cols)].markdown(f"""
+            <div class="card gear">
+              <div class="gtop"><span class="t">{escape(r['item'])}</span><span class="gp">A${r['price_aud']}</span></div>
+              <div class="gsize">{escape(r['size'])}</div>
+              <div class="b">{escape(r['why'])}</div>
+              <div class="s">For: {escape(need)}</div>
+            </div>""", unsafe_allow_html=True)
+    return gear
+
+
+GEAR_CSS = f"""<style>
+  .gearsum {{ display: grid; grid-template-columns: auto auto 1fr; gap: 6px 34px; align-items: end;
+              margin: 6px 0 14px; }}
+  .gearsum b {{ display: block; font-family: {ui.DISPLAY}; font-weight: 800; font-size: 2.1rem; line-height: 1;
+                color: {ui.INK}; font-variant-numeric: tabular-nums; }}
+  .gearsum span {{ font-size: .8rem; color: {ui.INK_MUTED}; }}
+  .gearnote {{ font-size: .82rem; color: {ui.INK_2}; max-width: 62ch; line-height: 1.45; }}
+  .gearwhen {{ font-family: {ui.DISPLAY}; font-weight: 700; font-size: 1.25rem; color: {ui.INK};
+               border-top: 1px solid {ui.BORDER}; padding-top: 10px; margin: 10px 0 6px; }}
+  .gearwhen span {{ font-family: {ui.BODY}; font-weight: 500; font-size: .8rem; color: {ui.INK_MUTED};
+                    margin-left: 10px; }}
+  .card.gear {{ margin-bottom: 12px; }}
+  .gtop {{ display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }}
+  .gp {{ font-family: {ui.DISPLAY}; font-weight: 700; font-size: 1.15rem; color: {ui.RULE};
+         font-variant-numeric: tabular-nums; white-space: nowrap; }}
+  .gsize {{ display: inline-block; margin-top: 6px; padding: 2px 8px; border-radius: 3px; font-size: .82rem;
+            font-weight: 600; color: {ui.ON_ACCENT}; background: {ui.ACCENT_FILL}; }}
+  @media (max-width: 900px) {{ .gearsum {{ grid-template-columns: 1fr 1fr; }} .gearnote {{ grid-column: 1 / -1; }} }}
+</style>"""
+
+
 def render(df: pd.DataFrame):
     ui.page_header("Build your fighter",
-                   "Enter your frame and goals. You get a stance, fighters to study and a training "
-                   "plan you can download.")
+                   "Enter your frame and goals on the left. You get a stance, fighters to study, a "
+                   "training roadmap and the gear to buy for it, all in one plan you can download.")
     with st.container(key="oct_build"):
         left, mid, right = st.columns([1.05, 2.0, 1.2], gap="medium")
     with left:
@@ -172,50 +229,55 @@ def render(df: pd.DataFrame):
                              hand=f["hand"], foot=f["foot"], ghost=True))
         body3d(figs, height=560, key="body")
 
-    ui.section("Fighters to model yourself on",
-               "Ranked on body match (height, reach, weight), stance, dominant hand, style and "
-               "proven quality. 'What to learn' comes from their real UFC stats.")
-    models = _models(df, p, stance)
-
-    ui.section("Your roadmap", "Length scales with your goal, sessions per week and experience.")
-    rm = _roadmap(p, stance)
-
-    a, b = st.columns([1, 1.3], gap="medium")
-    with a:
-        ui.section("First week", "Foundation phase — spread across the week with rest days.")
+    st.markdown(GEAR_CSS, unsafe_allow_html=True)
+    t_models, t_road, t_gear, t_gym = st.tabs(["Fighters to study", "Training roadmap", "Gear to buy",
+                                               "Classes and coaches"])
+    with t_models:
+        st.markdown('<div class="secsub">Ranked on body match (height, reach, weight), stance, dominant '
+                    'hand, style and proven quality. "What to learn" comes from their real UFC stats.</div>',
+                    unsafe_allow_html=True)
+        models = _models(df, p, stance)
+    with t_road:
+        st.markdown('<div class="secsub">Length scales with your goal, sessions per week and experience. '
+                    'Each phase lists what to work on and the classes to take each week.</div>',
+                    unsafe_allow_html=True)
+        rm = _roadmap(p, stance)
+        ui.section("First week", "Foundation phase, spread across the week with rest days.")
         st.dataframe(core.schedule(rm.iloc[0]["week"]), hide_index=True, width="stretch", height=290)
-    with b:
-        ui.section("Classes to join", "Sample class catalogue — swap in your gym's timetable "
-                   "(data/classes_sample.csv).")
-        classes = core.pick_classes(core.load_catalogue("classes"), p["style"], list(rm["week"]))
-        st.dataframe(classes[["class", "discipline", "level", "focus", "starts_in"]]
-                     .rename(columns=str.capitalize).rename(columns={"Starts_in": "Starts in"}),
-                     hide_index=True, width="stretch", height=290)
-
-    ui.section("Coaches to ask for", "Fictional sample roster — replace data/coaches_sample.csv "
-               "with your gym's coaches. Matched on discipline, stance, hand and goal.")
-    coaches = core.pick_coaches(core.load_catalogue("coaches"), style=p["style"], stance=stance,
-                                hand=p["hand"], goal=p["goal"])
-    cols = st.columns(len(coaches))
-    for c, (_, r) in zip(cols, coaches.iterrows()):
-        why = []
-        if r["stance"] == stance:
-            why.append(f"also fights {stance.lower()}")
-        if r["best_for"] in (p["style"], "Any"):
-            why.append(f"specialises in {p['style'].lower()}s" if r["best_for"] != "Any"
-                       else "supports every style")
-        c.markdown(f"""
-        <div class="card" style="height:100%">
-          <div class="t">{escape(r['coach'])}</div>
-          <div class="s">{escape(r['discipline'])}, {r['years_coaching']} years coaching, {escape(r['level'].lower())}</div>
-          <div style="margin-top:6px">{'' if r['stance'] == '—' else f'<span class="pill">{escape(r["stance"])}</span><span class="pill">{escape(r["hand"])}-handed</span>'}</div>
-          <div class="b">{escape(r['specialty'])}{'<br><span style="color:' + ui.ACCENT + '">Match: ' + escape(', '.join(why)) + '</span>' if why else ''}</div>
-        </div>""", unsafe_allow_html=True)
+    with t_gear:
+        gear = _gear(p, rm)
+    with t_gym:
+        a, b = st.columns([1.3, 1], gap="medium")
+        with a:
+            ui.section("Classes to join", "Sample class catalogue; swap in your gym's timetable "
+                       "(data/classes_sample.csv).")
+            classes = core.pick_classes(core.load_catalogue("classes"), p["style"], list(rm["week"]))
+            st.dataframe(classes[["class", "discipline", "level", "focus", "starts_in"]]
+                         .rename(columns=str.capitalize).rename(columns={"Starts_in": "Starts in"}),
+                         hide_index=True, width="stretch", height=290)
+        with b:
+            ui.section("Coaches to ask for", "Fictional sample roster, matched on discipline, stance, "
+                       "hand and goal. Replace data/coaches_sample.csv with your gym's coaches.")
+            coaches = core.pick_coaches(core.load_catalogue("coaches"), style=p["style"], stance=stance,
+                                        hand=p["hand"], goal=p["goal"])
+            for _, r in coaches.iterrows():
+                why = []
+                if r["stance"] == stance:
+                    why.append(f"also fights {stance.lower()}")
+                if r["best_for"] in (p["style"], "Any"):
+                    why.append(f"specialises in {p['style'].lower()}s" if r["best_for"] != "Any"
+                               else "supports every style")
+                st.markdown(f"""
+                <div class="card" style="margin-bottom:10px">
+                  <div class="t">{escape(r['coach'])}</div>
+                  <div class="s">{escape(r['discipline'])}, {r['years_coaching']} years coaching, {escape(r['level'].lower())}</div>
+                  <div class="b">{escape(r['specialty'])}{'<br><span style="color:' + ui.ACCENT + '">Match: ' + escape(', '.join(why)) + '</span>' if why else ''}</div>
+                </div>""", unsafe_allow_html=True)
 
     st.write("")
     learn = {f: ([df.loc[df["fighter"] == f, "study"].iloc[0]]
                  if isinstance(df.loc[df["fighter"] == f, "study"].iloc[0], str) else [])
              + core.strengths(df, f, top=3) for f in models["fighter"]}
-    plan = core.plan_markdown(p, stance, adv, models, rm, classes, coaches, learn)
-    st.download_button("Download my training plan (Markdown)", plan.encode(),
+    plan = core.plan_markdown(p, stance, adv, models, rm, classes, coaches, learn, gear)
+    st.download_button("Download my plan: stance, fighters, roadmap and gear", plan.encode(),
                        "training_plan.md", "text/markdown", type="primary")
