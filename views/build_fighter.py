@@ -1,5 +1,6 @@
 """Build your fighter: body → 3D model → stance, then tabs for fighters, roadmap, gear, classes."""
 from html import escape
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -138,6 +139,24 @@ def _roadmap(p, stance):
     return rm
 
 
+GEAR_DIR = Path(__file__).resolve().parents[1] / "static" / "gear"
+
+
+@st.cache_data
+def _gear_photos() -> dict:
+    """key -> (static URL, credit line) for every photo in static/gear (see its README)."""
+    credits = {}
+    f = GEAR_DIR / "credits.csv"
+    if f.exists():
+        c = pd.read_csv(f)
+        credits = {r.key: f"{r.author}, {r.license}" for r in c.itertuples()}
+    out = {}
+    for img in sorted(GEAR_DIR.glob("*")):
+        if img.suffix.lower() in (".jpg", ".jpeg", ".png", ".webp"):
+            out[img.stem] = (f"/app/static/gear/{img.name}", credits.get(img.stem, ""))
+    return out
+
+
 def _gear(p, rm):
     """Gear tab: what to buy, in what size, by when, and why, for this person's roadmap."""
     budget = st.segmented_control("Budget", list(core.BUDGETS), default="Balanced", key="bf_budget",
@@ -159,13 +178,17 @@ def _gear(p, rm):
         phase = g["phase"].iloc[0]
         st.markdown(f'<div class="gearwhen">{escape(label)}<span>{escape(phase)} phase, '
                     f'A${g["price_aud"].sum():,}</span></div>', unsafe_allow_html=True)
+        photos = _gear_photos()
         cols = st.columns(min(len(g), 4))
         for i, (_, r) in enumerate(g.iterrows()):
             n = r["needed_for"]
             need = ("Everyone, from week one" if not n else ", ".join(n[:2])
                     + (f" and {len(n) - 2} more" if len(n) > 2 else ""))
+            ph = photos.get(r["key"])
+            img = (f'<img class="gimg" src="{ph[0]}" alt="{escape(r["item"])}">'
+                   + (f'<div class="gcred">Photo: {escape(ph[1])}</div>' if ph[1] else "")) if ph else ""
             cols[i % len(cols)].markdown(f"""
-            <div class="card gear">
+            <div class="card gear">{img}
               <div class="gtop"><span class="t">{escape(r['item'])}</span><span class="gp">A${r['price_aud']}</span></div>
               <div class="gsize">{escape(r['size'])}</div>
               <div class="b">{escape(r['why'])}</div>
@@ -186,6 +209,9 @@ GEAR_CSS = f"""<style>
   .gearwhen span {{ font-family: {ui.BODY}; font-weight: 500; font-size: .8rem; color: {ui.INK_MUTED};
                     margin-left: 10px; }}
   .card.gear {{ margin-bottom: 12px; }}
+  .gimg {{ display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 3px;
+           margin-bottom: 4px; background: {ui.SURFACE_2}; }}
+  .gcred {{ font-size: .68rem; color: {ui.INK_MUTED}; margin-bottom: 8px; }}
   .gtop {{ display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }}
   .gp {{ font-family: {ui.DISPLAY}; font-weight: 700; font-size: 1.15rem; color: {ui.RULE};
          font-variant-numeric: tabular-nums; white-space: nowrap; }}
