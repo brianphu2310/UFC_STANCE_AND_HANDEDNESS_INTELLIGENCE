@@ -590,6 +590,16 @@ GEAR = {
     "boxing_shoes": dict(item="Boxing shoes", cat="Conditioning", price=(90, 280), optional=True,
                          needs={"Boxing Fundamentals", "Southpaw & Open-Stance Lab"},
                          why="Light, flat-soled and ankle-high for pivots on canvas; only for gyms that train in shoes."),
+    "knee_pads": dict(item="Knee pads", cat="Grappling", price=(30, 80), optional=True,
+                      needs={"Wrestling for MMA", "No-Gi Grappling", "MMA Integration"},
+                      why="Padding for knees that hit the mat hundreds of times a session in shots and scrambles."),
+    "ankle_supports": dict(item="Ankle supports", cat="Protection", price=(15, 40), optional=True,
+                           needs={"Muay Thai Technique", "Kickboxing Conditioning"},
+                           why="Light compression for ankles that pivot on every kick; not a fix for an injury."),
+    "timer": dict(item="Round timer", cat="Conditioning", price=(40, 150), optional=True, needs=None,
+                  why="Rounds and rest on the clock, so shadowboxing and home sessions run like a real class."),
+    "gym_bag": dict(item="Gym backpack", cat="Conditioning", price=(50, 180), optional=True, needs=None,
+                    why="Separate pockets keep wet gloves and wraps away from clean clothes so they dry and don't smell."),
     "rope": dict(item="Skipping rope", cat="Conditioning", price=(15, 45),
                  needs=None, why="Cheapest conditioning there is: footwork rhythm and a warm-up anywhere."),
 }
@@ -647,6 +657,8 @@ def recommend_gear(*, height_cm: float, weight_kg: float, gender: str, goal: str
         "rash": "Fitted", "fight_shorts": "Your waist size; split leg",
         "wrestling_shoes": "Your shoe size, snug", "ear_guards": "One size, adjustable",
         "boxing_shoes": "Your shoe size, snug", "rope": "Speed rope, cut to your height",
+        "knee_pads": "S/M/L by knee circumference", "ankle_supports": "Your shoe size range",
+        "timer": "Wall or bag-mounted", "gym_bag": "35 L or more fits gloves and shins",
     }
     k = BUDGETS.get(budget, 0.5)
     rows = []

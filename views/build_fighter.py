@@ -183,7 +183,7 @@ def _gear(p, rm):
         cols = st.columns(4)                      # fixed width, so a group of one stays card-sized
         for i, (_, r) in enumerate(g.iterrows()):
             n = r["needed_for"]
-            need = ("Everyone, from week one" if not n else ", ".join(n[:2])
+            need = (("Anyone who trains" if r["optional"] else "Everyone, from week one") if not n else ", ".join(n[:2])
                     + (f" and {len(n) - 2} more" if len(n) > 2 else ""))
             ph = photos.get(r["key"])
             img = (f'<img class="gimg" src="{ph[0]}" alt="{escape(r["item"])}">'

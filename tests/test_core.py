@@ -212,3 +212,12 @@ def test_gear_grappling_extras():
     assert "Boxing shoes" not in by.index
     a, _ = _gear("All-rounder", goal="Pro debut", sessions=5)
     assert {"MMA shorts", "Rash guard"} <= set(a["item"])
+
+
+def test_gear_extras_for_everyone():
+    for style in core.STYLES:
+        g, _ = _gear(style)
+        opt = set(g.loc[g["optional"], "item"])
+        assert {"Round timer", "Gym backpack"} <= opt
+    g, _ = _gear("Grappler")
+    assert "Ankle supports" not in set(g["item"])
