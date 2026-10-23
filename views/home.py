@@ -1,11 +1,13 @@
 """Home: the landing page. A fight-poster hero, the tale of the tape for orthodox vs southpaw, then
 the app's pages as tonight's fight card."""
 import base64
+import json
 from html import escape
 from pathlib import Path
 
 import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as components
 
 import ui
 
@@ -54,29 +56,96 @@ def _intro_video() -> str:
     return out
 
 
-def _intro():
-    """Once per session: two 3D fighters trade until one is knocked out, then the Topuria vs Holloway
-    photo, then the page. Pure CSS timing; 'Skip intro' or reduced motion removes it."""
+def _intro() -> float:
+    """Once per session, before the page: a southpaw and an orthodox 3D fighter trade until the
+    southpaw's left straight lands. That frame is staged like the Topuria vs Holloway photo and
+    dissolves into it, the photo dissolves back as the orthodox falls, K.O., then the page fades in.
+
+    It runs in a component iframe stretched over the whole window, so its script can follow the
+    video's own clock (static/hero/intro.json holds the beats) and remove itself when the clip ends.
+    Returns the seconds the landing page should wait before its own entrance."""
     if st.session_state.get("intro_done"):
-        return False
+        return 0.0
     st.session_state["intro_done"] = True
     video, photo = _intro_video(), ui._hero_photo("explorer")[0]
-    if not video:
-        return False
-    st.markdown(f"""
-<div id="skipintro" class="intro" aria-hidden="true">
-  <video autoplay muted playsinline>{video}</video>
-  <div class="ko">K.O.</div>
-  <div class="flash"></div>
-  <div class="shot"><div class="frame" style="background-image:url({photo})"></div>
-    <div class="cap"><b>Topuria vs Holloway</b><span>Every fight starts with a stance</span></div></div>
-  <a class="introskip" href="#skipintro">Skip intro</a>
-</div>""", unsafe_allow_html=True)
-    return True
+    tf = INTRO / "intro.json"
+    if not video or not tf.exists():
+        return 0.0
+    T = json.loads(tf.read_text())
+    st.markdown("""<style>
+  .st-key-introbox {{ position: relative; z-index: 1000002 !important; height: 0; overflow: visible; }}
+  .st-key-introbox iframe {{ position: fixed !important; inset: 0; width: 100vw !important; height: 100vh !important;
+                             height: 100dvh !important; border: 0; z-index: 1000002; background: #000; }}
+  @media (prefers-reduced-motion: reduce) {{ .st-key-introbox {{ display: none; }} }}
+</style>""".format(), unsafe_allow_html=True)
+    page = INTRO_HTML.replace("__FONTS__", ui._font_faces()).replace("__VIDEO__", video).replace("__PHOTO__", photo) \
+        .replace("__T__", json.dumps(T)).replace("__RED__", ui.ACCENT).replace("__DISPLAY__", ui.DISPLAY)
+    with st.container(key="introbox"):
+        components.html(page, height=0)
+    return T["total"] + .3
+
+
+INTRO_HTML = """<!doctype html><html><head><meta charset="utf-8"><style>
+__FONTS__
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+  #wrap { position: fixed; inset: 0; transition: opacity .8s ease; }
+  video, .photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .photo { background: center / cover no-repeat url(__PHOTO__); opacity: 0; transform-origin: 60% 45%; }
+  .cap { position: absolute; left: 0; right: 0; bottom: 9vh; text-align: center; opacity: 0; }
+  .cap b { display: block; font-family: __DISPLAY__; font-style: italic; font-weight: 800; text-transform: uppercase;
+           color: #fff; font-size: clamp(2rem, 5vw, 3.8rem); line-height: 1; text-shadow: 0 3px 18px #000; }
+  .cap span { color: __RED__; font-family: __DISPLAY__; font-style: italic; font-weight: 800; text-transform: uppercase;
+              font-size: 1.25rem; letter-spacing: .06em; text-shadow: 0 2px 10px #000; }
+  .ko { position: absolute; inset: 0; display: grid; place-items: center; font-family: __DISPLAY__; font-style: italic;
+        font-weight: 800; color: __RED__; font-size: clamp(6rem, 22vw, 20rem); letter-spacing: -.02em; opacity: 0;
+        text-shadow: 0 8px 0 #000, 0 0 60px rgba(229,37,45,.6); }
+  button { position: absolute; right: 18px; bottom: 18px; color: #fff; border: 1px solid rgba(255,255,255,.6);
+           padding: 8px 16px; font: 600 13px system-ui, sans-serif; text-transform: uppercase; letter-spacing: .08em;
+           background: rgba(0,0,0,.5); cursor: pointer; }
+  button:focus-visible { outline: 2px solid __RED__; outline-offset: 2px; }
+</style></head><body><div id="wrap">
+  <video id="v" muted playsinline preload="auto">__VIDEO__</video>
+  <div class="photo" id="ph"></div>
+  <div class="cap" id="cap"><b>Topuria vs Holloway</b><span>Every fight starts with a stance</span></div>
+  <div class="ko" id="ko">K.O.</div>
+  <button id="skip" type="button">Skip intro</button>
+</div><script>
+const T = __T__, v = document.getElementById("v"), ph = document.getElementById("ph"),
+      cap = document.getElementById("cap"), ko = document.getElementById("ko"), wrap = document.getElementById("wrap");
+const clamp = x => Math.max(0, Math.min(1, x)), ease = x => x * x * (3 - 2 * x);
+let done = false;
+function finish() {
+  if (done) return; done = true;
+  wrap.style.opacity = 0;
+  setTimeout(() => { try { window.frameElement.closest('[class*="st-key-introbox"]').style.display = "none"; }
+                     catch (e) { document.body.style.display = "none"; } }, 850);
+}
+function tick() {
+  if (done) return;
+  const t = v.currentTime;
+  // the match cut: the real photo dissolves in over the held 3D frame, then out as he falls
+  const inn = ease(clamp((t - T.impact + .05) / .7)), out = ease(clamp((t - (T.ko - .55)) / .6));
+  const a = inn * (1 - out);
+  ph.style.opacity = a; ph.style.transform = `scale(${1.04 - .04 * inn + .02 * clamp((t - T.impact) / T.hold)})`;
+  cap.style.opacity = ease(clamp((t - T.impact - .45) / .5)) * (1 - out);
+  const k = clamp((t - T.ko - .55) / .35);
+  ko.style.opacity = k; ko.style.transform = `scale(${2.4 - 1.4 * ease(k)}) skewX(${-10 * (1 - k)}deg)`;
+  if (t >= T.total - .25 || v.ended) finish();
+  requestAnimationFrame(tick);
+}
+document.getElementById("skip").onclick = finish;
+v.addEventListener("ended", finish);
+v.addEventListener("error", finish);
+const go = v.play();
+if (go && go.catch) go.catch(finish);          // autoplay refused: go straight to the page
+requestAnimationFrame(tick);
+setTimeout(finish, (T.total + 6) * 1000);       // never trap the page behind the intro
+</script></body></html>"""
 
 
 def render(df: pd.DataFrame):
-    delay = "--land-delay: 9.4s; " if _intro() else ""
+    wait = _intro()
+    delay = f"--land-delay: {wait:.1f}s; " if wait else ""
     hero, _ = ui._hero_photo("home")
     southpaw = (df["stance"] == "Southpaw").mean()
     st.markdown(f"""
@@ -178,38 +247,6 @@ CSS = f"""<style>
   .bout u::after {{ content: ""; display: inline-block; margin-left: 8px; border: 6px solid transparent;
                     border-left: 9px solid {ui.ACCENT}; border-right: 0; vertical-align: 1px; }}
   /* intro: 0-4.8s the 3D fight, 4.8s K.O., 6.6s flash to the photo, 9.2s fade into the page */
-  /* lift the element that holds the intro above the page that follows it */
-  [data-testid="stElementContainer"]:has(.intro), .stMarkdown:has(.intro), [data-testid="stMarkdownContainer"]:has(.intro) {{
-    position: relative; z-index: 1000002 !important; }}
-  .intro {{ position: fixed; inset: 0; z-index: 1000002; background: #000; overflow: hidden;
-            animation: introOut .7s ease 9.2s forwards; }}
-  .intro video {{ position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }}
-  .intro .ko {{ position: absolute; inset: 0; display: grid; place-items: center; font-family: {ui.DISPLAY};
-                font-style: italic; font-weight: 800; color: {ui.ACCENT}; font-size: clamp(6rem, 22vw, 20rem);
-                letter-spacing: -.02em; text-shadow: 0 8px 0 #000, 0 0 60px rgba(229,37,45,.6); opacity: 0;
-                animation: koIn .35s cubic-bezier(.2,1.4,.4,1) 4.8s forwards, fadeAway .3s ease 6.5s forwards; }}
-  .intro .flash {{ position: absolute; inset: 0; background: #fff; opacity: 0; animation: flash .45s ease 6.5s forwards; }}
-  .intro .shot {{ position: absolute; inset: 0; display: grid; place-items: center; align-content: center; gap: 18px;
-                  background: #0B0B0B; opacity: 0; animation: show .01s linear 6.6s forwards; }}
-  .intro .frame {{ width: min(86vw, 1100px); aspect-ratio: 738 / 414; max-width: 100%; border: 5px solid #E9E9E9;
-                   background: center / cover no-repeat; box-shadow: 0 30px 80px rgba(0,0,0,.8);
-                   animation: kenburns 3s ease-out 6.6s both; }}
-  .intro .cap {{ text-align: center; }}
-  .intro .cap b {{ display: block; font-family: {ui.DISPLAY}; font-style: italic; font-weight: 800; text-transform: uppercase;
-                   color: #fff !important; font-size: clamp(2rem, 5vw, 3.6rem); line-height: 1; }}
-  .intro .cap span {{ color: {ui.ACCENT}; font-family: {ui.DISPLAY}; font-style: italic; font-weight: 800;
-                      text-transform: uppercase; font-size: 1.2rem; letter-spacing: .06em; }}
-  .intro .introskip {{ position: absolute; right: max(18px, env(safe-area-inset-right, 0px)); bottom: max(18px, env(safe-area-inset-bottom, 0px));
-                  color: #fff !important; border: 1px solid rgba(255,255,255,.6); padding: 8px 16px; font-size: .85rem;
-                  text-transform: uppercase; letter-spacing: .08em; text-decoration: none !important; background: rgba(0,0,0,.5); }}
-  .intro:target {{ display: none; }}
-  @keyframes koIn {{ from {{ opacity: 0; transform: scale(2.4) skewX(-10deg); }} to {{ opacity: 1; transform: none; }} }}
-  @keyframes fadeAway {{ to {{ opacity: 0; }} }}
-  @keyframes flash {{ 0% {{ opacity: 0; }} 25% {{ opacity: 1; }} 100% {{ opacity: 0; }} }}
-  @keyframes show {{ to {{ opacity: 1; }} }}
-  @keyframes kenburns {{ from {{ transform: scale(1.08); }} to {{ transform: scale(1); }} }}
-  @keyframes introOut {{ to {{ opacity: 0; visibility: hidden; pointer-events: none; }} }}
-  @media (prefers-reduced-motion: reduce) {{ .intro {{ display: none; }} }}
   @keyframes punch {{ from {{ opacity: 0; transform: translateX(-30px) skewX(-8deg); }} to {{ opacity: 1; transform: none; }} }}
   @media (max-width: 900px) {{
     .bouts {{ grid-template-columns: 1fr; }} .bout:first-child, .bout:not(:first-child) {{ grid-row: auto; grid-column: 1; }}

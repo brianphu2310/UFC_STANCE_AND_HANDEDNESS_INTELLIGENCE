@@ -1615,7 +1615,8 @@ function frame(dtFixed) {
     let dy = pb.yaw - pa.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy));
     F.group.position.set(pa.x + (pb.x - pa.x) * k, 0, pa.z + (pb.z - pa.z) * k);
     F.group.rotation.y = pa.yaw + dy * k;
-    if (F.koF) { F.group.rotation.order = "YXZ"; F.group.rotation.x = -1.42 * F.koF; F.group.position.y = .07 * F.koF; }
+    if (F.koF) { F.group.rotation.order = "YXZ"; F.group.rotation.x = -1.38 * F.koF; F.group.rotation.z = (F.koRoll || 0) * F.koF;
+      F.group.position.y = F.koLift || 0; F.group.position.addScaledVector(F.koSlide || V(0, 0, 0), F.koF); }
     F.group.updateMatrixWorld();
     const so = st.out[i];
     F.stepOpt = so.step && faceW > .5 ? { D: so.step.D, u: so.step.u,
@@ -1644,7 +1645,17 @@ function frame(dtFixed) {
     const Jp = solve(F.p, MODES[prevMode], opts), Jc = solve(F.p, MODES[mode], opts);
     F.J = blendJ(Jp, Jc, k);
     if (F.kd > 0) F.J = blendJ(F.J, solve(F.p, "down", opts), F.kd * faceW);
+    if (F.koF) F.J = blendJ(F.J, solve(F.p, "stand", { t: time }), Math.min(1, F.koF * 1.4));   // knocked out: limp, legs together
     F.place(F.J);
+    if (F.koF) {                                         // keep every joint on or above the canvas while falling
+      F.group.updateMatrixWorld(true);
+      let lo = 9;
+      const pts = [F.J.head, F.J.neck, ...[1, -1].flatMap(sd => [F.J.ankle[sd], F.J.knee[sd], F.J.hip[sd], F.J.sh[sd], F.J.elbow[sd], F.J.wrist[sd]])];
+      for (const q of pts) if (q && q.isVector3) lo = Math.min(lo, q.clone().applyMatrix4(F.group.matrixWorld).y);
+      const need = .075 - lo;                            // limb and head radius above the joint centre
+      F.koLift = Math.max(0, (F.koLift || 0) + need);
+      if (need > 0) { F.group.position.y += need; F.group.updateMatrixWorld(true); }
+    }
     const op = (prevMode === "reach" && i === 1 ? 1 - k : 0) + (mode === "reach" && i === 1 ? k : 0);
     const target = 1 - .62 * op;
     if (Math.abs(target - F.opacity) > .004) F.setOpacity(target);
@@ -1695,9 +1706,9 @@ function frame(dtFixed) {
     F.flinch += (br - F.flinch) * Math.min(dt * 14, 1);
     if (F.kdT >= 0) { F.kdT += dt; if (F.kdT > 2.0 && !F.koHold) F.kdT = -1; }
     const kt = F.kdT;
-    F.kd = kt < 0 ? 0 : kt < .3 ? easeOut(kt / .3) : (kt < 1.3 || F.koHold) ? 1 : 1 - ease(clamp((kt - 1.3) / .7, 0, 1));
+    F.kd = kt < 0 ? 0 : F.koHold ? .32 * easeOut(clamp(kt / .25, 0, 1)) * (1 - .6 * (F.koF || 0)) : kt < .3 ? easeOut(kt / .3) : kt < 1.3 ? 1 : 1 - ease(clamp((kt - 1.3) / .7, 0, 1));
     // a held knockout (capture only, for the landing-page intro): after the buckle, fall flat
-    if (F.koHold) { const f = clamp((kt - .18) / .55, 0, 1); F.koF = f * f; }
+    if (F.koHold) { const f = clamp((kt - .22) / .62, 0, 1); F.koF = f < 1 ? f * f * (1.6 - .6 * f) : 1 - .025 * Math.sin(clamp((kt - .84) / .3, 0, 1) * Math.PI); }
   });
   stepFlashes(dt);
 
@@ -1762,7 +1773,10 @@ if (CAPTURE) {
     if (o.neon !== undefined) { NEON_MODE = o.neon; for (const F of fighters) if (F.mats) F.mats.skin.userData.neon.value = o.neon ? 1 : 0; }
     if (o.clearFlashes) { for (const f of flashes) scene.remove(f.m); flashes.length = 0; }
     if (o.ko !== undefined && fighters[o.ko]) { const F = fighters[o.ko]; F.kdT = 0; F.koHold = true;
-      F.hitHeadT = time; flash(new THREE.Vector3(0, F.p.H * .9, .1).applyMatrix4(F.group.matrixWorld)); }
+      F.koRoll = o.koRoll || 0; F.koSlide = o.koSlide ? V(...o.koSlide) : null; F.koLift = 0; }
+    if (o.plan) { PLAN = { ev: o.plan.ev.slice().sort((p, q) => p.t0 - q.t0), len: o.plan.len, spar: true,
+                           n: fighters.length, sel: strikeSel }; }
+    if (o.hold !== undefined) paused = !!o.hold;
   };
 } else {
   renderer.setAnimationLoop(() => frame());
