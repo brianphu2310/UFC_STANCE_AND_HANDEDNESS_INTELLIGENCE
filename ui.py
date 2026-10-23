@@ -238,10 +238,11 @@ def inject_css():
   header[data-testid="stHeader"] a[data-testid="stTopNavLink"][aria-current="page"] span {{ color: {ACCENT} !important; }}
 
   /* page banner: a photo framed in white, the title set over its dark side */
-  .hero {{ position: relative; height: 300px; margin: 0 0 26px; border: 4px solid #E9E9E9; background: #111 center / cover no-repeat;
+  .hero {{ position: relative; height: 300px; margin: 0 0 26px; border: 4px solid #E9E9E9;
+           background: #0B0B0B right center / auto 100% no-repeat;
            box-shadow: 0 18px 40px rgba(0,0,0,.6); overflow: hidden; }}
   .hero::before {{ content: ""; position: absolute; inset: 0;
-           background: linear-gradient(90deg, rgba(0,0,0,.92) 0%, rgba(0,0,0,.7) 38%, rgba(0,0,0,.05) 75%); }}
+           background: linear-gradient(90deg, #0B0B0B 0%, #0B0B0B 30%, rgba(11,11,11,.75) 50%, rgba(11,11,11,0) 72%); }}
   .hero .in {{ position: absolute; left: 34px; bottom: 30px; right: 40%; }}
   .hero .kicker {{ font-family: {DISPLAY}; font-style: italic; font-weight: 800; font-size: 1.05rem; letter-spacing: .03em;
            text-transform: uppercase; color: {ACCENT}; margin: 0 0 6px; }}
