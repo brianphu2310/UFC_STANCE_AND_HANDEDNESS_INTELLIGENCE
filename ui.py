@@ -226,12 +226,123 @@ def inject_css():
   .foot {{ color: {INK_MUTED}; font-size: .86rem; padding: 26px 0 8px; border-top: 1px solid {BORDER};
            margin-top: 40px; display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; }}
   .foot a {{ color: {INK_2}; }}
+  /* ================= fight-night layer: one panel language, broadcast controls ================= */
+  :root {{ --glow: rgba(124, 77, 255, .55); --edge: rgba(167, 123, 255, .20); --edge-hi: rgba(167, 123, 255, .42); }}
+
+  /* nav: active page is a lit pill, not an underline */
+  header[data-testid="stHeader"] a[data-testid="stTopNavLink"] {{
+    margin: 0 3px; padding: 7px 14px !important; border-radius: 999px !important; border-bottom: none !important;
+    transition: background .15s ease; }}
+  header[data-testid="stHeader"] a[data-testid="stTopNavLink"]:hover {{ background: rgba(167,123,255,.10) !important; }}
+  header[data-testid="stHeader"] a[data-testid="stTopNavLink"][aria-current="page"] {{
+    background: linear-gradient(135deg, rgba(124,77,255,.95), rgba(91,52,184,.95)) !important;
+    box-shadow: 0 0 0 1px rgba(201,169,255,.35) inset, 0 6px 22px -6px var(--glow); }}
+  header[data-testid="stHeader"] a[data-testid="stTopNavLink"][aria-current="page"] span {{ color: #fff !important; }}
+  header[data-testid="stHeader"] {{ box-shadow: 0 1px 0 rgba(167,123,255,.12), 0 12px 30px -20px rgba(124,77,255,.6); }}
+
+  /* page header: kicker, gradient title, corner-colour rule */
+  .kicker {{ font-family: {BODY}; font-size: .78rem; font-weight: 700; letter-spacing: .16em;
+             text-transform: uppercase; color: {ACCENT}; margin: 0 0 12px; display: flex; align-items: center; gap: 10px; }}
+  .kicker i {{ font-style: normal; color: {ACCENT_2}; }}
+  .kicker::after {{ content: ""; width: 42px; height: 2px; background: linear-gradient(90deg, {ACCENT}, {ACCENT_2}); }}
+  .ph h1 {{ font-size: 3rem !important; background: linear-gradient(180deg, #FFFFFF 10%, #CDB8FF 120%);
+            -webkit-background-clip: text; background-clip: text; color: transparent !important; }}
+  .ph p {{ font-size: 1.06rem !important; }}
+
+  /* one panel language: glass with a violet edge and a lit top */
+  .card, [data-testid="stPlotlyChart"], [data-testid="stDataFrame"] {{
+    background: linear-gradient(180deg, rgba(167,123,255,.07), rgba(20,18,30,.72) 38%) !important;
+    border: 1px solid var(--edge) !important; border-radius: 10px !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 20px 44px -30px var(--glow); }}
+  [data-testid="stPlotlyChart"] {{ padding: 4px 2px; }}
+  [class*="st-key-oct_"] {{ background:
+      radial-gradient(760px 380px at 50% 0%, rgba(124,77,255,.20), transparent 70%),
+      linear-gradient(180deg, rgba(167,123,255,.06), rgba(20,18,30,.85)) !important;
+      box-shadow: inset 0 0 0 1px var(--edge), inset 0 1px 0 var(--edge-hi); }}
+  [class*="st-key-oct_"] .card {{ background: transparent !important; border: none !important; box-shadow: none; }}
+  [class*="st-key-oct_"] iframe {{ border-radius: 10px; box-shadow: 0 0 0 1px var(--edge), 0 24px 60px -28px var(--glow); }}
+
+  /* sections: corner chip + gradient hairline */
+  .sec {{ border-top: none !important; padding-top: 18px !important; position: relative; display: flex; align-items: center; gap: 12px; }}
+  .sec::before {{ content: ""; width: 10px; height: 10px; flex: none; background: linear-gradient(135deg, {ACCENT}, {ACCENT_2});
+                  clip-path: polygon(30% 0, 70% 0, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0 70%, 0 30%); }}
+  .sec::after {{ content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px;
+                 background: linear-gradient(90deg, var(--edge-hi), rgba(72,209,224,.18) 40%, transparent); }}
+
+  /* sliders: thicker lit track, glowing thumb, value in a chip */
+  [data-testid="stSlider"] [role="group"] {{ margin-top: 12px; }}
+  [data-testid="stSlider"] [role="group"] > div > div:first-child {{ height: 6px !important; border-radius: 99px !important;
+    box-shadow: 0 0 14px -3px var(--glow); }}
+  [data-testid="stSlider"] [role="group"] > div > div:has(input[type="range"]) {{
+    width: 18px !important; height: 18px !important; border-radius: 50% !important; background: #fff !important;
+    border: none !important; box-shadow: 0 0 0 4px rgba(124,77,255,.4), 0 0 18px 2px var(--glow) !important; }}
+  [data-testid="stSliderThumbValue"] {{ top: -28px !important; }}
+  [data-testid="stSliderThumbValue"] p {{ font-family: {DISPLAY}; font-weight: 800; font-size: 1rem !important;
+    color: #fff !important; background: #2A2147; border: 1px solid var(--edge-hi);
+    padding: 0 7px; border-radius: 4px; line-height: 1.35; white-space: nowrap; }}
+  [data-testid="stSliderTickBar"] p {{ color: {INK_MUTED} !important; font-size: .74rem !important; }}
+
+  /* radios become a segmented switch, matching st.segmented_control */
+  [data-testid="stRadioGroup"] {{ display: inline-flex !important; flex-direction: row !important; gap: 0 !important;
+    border: 1px solid {FIELD_BORDER}; border-radius: 8px; overflow: hidden; background: rgba(11,10,18,.5); }}
+  [data-testid="stRadioGroup"] > div {{ margin: 0 !important; }}
+  [data-testid="stRadioGroup"] > div + div {{ border-left: 1px solid {FIELD_BORDER}; }}
+  [data-testid="stRadioOption"] {{ padding: 6px 16px !important; margin: 0 !important; cursor: pointer; }}
+  [data-testid="stRadioOption"] > div > div:first-child {{ display: none !important; }}
+  [data-testid="stRadioOption"] p {{ color: {INK_2} !important; font-weight: 600; }}
+  [data-testid="stRadioOption"][data-selected="true"] {{ background: linear-gradient(135deg, {ACCENT_FILL}, #5B34B8); }}
+  [data-testid="stRadioOption"][data-selected="true"] p {{ color: #fff !important; }}
+
+  /* segmented controls and pills: same switch (1.66 marks the selected button with aria-checked) */
+  [data-testid="stButtonGroup"] button {{ border-color: {FIELD_BORDER} !important; background-color: rgba(11,10,18,.5); }}
+  [data-testid="stButtonGroup"] button p {{ font-weight: 600; color: {INK_2}; }}
+  [data-testid="stButtonGroup"] button[aria-checked="true"], [data-testid="stButtonGroup"] button[aria-pressed="true"],
+  [data-testid="stBaseButton-segmented_controlActive"], [data-testid="stBaseButton-pillsActive"] {{
+    background: linear-gradient(135deg, {ACCENT_FILL}, #5B34B8) !important; border-color: rgba(201,169,255,.45) !important;
+    box-shadow: 0 6px 18px -8px var(--glow); }}
+  [data-testid="stButtonGroup"] button[aria-checked="true"] p, [data-testid="stButtonGroup"] button[aria-pressed="true"] p {{
+    color: #fff !important; }}
+
+  /* tabs: lit pills on a rail */
+  [data-testid="stTabs"] [role="tablist"] {{ gap: 6px; border-bottom: 1px solid var(--edge); padding-bottom: 8px; }}
+  [data-testid="stTab"] {{ padding: 8px 16px !important; border-radius: 999px; transition: background .15s ease; }}
+  [data-testid="stTab"] p {{ font-weight: 600; font-size: .95rem !important; color: {INK_MUTED}; }}
+  [data-testid="stTab"]:hover {{ background: rgba(167,123,255,.10); }}
+  [data-testid="stTab"][aria-selected="true"] {{ background: rgba(124,77,255,.22); box-shadow: inset 0 0 0 1px var(--edge-hi); }}
+  [data-testid="stTab"][aria-selected="true"] p {{ color: #fff; }}
+  [data-testid="stTabs"] .react-aria-SelectionIndicator {{ display: none; }}
+
+  /* inputs, toggles, buttons */
+  [data-baseweb="select"] > div, [data-testid="stTextInputRootElement"] {{ border-radius: 8px !important;
+    background: rgba(11,10,18,.55) !important; }}
+  .stDownloadButton button, .stButton button {{ border-radius: 8px !important; }}
+  .stDownloadButton button[kind="primary"], .stButton button[kind="primary"], .stDownloadButton button {{
+    background: linear-gradient(135deg, {ACCENT_FILL}, #5B34B8) !important; border: 1px solid rgba(201,169,255,.35) !important;
+    box-shadow: 0 10px 26px -12px var(--glow); color: #fff !important; }}
+  .stDownloadButton button p {{ color: #fff !important; }}
+
+  /* numbers: scoreboard gradient */
+  [data-testid="stMetricValue"], .kv b, .score {{ background: linear-gradient(180deg, #FFFFFF, #D6C6FF);
+    -webkit-background-clip: text; background-clip: text; color: transparent !important; }}
+  [data-testid="stMetricDelta"] {{ background: rgba(72,209,224,.10) !important; color: {ACCENT_2} !important; }}
+
+  /* sidebar */
+  section[data-testid="stSidebar"] {{ background: linear-gradient(180deg, rgba(29,26,42,.92), rgba(14,12,22,.92)) !important;
+    border-right: 1px solid var(--edge) !important; }}
+  .sbh {{ display: flex; align-items: center; gap: 10px; }}
+  .sbh::before {{ content: ""; width: 4px; height: 20px; border-radius: 2px; background: linear-gradient({ACCENT}, {ACCENT_2}); }}
+  .callout {{ background: linear-gradient(90deg, rgba(233,180,76,.08), transparent 70%) !important;
+              padding: 10px 14px 10px 16px !important; border-radius: 0 8px 8px 0; }}
   @media (prefers-reduced-motion: reduce) {{ * {{ animation: none !important; transition: none !important; }} }}
 </style>""", unsafe_allow_html=True)
 
 
+KICKER = {"value": ""}   # "02 · Explorer", set per page by the app before it renders
+
+
 def page_header(title: str, dek: str | None = None):
-    st.markdown(f'<div class="ph"><h1>{escape(title)}</h1>'
+    k = KICKER["value"]
+    st.markdown(f'<div class="ph">' + (f'<div class="kicker">{k}</div>' if k else "") + f'<h1>{escape(title)}</h1>'
                 + (f'<p>{escape(dek)}</p>' if dek else "") + '</div>', unsafe_allow_html=True)
 
 
