@@ -574,13 +574,22 @@ GEAR = {
                       why="The glove you compete in; train with it in the weeks before a bout."),
     "gi": dict(item="BJJ gi", cat="Grappling", price=(100, 260),
                needs={"BJJ Fundamentals (Gi)"}, why="Required for gi classes."),
-    "rash": dict(item="Rash guard and grappling shorts", cat="Grappling", price=(60, 160),
+    "rash": dict(item="Rash guard", cat="Grappling", price=(40, 110),
                  needs={"No-Gi Grappling", "Wrestling for MMA", "MMA Integration", "Competition Team"},
                  styles={"Grappler", "All-rounder"},
-                 why="Tight kit that won't catch fingers or toes; keeps mats hygienic."),
+                 why="Tight top that won't catch fingers or toes; keeps mats hygienic."),
+    "fight_shorts": dict(item="MMA shorts", cat="Grappling", price=(40, 110),
+                         needs={"No-Gi Grappling", "Wrestling for MMA", "MMA Integration"},
+                         why="Split-leg shorts with no pockets or zips: free to kick, nothing to catch on."),
     "wrestling_shoes": dict(item="Wrestling shoes", cat="Grappling", price=(80, 180),
                             needs={"Wrestling for MMA"},
                             why="Grip for shots and sprawls if your gym wrestles in shoes (some go barefoot)."),
+    "ear_guards": dict(item="Ear guards", cat="Grappling", price=(30, 70), optional=True,
+                       needs={"Wrestling for MMA", "No-Gi Grappling", "BJJ Fundamentals (Gi)"},
+                       why="Wrestling headgear that prevents cauliflower ear from friction in the clinch and on the mat."),
+    "boxing_shoes": dict(item="Boxing shoes", cat="Conditioning", price=(90, 280), optional=True,
+                         needs={"Boxing Fundamentals", "Southpaw & Open-Stance Lab"},
+                         why="Light, flat-soled and ankle-high for pivots on canvas; only for gyms that train in shoes."),
     "rope": dict(item="Skipping rope", cat="Conditioning", price=(15, 45),
                  needs=None, why="Cheapest conditioning there is: footwork rhythm and a warm-up anywhere."),
 }
@@ -609,7 +618,8 @@ def gi_size(height_cm: float, weight_kg: float, gender: str) -> str:
 
 # For a grappler, sparring and the fight team mean live rolls, not striking rounds.
 GRAPPLER_ROLLS = {"Controlled Sparring", "Competition Team"}
-STRIKING_KIT = {"hand_wraps", "boxing_gloves", "bag_mitts", "groin", "shins", "headgear"}
+STRIKING_KIT = {"hand_wraps", "boxing_gloves", "bag_mitts", "groin", "shins", "headgear",
+                "boxing_shoes"}
 
 
 def recommend_gear(*, height_cm: float, weight_kg: float, gender: str, goal: str, style: str,
@@ -634,7 +644,9 @@ def recommend_gear(*, height_cm: float, weight_kg: float, gender: str, goal: str
         "shins": shin_size(height_cm),
         "headgear": "Open-face" if not competitive else "Open-face, competition approved",
         "mma_spar": "7 oz", "mma_fight": "4 oz", "gi": gi_size(height_cm, weight_kg, gender),
-        "rash": "Fitted", "wrestling_shoes": "Your shoe size, snug", "rope": "Speed rope, cut to your height",
+        "rash": "Fitted", "fight_shorts": "Your waist size; split leg",
+        "wrestling_shoes": "Your shoe size, snug", "ear_guards": "One size, adjustable",
+        "boxing_shoes": "Your shoe size, snug", "rope": "Speed rope, cut to your height",
     }
     k = BUDGETS.get(budget, 0.5)
     rows = []

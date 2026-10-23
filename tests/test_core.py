@@ -163,7 +163,7 @@ def test_gear_follows_the_classes():
     assert not items & {"Boxing gloves", "Shin guards", "Headgear", "MMA fight gloves (4 oz)"}
     s, _ = _gear("Striker", goal="Pro debut")
     assert {"Boxing gloves", "Hand wraps", "Mouthguard"} <= set(s["item"])
-    assert not set(s["item"]) & {"BJJ gi", "Rash guard and grappling shorts", "MMA fight gloves (4 oz)"}
+    assert not set(s["item"]) & {"BJJ gi", "Rash guard", "MMA fight gloves (4 oz)"}
     # every item says which of the user's classes needs it, and those classes are in the roadmap
     classes = {c for w in rm["week"] for c in w}
     for r in g.itertuples():
@@ -203,3 +203,12 @@ def test_gear_optional_extras_last_and_outside_totals():
                               pd.DataFrame(columns=["class", "discipline", "level", "focus"]),
                               pd.DataFrame(columns=["coach", "discipline", "specialty"]), {}, g)
     assert f"A${g.loc[~g['optional'], 'price_aud'].sum():,} in total" in plan
+
+
+def test_gear_grappling_extras():
+    g, _ = _gear("Grappler")
+    by = g.set_index("item")
+    assert "Ear guards" in by.index and by.loc["Ear guards", "optional"]
+    assert "Boxing shoes" not in by.index
+    a, _ = _gear("All-rounder", goal="Pro debut", sessions=5)
+    assert {"MMA shorts", "Rash guard"} <= set(a["item"])
