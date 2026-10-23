@@ -89,7 +89,8 @@ def render(df: pd.DataFrame):
                         "Right-handed southpaws are "
                         f"{head.diff:+.1f} against orthodox right-handers, a gap too small to separate from "
                         "chance with groups this size.")
-    verdict.markdown(f'<div class="callout" style="border-left-color:{ui.RULE}">{verdict_html}</div>',
+    verdict.markdown(f'<div class="callout" style="border-left-color:{ui.RULE};margin-bottom:18px">'
+                     f'{verdict_html}</div>',
                      unsafe_allow_html=True)
 
     fig = go.Figure()

@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <title>Body 3D</title>
 <style>
-  @font-face { font-family: "Instrument Sans"; src: url("../../app/static/fonts/instrument-sans-latin-400-normal.woff2") format("woff2"); font-weight: 400; }
-  @font-face { font-family: "Instrument Sans"; src: url("../../app/static/fonts/instrument-sans-latin-600-normal.woff2") format("woff2"); font-weight: 600; }
-  @font-face { font-family: "Big Shoulders Display"; src: url("../../app/static/fonts/big-shoulders-display-latin-700-normal.woff2") format("woff2"); font-weight: 700; }
-  @font-face { font-family: "Big Shoulders Display"; src: url("../../app/static/fonts/big-shoulders-display-latin-800-normal.woff2") format("woff2"); font-weight: 800; }
+  @font-face { font-family: "Instrument Sans"; src: url("fonts/instrument-sans-latin-400-normal.woff2") format("woff2"); font-weight: 400; }
+  @font-face { font-family: "Instrument Sans"; src: url("fonts/instrument-sans-latin-600-normal.woff2") format("woff2"); font-weight: 600; }
+  @font-face { font-family: "Big Shoulders Display"; src: url("fonts/big-shoulders-display-latin-700-normal.woff2") format("woff2"); font-weight: 700; }
+  @font-face { font-family: "Big Shoulders Display"; src: url("fonts/big-shoulders-display-latin-800-normal.woff2") format("woff2"); font-weight: 800; }
   :root { --bg:#0B0A12; --ink:#F1EEF8; --ink2:#C6C0D8; --mute:#958EAD; --line:#2B2740;
           --a:#A77BFF; --afill:#7C4DFF; --b:#48D1E0; --rule:#E9B44C; --neon:#A879FF; }
   html, body { margin:0; height:100%; background:var(--bg); overflow:hidden; color:var(--ink);
@@ -55,7 +55,10 @@
   .tool { padding:6px 9px; color:var(--ink2); background:rgba(20,18,30,.9); border:1px solid var(--line); border-radius:4px; }
   .tool.on { color:var(--ink); border-color:#5B4E86; }
   .seg button:focus-visible, .tool:focus-visible { outline:2px solid var(--rule); outline-offset:-2px; }
+  .seg.tools .tool { border:none; border-radius:0; background:transparent; }
+  .seg.tools .tool.on { color:var(--ink); background:rgba(124,77,255,.22); }
   .spacer { flex:1; }
+  @media (max-width: 1000px) { .seg button, .tool { padding:6px 7px; font-size:11.5px; } .bar { gap:5px; } }
   .key { font-size:11.5px; color:var(--ink2); }
   .key i { display:inline-block; width:14px; height:4px; border-radius:2px; margin-right:6px;
            vertical-align:middle; background:var(--rule); box-shadow:0 0 6px var(--rule); }
@@ -86,10 +89,12 @@
       <button data-k="cross" aria-pressed="false">Cross</button>
       <button data-k="kick" aria-pressed="false">Kick</button>
     </div>
-    <button class="tool on" id="bPlay" aria-pressed="true">Pause</button>
-    <button class="tool on" id="bSpin" aria-pressed="true">Rotate</button>
-    <button class="tool" id="bReset">Reset</button>
-    <button class="tool" id="bNeon" aria-pressed="false">Neon</button>
+    <div class="seg tools" role="group" aria-label="Playback">
+      <button class="tool on" id="bPlay" aria-pressed="true">Pause</button>
+      <button class="tool on" id="bSpin" aria-pressed="true">Rotate</button>
+      <button class="tool" id="bReset">Reset</button>
+      <button class="tool" id="bNeon" aria-pressed="false">Neon</button>
+    </div>
     <span class="spacer"></span>
     <span class="key"><i></i>Gold glove and gold ring: dominant hand and foot</span>
   </div>

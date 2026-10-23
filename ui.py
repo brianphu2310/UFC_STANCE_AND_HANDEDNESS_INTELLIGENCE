@@ -5,7 +5,9 @@ dominant side. Display type is Big Shoulders Display (condensed, scoreboard-like
 Instrument Sans, both self-hosted. Signature devices: the octagon-cut primary panel on each page
 and a faint chain-link diamond in the page background, taken from the cage fence.
 """
+import base64
 from html import escape
+from pathlib import Path
 
 import plotly.graph_objects as go
 import streamlit as st
@@ -62,23 +64,25 @@ def colors_for(dim_label: str) -> dict:
     return dict(zip(order, PALETTE))
 
 
+FONTS = [("Instrument Sans", w, f"instrument-sans-latin-{w}-normal.woff2") for w in (400, 500, 600, 700)] + \
+        [("Big Shoulders Display", w, f"big-shoulders-display-latin-{w}-normal.woff2") for w in (500, 700, 800)]
+
+
+@st.cache_resource
+def _font_faces() -> str:
+    """@font-face rules with the fonts inlined: Community Cloud serves the app under a path prefix,
+    so linked /app/static files can miss; data URIs load everywhere (about 110 KB once cached)."""
+    d = Path(__file__).parent / "static" / "fonts"
+    return "\n".join(
+        f'  @font-face {{ font-family: "{fam}"; font-weight: {w}; font-display: swap; src: '
+        f'url("data:font/woff2;base64,{base64.b64encode((d / f).read_bytes()).decode()}") format("woff2"); }}'
+        for fam, w, f in FONTS)
+
+
 def inject_css():
     st.markdown(f"""
 <style>
-  @font-face {{ font-family: "Instrument Sans"; font-weight: 400; font-display: swap;
-               src: url("app/static/fonts/instrument-sans-latin-400-normal.woff2") format("woff2"); }}
-  @font-face {{ font-family: "Instrument Sans"; font-weight: 500; font-display: swap;
-               src: url("app/static/fonts/instrument-sans-latin-500-normal.woff2") format("woff2"); }}
-  @font-face {{ font-family: "Instrument Sans"; font-weight: 600; font-display: swap;
-               src: url("app/static/fonts/instrument-sans-latin-600-normal.woff2") format("woff2"); }}
-  @font-face {{ font-family: "Instrument Sans"; font-weight: 700; font-display: swap;
-               src: url("app/static/fonts/instrument-sans-latin-700-normal.woff2") format("woff2"); }}
-  @font-face {{ font-family: "Big Shoulders Display"; font-weight: 500; font-display: swap;
-               src: url("app/static/fonts/big-shoulders-display-latin-500-normal.woff2") format("woff2"); }}
-  @font-face {{ font-family: "Big Shoulders Display"; font-weight: 700; font-display: swap;
-               src: url("app/static/fonts/big-shoulders-display-latin-700-normal.woff2") format("woff2"); }}
-  @font-face {{ font-family: "Big Shoulders Display"; font-weight: 800; font-display: swap;
-               src: url("app/static/fonts/big-shoulders-display-latin-800-normal.woff2") format("woff2"); }}
+{_font_faces()}
 
   .stApp {{ font-family: {BODY}; }}
   /* arena light from above, and the cage's chain-link diamond at 3% in the background */
@@ -133,7 +137,7 @@ def inject_css():
     background: rgba(20, 18, 30, .78); border-right: 1px solid {BORDER}; }}
   section[data-testid="stSidebar"] > div:first-child {{ background: transparent; padding-top: 3.7rem; }}
   [data-testid="stSidebarHeader"] {{ height: .6rem !important; min-height: 0 !important; padding: 0 !important; }}
-  section[data-testid="stSidebar"] label p {{ color: {INK_MUTED}; font-size: .8rem; }}
+  section[data-testid="stSidebar"] label p {{ color: {INK_2}; font-size: .86rem; }}
   .sbh {{ font-family: {DISPLAY}; font-weight: 700; font-size: 1.3rem; color: {INK}; margin: 4px 0 10px; }}
 
   /* ---------- page header ---------- */
@@ -148,7 +152,7 @@ def inject_css():
   /* ---------- sections ---------- */
   .sec {{ font-family: {DISPLAY}; font-weight: 700; font-size: 1.6rem; color: {INK};
           margin: 30px 0 2px; padding-top: 14px; border-top: 1px solid {BORDER}; line-height: 1.05; }}
-  .secsub {{ color: {INK_MUTED}; font-size: .88rem; margin-bottom: 10px; max-width: 75ch; }}
+  .secsub {{ color: {INK_MUTED}; font-size: .95rem; margin-bottom: 10px; max-width: 75ch; }}
 
   /* ---------- panels: the octagon cut is the one signature device ---------- */
   .card {{ background: {SURFACE}; border: 1px solid {BORDER}; border-radius: 4px; padding: 16px 18px; }}
@@ -156,11 +160,11 @@ def inject_css():
       linear-gradient({SURFACE}, {SURFACE}) padding-box;
       clip-path: polygon(0 0, calc(100% - 22px) 0, 100% 22px, 100% 100%, 22px 100%, 0 calc(100% - 22px)); }}
   .card .t {{ font-family: {DISPLAY}; font-weight: 700; font-size: 1.35rem; color: {INK}; line-height: 1.05; }}
-  .card .s {{ color: {INK_MUTED}; font-size: .82rem; margin-top: 3px; }}
-  .card .b {{ color: {INK_2}; font-size: .88rem; margin-top: 10px; line-height: 1.5; }}
+  .card .s {{ color: {INK_MUTED}; font-size: .86rem; margin-top: 3px; }}
+  .card .b {{ color: {INK_2}; font-size: .94rem; margin-top: 10px; line-height: 1.5; }}
   .card ul {{ margin: 6px 0 0; padding-left: 18px; }}
   .kv {{ display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; margin-top: 14px; }}
-  .kv div {{ font-size: .78rem; color: {INK_MUTED}; }}
+  .kv div {{ font-size: .82rem; color: {INK_MUTED}; }}
   .kv b {{ display: block; color: {INK}; font-family: {DISPLAY}; font-size: 1.35rem; font-weight: 700;
            line-height: 1.05; margin-top: 1px; }}
   .pill {{ display: inline-block; padding: 1px 9px; border-radius: 3px; font-size: .76rem;
@@ -186,7 +190,7 @@ def inject_css():
   .simrow {{ display: grid; grid-template-columns: 1fr 90px 34px; gap: 12px; align-items: center;
              padding: 9px 0; border-bottom: 1px solid {BORDER}; }}
   .simrow b {{ display: block; font-family: {DISPLAY}; font-size: 1.15rem; font-weight: 700; color: {INK}; }}
-  .simrow span {{ font-size: .78rem; color: {INK_MUTED}; }}
+  .simrow span {{ font-size: .84rem; color: {INK_MUTED}; }}
   .simbar {{ height: 4px; background: {SURFACE_2}; }}
   .simbar i {{ display: block; height: 4px; background: linear-gradient(90deg, {ACCENT_2}, {ACCENT}); }}
   .simrow em {{ font-style: normal; font-family: {DISPLAY}; font-weight: 800; font-size: 1.35rem;
@@ -219,7 +223,7 @@ def inject_css():
   [data-testid="stBaseButton-segmented_controlActive"] p, [data-testid="stBaseButton-pillsActive"] p {{
     color: {ON_ACCENT} !important; font-weight: 600; }}
 
-  .foot {{ color: {INK_MUTED}; font-size: .8rem; padding: 26px 0 8px; border-top: 1px solid {BORDER};
+  .foot {{ color: {INK_MUTED}; font-size: .86rem; padding: 26px 0 8px; border-top: 1px solid {BORDER};
            margin-top: 40px; display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; }}
   .foot a {{ color: {INK_2}; }}
   @media (prefers-reduced-motion: reduce) {{ * {{ animation: none !important; transition: none !important; }} }}

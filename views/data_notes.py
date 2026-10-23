@@ -11,7 +11,9 @@ def render(df: pd.DataFrame):
                    "Sources for each column, the stance corrections, and what the data can't tell you.")
     dic = pd.read_csv(core.DATA_DIR / "data_dictionary.csv")
     st.dataframe(dic, hide_index=True, width="stretch", height=38 + 35 * len(dic),
-                 column_config={"source": st.column_config.TextColumn("Source")})
+                 column_config={"column": st.column_config.TextColumn("Column", width="medium"),
+                                "meaning": st.column_config.TextColumn("Meaning", width="large"),
+                                "source": st.column_config.TextColumn("Source", width="small")})
     ui.callout(
         "<b>Scraped</b> means taken from UFCSTATS, Tapology or Sherdog. <b>Derived</b> means computed "
         "from scraped fight logs. <b>Curated</b> means assigned from public knowledge. "
@@ -25,7 +27,7 @@ def render(df: pd.DataFrame):
     st.dataframe(mism[["fighter", "stance_project", "stance", "hand"]]
                  .rename(columns={"stance_project": "Project file", "stance": "UFCSTATS",
                                   "fighter": "Fighter", "hand": "Hand"}),
-                 hide_index=True, width="stretch", height=38 + 35 * len(mism))
+                 hide_index=True, width="stretch", height=min(38 + 35 * len(mism), 420))
 
     st.markdown("""
 **Limitations**

@@ -232,7 +232,8 @@ CSS = f"""
                       max-width: none !important; padding-left: 2rem !important; padding-right: 2rem !important; }}
   div[data-testid="stVerticalBlock"] {{ gap: .5rem; }}
   .ph h1 {{ font-size: 2.15rem !important; max-width: 30ch; line-height: 1.02 !important; }}
-  .sb-note {{ color: {ui.INK_MUTED}; font-size: .74rem; margin-top: 12px; line-height: 1.45; }}
+  .ph {{ margin-bottom: 14px !important; }}
+  .sb-note {{ color: {ui.INK_MUTED}; font-size: .82rem; margin-top: 12px; line-height: 1.45; }}
 
   .score4 {{ display: grid; grid-template-columns: repeat(4, 1fr); margin-top: 4px; }}
   .score4 div {{ padding: 2px 10px 0; border-left: 1px solid {ui.BORDER}; }}

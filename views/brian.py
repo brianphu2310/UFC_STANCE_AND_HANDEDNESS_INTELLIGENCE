@@ -15,7 +15,7 @@ def render(df: pd.DataFrame):
                    "A game plan against Brian's stance and reach. These are coaching heuristics: "
                    "the data has no head-to-head results to predict from.")
     with st.container(key="oct_brian"):
-        left, mid, right = st.columns([1, 2.2, 1.2], gap="medium")
+        left, mid, right = st.columns([1.2, 2.2, 1.25], gap="medium")
     with left:
         stance = st.segmented_control("Your stance", ["Orthodox", "Southpaw", "Switch"],
                                       default="Orthodox", key="br_st") or "Orthodox"
