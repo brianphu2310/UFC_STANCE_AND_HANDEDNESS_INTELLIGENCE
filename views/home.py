@@ -1,11 +1,15 @@
 """Home: the landing page. A fight-poster hero, the tale of the tape for orthodox vs southpaw, then
 the app's pages as tonight's fight card."""
+import base64
 from html import escape
+from pathlib import Path
 
 import pandas as pd
 import streamlit as st
 
 import ui
+
+INTRO = Path(__file__).resolve().parents[1] / "static" / "hero"   # intro.webm and intro.mp4
 
 CARD = [  # (page url, slug for the photo, billing, title, what you get)
     ("build-your-fighter", "default", "Main event", "Build your fighter",
@@ -39,11 +43,44 @@ def _tape(df: pd.DataFrame) -> str:
       The lab tests whether that gap is real.</p></div>"""
 
 
+@st.cache_data
+def _intro_video() -> str:
+    """<source> tags for the intro clip: WebM for Chrome and Firefox, MP4 for Safari."""
+    out = ""
+    for ext in ("webm", "mp4"):
+        f = INTRO / f"intro.{ext}"
+        if f.exists():
+            out += f'<source src="data:video/{ext};base64,{base64.b64encode(f.read_bytes()).decode()}" type="video/{ext}">'
+    return out
+
+
+def _intro():
+    """Once per session: two 3D fighters trade until one is knocked out, then the Topuria vs Holloway
+    photo, then the page. Pure CSS timing; 'Skip intro' or reduced motion removes it."""
+    if st.session_state.get("intro_done"):
+        return False
+    st.session_state["intro_done"] = True
+    video, photo = _intro_video(), ui._hero_photo("explorer")[0]
+    if not video:
+        return False
+    st.markdown(f"""
+<div id="skipintro" class="intro" aria-hidden="true">
+  <video autoplay muted playsinline>{video}</video>
+  <div class="ko">K.O.</div>
+  <div class="flash"></div>
+  <div class="shot"><div class="frame" style="background-image:url({photo})"></div>
+    <div class="cap"><b>Topuria vs Holloway</b><span>Every fight starts with a stance</span></div></div>
+  <a class="introskip" href="#skipintro">Skip intro</a>
+</div>""", unsafe_allow_html=True)
+    return True
+
+
 def render(df: pd.DataFrame):
+    delay = "--land-delay: 9.4s; " if _intro() else ""
     hero, _ = ui._hero_photo("home")
     southpaw = (df["stance"] == "Southpaw").mean()
     st.markdown(f"""
-<div class="land" style="background-image:url({hero})">
+<div class="land" style="{delay}background-image:url({hero})">
   <div class="in">
     <div class="kick">UFC stance &amp; handedness intelligence</div>
     <div class="h1" role="heading" aria-level="1">Which side<br>do you <em>lead</em> with?</div>
@@ -83,7 +120,7 @@ CSS = f"""<style>
                  color: {ui.ACCENT}; font-size: 1.15rem; letter-spacing: .04em; }}
   .land .h1 {{ font-family: {ui.DISPLAY}; font-style: italic; font-weight: 800; text-transform: uppercase;
               font-size: clamp(3.4rem, 7.4vw, 6.6rem); line-height: .86; margin: 10px 0 0; padding: 0;
-              color: #fff !important; letter-spacing: -.005em; animation: punch .7s cubic-bezier(.2,.9,.3,1.2) both; }}
+              color: #fff !important; letter-spacing: -.005em; animation: punch .7s cubic-bezier(.2,.9,.3,1.2) both; animation-delay: var(--land-delay, 0s); }}
   .land .h1 em {{ color: {ui.ACCENT}; font-style: italic; }}
   .land p {{ color: #D8D8D8 !important; font-size: 1.1rem; line-height: 1.5; max-width: 54ch; margin: 18px 0 0; }}
   .cta {{ display: flex; gap: 12px; flex-wrap: wrap; margin-top: 26px; }}
@@ -140,6 +177,39 @@ CSS = f"""<style>
              color: #fff; font-size: 1.05rem; margin-top: 4px; }}
   .bout u::after {{ content: ""; display: inline-block; margin-left: 8px; border: 6px solid transparent;
                     border-left: 9px solid {ui.ACCENT}; border-right: 0; vertical-align: 1px; }}
+  /* intro: 0-4.8s the 3D fight, 4.8s K.O., 6.6s flash to the photo, 9.2s fade into the page */
+  /* lift the element that holds the intro above the page that follows it */
+  [data-testid="stElementContainer"]:has(.intro), .stMarkdown:has(.intro), [data-testid="stMarkdownContainer"]:has(.intro) {{
+    position: relative; z-index: 1000002 !important; }}
+  .intro {{ position: fixed; inset: 0; z-index: 1000002; background: #000; overflow: hidden;
+            animation: introOut .7s ease 9.2s forwards; }}
+  .intro video {{ position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }}
+  .intro .ko {{ position: absolute; inset: 0; display: grid; place-items: center; font-family: {ui.DISPLAY};
+                font-style: italic; font-weight: 800; color: {ui.ACCENT}; font-size: clamp(6rem, 22vw, 20rem);
+                letter-spacing: -.02em; text-shadow: 0 8px 0 #000, 0 0 60px rgba(229,37,45,.6); opacity: 0;
+                animation: koIn .35s cubic-bezier(.2,1.4,.4,1) 4.8s forwards, fadeAway .3s ease 6.5s forwards; }}
+  .intro .flash {{ position: absolute; inset: 0; background: #fff; opacity: 0; animation: flash .45s ease 6.5s forwards; }}
+  .intro .shot {{ position: absolute; inset: 0; display: grid; place-items: center; align-content: center; gap: 18px;
+                  background: #0B0B0B; opacity: 0; animation: show .01s linear 6.6s forwards; }}
+  .intro .frame {{ width: min(86vw, 1100px); aspect-ratio: 738 / 414; max-width: 100%; border: 5px solid #E9E9E9;
+                   background: center / cover no-repeat; box-shadow: 0 30px 80px rgba(0,0,0,.8);
+                   animation: kenburns 3s ease-out 6.6s both; }}
+  .intro .cap {{ text-align: center; }}
+  .intro .cap b {{ display: block; font-family: {ui.DISPLAY}; font-style: italic; font-weight: 800; text-transform: uppercase;
+                   color: #fff !important; font-size: clamp(2rem, 5vw, 3.6rem); line-height: 1; }}
+  .intro .cap span {{ color: {ui.ACCENT}; font-family: {ui.DISPLAY}; font-style: italic; font-weight: 800;
+                      text-transform: uppercase; font-size: 1.2rem; letter-spacing: .06em; }}
+  .intro .introskip {{ position: absolute; right: max(18px, env(safe-area-inset-right, 0px)); bottom: max(18px, env(safe-area-inset-bottom, 0px));
+                  color: #fff !important; border: 1px solid rgba(255,255,255,.6); padding: 8px 16px; font-size: .85rem;
+                  text-transform: uppercase; letter-spacing: .08em; text-decoration: none !important; background: rgba(0,0,0,.5); }}
+  .intro:target {{ display: none; }}
+  @keyframes koIn {{ from {{ opacity: 0; transform: scale(2.4) skewX(-10deg); }} to {{ opacity: 1; transform: none; }} }}
+  @keyframes fadeAway {{ to {{ opacity: 0; }} }}
+  @keyframes flash {{ 0% {{ opacity: 0; }} 25% {{ opacity: 1; }} 100% {{ opacity: 0; }} }}
+  @keyframes show {{ to {{ opacity: 1; }} }}
+  @keyframes kenburns {{ from {{ transform: scale(1.08); }} to {{ transform: scale(1); }} }}
+  @keyframes introOut {{ to {{ opacity: 0; visibility: hidden; pointer-events: none; }} }}
+  @media (prefers-reduced-motion: reduce) {{ .intro {{ display: none; }} }}
   @keyframes punch {{ from {{ opacity: 0; transform: translateX(-30px) skewX(-8deg); }} to {{ opacity: 1; transform: none; }} }}
   @media (max-width: 900px) {{
     .bouts {{ grid-template-columns: 1fr; }} .bout:first-child, .bout:not(:first-child) {{ grid-row: auto; grid-column: 1; }}
