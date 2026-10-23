@@ -8,7 +8,10 @@ Drop one photo per item here, named after its key in `ufc_core.GEAR`, as `.jpg`,
 
 The Gear tab shows a photo when its file exists and falls back to a plain card when it doesn't.
 
-Only use photos you are allowed to republish (your own, or openly licensed ones such as Wikimedia
-Commons CC BY / CC BY-SA / public domain). Record each one in `credits.csv` (columns
-`key,author,license,source_url`); the card prints the credit under the photo. Retailer product
-photos are copyrighted and should not be committed here.
+Record each photo in `credits.csv` (columns `key,author,license,source_url`); the card prints the
+credit under the photo.
+
+The photos here now are retailer product photos added by the project owner to illustrate each item for
+a class project. They are copyrighted by their brands, are not endorsements, and are not
+cleared for commercial use. Before reusing the app outside the class, replace them with your own
+photos or openly licensed ones (Wikimedia Commons CC BY / CC BY-SA / public domain).
