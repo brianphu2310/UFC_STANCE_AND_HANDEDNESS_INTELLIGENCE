@@ -8,13 +8,13 @@
   @font-face { font-family: "Instrument Sans"; src: url("fonts/instrument-sans-latin-600-normal.woff2") format("woff2"); font-weight: 600; }
   @font-face { font-family: "Big Shoulders Display"; src: url("fonts/big-shoulders-display-latin-700-normal.woff2") format("woff2"); font-weight: 700; }
   @font-face { font-family: "Big Shoulders Display"; src: url("fonts/big-shoulders-display-latin-800-normal.woff2") format("woff2"); font-weight: 800; }
-  :root { --bg:#0B0A12; --ink:#F1EEF8; --ink2:#C6C0D8; --mute:#958EAD; --line:#2B2740;
-          --a:#A77BFF; --afill:#7C4DFF; --b:#48D1E0; --rule:#E9B44C; --neon:#A879FF; }
+  :root { --bg:#0A0A0A; --ink:#F3F1EC; --ink2:#C4C1BA; --mute:#8F8C86; --line:#2E2E33;
+          --a:#E5252D; --afill:#C8102E; --b:#3B82F6; --rule:#E9B44C; --neon:#FF3B3B; }
   html, body { margin:0; height:100%; background:var(--bg); overflow:hidden; color:var(--ink);
                font-family:"Instrument Sans", "Segoe UI", system-ui, sans-serif; }
   #wrap { position:relative; width:100%; height:100%; overflow:hidden; box-sizing:border-box;
           border:1px solid var(--line); border-radius:6px;
-          background: radial-gradient(120% 85% at 50% 8%, #221A33 0%, #120E1C 52%, #08070C 100%); }
+          background: radial-gradient(120% 85% at 50% 8%, #1F1F21 0%, #111112 52%, #060606 100%); }
   canvas { display:block; position:absolute; inset:0; }
   #labels { position:absolute; inset:0; pointer-events:none; overflow:hidden; }
   .lab { position:absolute; left:0; top:0; white-space:nowrap; will-change:transform; transition:opacity .2s; }
@@ -24,13 +24,13 @@
   .tag small { display:block; font-family:"Instrument Sans", sans-serif; font-weight:400; font-size:11.5px;
                color:var(--ink2); margin-top:3px; }
   .chip { font-size:12px; font-weight:600; padding:3px 8px; border-radius:3px; line-height:1.2;
-          background:rgba(11,10,18,.88); border:1px solid currentColor; }
+          background:rgba(10,10,10,.88); border:1px solid currentColor; }
   .val { font-family:"Big Shoulders Display", sans-serif; font-weight:700; font-size:15px;
          text-shadow:0 0 3px #000, 0 0 8px #000; }
   .hud { position:absolute; top:12px; left:14px; right:14px; pointer-events:none; display:flex;
          justify-content:space-between; align-items:flex-start; gap:14px; }
   .head { flex:1 1 auto; min-width:0; }
-  .rt { border-collapse:collapse; font-size:12px; background:rgba(11,10,18,.78); border:1px solid var(--line);
+  .rt { border-collapse:collapse; font-size:12px; background:rgba(10,10,10,.78); border:1px solid var(--line);
         border-radius:4px; }
   .rt th, .rt td { padding:4px 9px; text-align:left; white-space:nowrap; }
   .rt th { font-family:"Big Shoulders Display", sans-serif; font-weight:700; font-size:14px; padding-top:6px; }
@@ -45,15 +45,15 @@
   .bar { position:absolute; left:12px; right:12px; bottom:12px; display:flex; align-items:center;
          gap:6px; flex-wrap:wrap; }
   .seg { display:inline-flex; border:1px solid var(--line); border-radius:4px; overflow:hidden;
-         background:rgba(20,18,30,.9); }
+         background:rgba(20,20,22,.9); }
   .seg button, .tool { all:unset; cursor:pointer; font-size:12px; padding:6px 9px; color:var(--ink2); }
   .seg button + button { border-left:1px solid var(--line); }
-  .seg button.on { background:#F3F1EC; color:#0F0F11; font-weight:600; }
+  .seg button.on { background:var(--afill); color:#fff; font-weight:700; }
   .seg button, .tool { min-height:28px; box-sizing:border-box; }
   canvas:focus-visible { outline:2px solid var(--rule); outline-offset:-2px; }
   .sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
-  .tool { padding:6px 9px; color:var(--ink2); background:rgba(20,18,30,.9); border:1px solid var(--line); border-radius:4px; }
-  .tool.on { color:var(--ink); border-color:#5B4E86; }
+  .tool { padding:6px 9px; color:var(--ink2); background:rgba(20,20,22,.9); border:1px solid var(--line); border-radius:4px; }
+  .tool.on { color:var(--ink); border-color:#6A6A72; }
   .seg button:focus-visible, .tool:focus-visible { outline:2px solid var(--rule); outline-offset:-2px; }
   .seg.tools .tool { border:none; border-radius:0; background:transparent; }
   .seg.tools .tool.on { color:var(--ink); background:rgba(243,241,236,.14); }
@@ -110,7 +110,7 @@ const send = (type, data = {}) =>
   window.parent.postMessage({ isStreamlitMessage: true, type, ...data }, "*");
 let frameHeight = 520;
 
-const COL = { a: "#A77BFF", b: "#48D1E0", rule: "#E9B44C", skin: "#404047", ink: "#F1EEF8", hit: "#FF8AD8" };   // corners: violet, cyan
+const COL = { a: "#E5252D", b: "#3B82F6", rule: "#E9B44C", skin: "#404047", ink: "#F3F1EC", hit: "#FFD25A" };   // corners: red, blue
 const REDUCE = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const V = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
 const UP = V(0, 1, 0), ZAX = V(0, 0, 1);
@@ -170,10 +170,10 @@ controls.maxDistance = 14;
 controls.maxPolarAngle = Math.PI * 0.52;
 controls.autoRotate = !REDUCE;
 
-// future-purple arena: violet rims and fog, neutral key light so skin and kit keep their colours
-const NEON = "#A879FF", NEON_DEEP = "#6B2FE0";
-scene.fog = new THREE.Fog("#0D0A14", 6.5, 17);
-scene.add(new THREE.HemisphereLight("#d9d4e6", "#1a1426", 0.7));
+// fight-night arena: red and blue corner rims, dark fog, neutral key light so skin and kit keep their colours
+const NEON = "#FF3B3B", NEON_DEEP = "#B3121A";
+scene.fog = new THREE.Fog("#0B0B0C", 6.5, 17);
+scene.add(new THREE.HemisphereLight("#e6e3df", "#1a1717", 0.7));
 const spot = new THREE.SpotLight("#fff6ee", 6, 0, 0.55, 0.85, 0);
 spot.position.set(0.8, 7, 1.4);
 spot.target.position.set(0, 0.9, 0);
@@ -182,9 +182,9 @@ spot.shadow.mapSize.set(2048, 2048);
 spot.shadow.bias = -0.0004;
 spot.shadow.camera.near = 2; spot.shadow.camera.far = 14;
 scene.add(spot, spot.target);
-const rimA = new THREE.DirectionalLight("#9B6BFF", 2.4); rimA.position.set(-3, 2.4, -4.5); scene.add(rimA);
-const rimB = new THREE.DirectionalLight("#C77DFF", 1.6); rimB.position.set(-3, 2.4, 4.5); scene.add(rimB);
-const fill = new THREE.DirectionalLight("#c3c8f0", 0.85); fill.position.set(5, 2, 1); scene.add(fill);
+const rimA = new THREE.DirectionalLight("#FF5A4A", 2.0); rimA.position.set(-3, 2.4, -4.5); scene.add(rimA);
+const rimB = new THREE.DirectionalLight("#8FB0FF", 1.4); rimB.position.set(-3, 2.4, 4.5); scene.add(rimB);
+const fill = new THREE.DirectionalLight("#e2e2e8", 0.85); fill.position.set(5, 2, 1); scene.add(fill);
 
 // ---- stage: a UFC-size Octagon. 30 ft across the flats, canvas mat, eight padded posts,
 // black chain-link fence with a padded top rail, on a dark arena floor
@@ -193,9 +193,9 @@ const OCT_A = 4.57;                                   // apothem: centre to the 
 const OCT_R = OCT_A / Math.cos(Math.PI / 8);          // centre to a post
 const FENCE_H = 1.75, SKIRT_H = .22;
 const octAngle = k => Math.PI / 8 + k * Math.PI / 4;  // post k sits at this angle
-const CORNER_POST = { 5: COL.a, 1: COL.b };          // violet and cyan corner posts
+const CORNER_POST = { 5: COL.a, 1: COL.b };          // red and blue corner posts
 const floor = new THREE.Mesh(new THREE.PlaneGeometry(60, 60),
-  new THREE.MeshStandardMaterial({ color: "#0b0912", roughness: 0.9, metalness: 0 }));
+  new THREE.MeshStandardMaterial({ color: "#0b0b0c", roughness: 0.9, metalness: 0 }));
 floor.rotation.x = -Math.PI / 2;
 floor.receiveShadow = true;
 scene.add(floor);
@@ -205,31 +205,31 @@ function canvasTexture() {                             // the mat: worn light ca
   const oct = (r) => { g.beginPath(); for (let k = 0; k < 8; k++) { const a = octAngle(k);
     const x = N / 2 + r * px * Math.cos(a), y = N / 2 - r * px * Math.sin(a); k ? g.lineTo(x, y) : g.moveTo(x, y); } g.closePath(); };
   const k8 = 1 / Math.cos(Math.PI / 8), cx = N / 2;
-  g.fillStyle = "#16111f"; g.fillRect(0, 0, N, N);
+  g.fillStyle = "#121212"; g.fillRect(0, 0, N, N);
   oct(OCT_R); g.fill();                                       // dark apron by the fence
-  g.fillStyle = "#cfcad8"; oct(OCT_R - .62 * k8); g.fill();   // lilac-grey canvas
+  g.fillStyle = "#dcdad6"; oct(OCT_R - .62 * k8); g.fill();   // off-white canvas
   // apron: hash marks round the edge, like a dial
-  g.strokeStyle = "#3b2d57"; g.lineWidth = .025 * px;
+  g.strokeStyle = "#3a3a3a"; g.lineWidth = .025 * px;
   for (let k = 0; k < 96; k++) {
     const a = k / 96 * Math.PI * 2, r0 = (OCT_A - .55) * px, r1 = (OCT_A - (k % 4 ? .45 : .32)) * px;
     g.beginPath(); g.moveTo(cx + r0 * Math.cos(a), cx - r0 * Math.sin(a)); g.lineTo(cx + r1 * Math.cos(a), cx - r1 * Math.sin(a)); g.stroke();
   }
-  g.strokeStyle = "#7A3CF0"; g.lineWidth = .05 * px; oct(OCT_R - .7 * k8); g.stroke();      // purple boundary line
-  g.strokeStyle = "rgba(122,60,240,.35)"; g.lineWidth = .02 * px; oct(OCT_R - .82 * k8); g.stroke();
+  g.strokeStyle = "#C8102E"; g.lineWidth = .05 * px; oct(OCT_R - .7 * k8); g.stroke();      // red boundary line
+  g.strokeStyle = "rgba(200,16,46,.35)"; g.lineWidth = .02 * px; oct(OCT_R - .82 * k8); g.stroke();
   // centre: double octagon with spokes and a filled core
   g.globalAlpha = .9;
-  g.strokeStyle = "#7A3CF0"; g.lineWidth = .04 * px; oct(1.25 * k8); g.stroke();
+  g.strokeStyle = "#C8102E"; g.lineWidth = .04 * px; oct(1.25 * k8); g.stroke();
   g.lineWidth = .02 * px; oct(1.05 * k8); g.stroke();
   g.globalAlpha = .35; g.lineWidth = .015 * px;
   for (let k = 0; k < 8; k++) {
     const a = octAngle(k), r0 = 1.25 * k8 * px, r1 = (OCT_R - .82 * k8) * px;
     g.beginPath(); g.moveTo(cx + r0 * Math.cos(a), cx - r0 * Math.sin(a)); g.lineTo(cx + r1 * Math.cos(a), cx - r1 * Math.sin(a)); g.stroke();
   }
-  g.globalAlpha = .18; g.fillStyle = "#7A3CF0"; oct(1.05 * k8); g.fill();
-  g.globalAlpha = .55; g.fillStyle = "#4c1fa8"; oct(.35 * k8); g.fill();
+  g.globalAlpha = .18; g.fillStyle = "#C8102E"; oct(1.05 * k8); g.fill();
+  g.globalAlpha = .55; g.fillStyle = "#8a0d1d"; oct(.35 * k8); g.fill();
   g.globalAlpha = 1;
-  // corner quarters: faint arcs in front of the violet and cyan corners
-  for (const [k, col] of [[5, "rgba(124,77,255,.3)"], [1, "rgba(72,209,224,.3)"]]) {
+  // corner quarters: faint arcs in front of the red and blue corners
+  for (const [k, col] of [[5, "rgba(229,37,45,.3)"], [1, "rgba(59,130,246,.3)"]]) {
     const a = octAngle(k), r = (OCT_R - 1.2) * px;
     g.strokeStyle = col; g.lineWidth = .05 * px;
     g.beginPath(); g.arc(cx + r * Math.cos(a), cx - r * Math.sin(a), .7 * px, 0, Math.PI * 2); g.stroke();
@@ -543,9 +543,9 @@ float torsoH(vec3 p) {
   return h;
 }`;
 function muscled(mat) {                          // skin material that reads the "ao" attribute
-  // neon look (the Neon button): rim glow, glowing muscle lines and a violet emissive skin
+  // neon look (the Neon button): rim glow, glowing muscle lines and a red emissive skin
   mat.userData.neon = { value: 0 };
-  mat.userData.neonCol = { value: new THREE.Color("#B37BFF") };
+  mat.userData.neonCol = { value: new THREE.Color("#FF4A4A") };
   mat.onBeforeCompile = (sh) => {
     sh.uniforms.uNeon = mat.userData.neon;
     sh.uniforms.uNeonCol = mat.userData.neonCol;
@@ -1165,7 +1165,7 @@ class Fighter {
     }
     this.parts.ankleL.visible = this.foot === LEFT;
     this.parts.ankleR.visible = this.foot === RIGHT;
-    // Neon button: violet glowing skin (eases in and out)
+    // Neon button: red glowing skin (eases in and out)
     const nu = this.mats.skin.userData.neon;
     nu.value += ((NEON_MODE ? 1 : 0) - nu.value) * .12;
     this.mats.skin.color.set(COL.skin).lerp(NEON_SKIN, nu.value);
