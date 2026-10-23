@@ -1,9 +1,8 @@
-"""Design system: future-purple fight night.
+"""Design system: fight-night broadcast.
 
-Violet-black arena with a violet corner and a cyan corner; a gold rule marks references and the
-dominant side. Display type is Big Shoulders Display (condensed, scoreboard-like), body is
-Instrument Sans, both self-hosted. Signature devices: the octagon-cut primary panel on each page
-and a faint chain-link diamond in the page background, taken from the cage fence.
+Smoky black arena, red corner and blue corner, gold for the dominant side. Display type is Big
+Shoulders Display set heavy, italic and uppercase like a fight-game menu; body is Instrument Sans,
+both self-hosted. Each page opens on a photo banner; panels are dark boxes with a hairline.
 """
 import base64
 from html import escape
@@ -15,31 +14,31 @@ import streamlit as st
 import ufc_core as core
 
 # ---------------------------------------------------------------- tokens
-BG = "#0F0F11"          # canvas: neutral charcoal, like a printed fight programme at night
-SURFACE = "#17171B"     # panels
-SURFACE_2 = "#202026"   # raised / hover, inputs
-BORDER = "#2C2C33"      # hairlines
-INK = "#F3F1EC"         # warm paper white
-INK_2 = "#C4C1BA"
-INK_MUTED = "#8F8C86"   # 5.6:1 on BG, 4.9:1 on SURFACE_2
-ACCENT = "#A77BFF"      # violet corner: lines, marks and text (6.4:1 on BG)
-ACCENT_FILL = "#7C4DFF" # violet for filled buttons, chips, sliders (white text 4.8:1)
-ACCENT_2 = "#48D1E0"    # cyan corner (10.6:1 on BG)
-ACCENT_2_TEXT = "#48D1E0"
+BG = "#0A0A0A"          # canvas: arena black
+SURFACE = "#151515"     # panels
+SURFACE_2 = "#1F1F20"   # raised / hover, inputs
+BORDER = "#2E2E30"      # hairlines
+INK = "#F5F5F5"
+INK_2 = "#C8C8C8"
+INK_MUTED = "#8E8E8E"   # 5.9:1 on BG, 5.0:1 on SURFACE_2
+ACCENT = "#E5252D"      # red corner: lines, marks and text (4.9:1 on BG)
+ACCENT_FILL = "#C8102E" # red for filled buttons, chips, sliders (white text 5.9:1)
+ACCENT_2 = "#3B82F6"    # blue corner (5.4:1 on BG)
+ACCENT_2_TEXT = "#5B9BFF"
 ON_ACCENT = "#FFFFFF"   # text on ACCENT_FILL
-FIELD_BORDER = "#5E5D66"  # input outlines: 3.1:1 on SURFACE_2 (WCAG 1.4.11)
+FIELD_BORDER = "#5C5C60"  # input outlines: 3.1:1 on SURFACE_2 (WCAG 1.4.11)
 RULE = "#E9B44C"        # gold: reference lines, dominant side, focus ring
-ACCENT_SOFT = "rgba(167, 123, 255, 0.14)"
-MUTED_FILL = "#2A2A31"   # de-emphasised bars (outside a selection)
+ACCENT_SOFT = "rgba(229, 37, 45, 0.14)"
+MUTED_FILL = "#2A2A2C"   # de-emphasised bars (outside a selection)
 SHADOW = "none"
 
 DISPLAY = "'Big Shoulders Display', 'Oswald', 'Arial Narrow', sans-serif"
 BODY = "'Instrument Sans', 'Segoe UI', system-ui, sans-serif"
 
 # Categorical palette (dark surface), assigned in a fixed order per dimension.
-PALETTE = ["#A77BFF", "#48D1E0", "#E9B44C", "#F062A8", "#6BDB9A", "#7D7896"]
-SEQ_BLUE = [[0, "#1E1733"], [0.5, "#5B34B8"], [1, "#C9A9FF"]]   # violet-black -> lavender
-GRAD_BAR = ["#48D1E0", "#A77BFF"]
+PALETTE = ["#E5252D", "#3B82F6", "#E9B44C", "#2DBE8C", "#B8B8B8", "#6E6E72"]
+SEQ_BLUE = [[0, "#2A0A0E"], [0.5, "#B3121A"], [1, "#FFB3B3"]]   # black -> red -> pale red
+GRAD_BAR = ["#3B82F6", "#E5252D"]
 STYLE_COLORS = dict(zip(core.STYLES, PALETTE))
 
 PLOTLY_CONFIG = {"displaylogo": False, "displayModeBar": False, "topojsonURL": "app/static/"}
@@ -85,7 +84,15 @@ def inject_css():
 {_font_faces()}
 
   .stApp {{ font-family: {BODY}; }}
-  .stApp {{ background: {BG}; }}
+  /* smoky arena: haze from the lights, a few soft bokeh discs and film grain */
+  .stApp {{ background:
+      radial-gradient(circle at 8% 22%, rgba(255,255,255,.05) 0 70px, transparent 120px),
+      radial-gradient(circle at 92% 12%, rgba(255,255,255,.045) 0 90px, transparent 150px),
+      radial-gradient(circle at 78% 64%, rgba(255,255,255,.03) 0 60px, transparent 110px),
+      radial-gradient(circle at 20% 86%, rgba(255,255,255,.03) 0 80px, transparent 140px),
+      radial-gradient(1400px 700px at 50% -20%, rgba(255,255,255,.07), transparent 60%),
+      url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+      {BG}; background-attachment: fixed; }}
   .block-container {{ padding-top: 4.5rem; max-width: 1440px; }}
   .stApp p, .stApp li, .stApp label, .stApp input, .stApp textarea, .stApp button {{ font-family: {BODY}; }}
   h1, h2, h3, h4 {{ font-family: {DISPLAY}; color: {INK}; letter-spacing: .005em; }}
@@ -106,7 +113,7 @@ def inject_css():
     content: "Stance Intelligence"; position: absolute; left: 28px; top: 50%;
     transform: translateY(-50%); font-family: {DISPLAY}; font-weight: 800; font-size: 1.45rem;
     color: {INK}; letter-spacing: .01em; padding-left: 36px; line-height: 28px;
-    background: url("data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2064%2064%22%20role%3D%22img%22%20aria-label%3D%22Stance%20Intelligence%20mark%22%3E%3Cdefs%3E%3CclipPath%20id%3D%22o%22%3E%3Cpolygon%20points%3D%2259.72%2C43.48%2043.48%2C59.72%2020.52%2C59.72%204.28%2C43.48%204.28%2C20.52%2020.52%2C4.28%2043.48%2C4.28%2059.72%2C20.52%22/%3E%3C/clipPath%3E%3C/defs%3E%3Cg%20clip-path%3D%22url%28%23o%29%22%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%2230.5%22%20height%3D%2264%22%20fill%3D%22%23A77BFF%22/%3E%3Crect%20x%3D%2233.5%22%20y%3D%220%22%20width%3D%2230.5%22%20height%3D%2264%22%20fill%3D%22%2348D1E0%22/%3E%3C/g%3E%3C/svg%3E") no-repeat left center / 26px 26px;
+    background: url("data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2064%2064%22%20role%3D%22img%22%20aria-label%3D%22Stance%20Intelligence%20mark%22%3E%3Cdefs%3E%3CclipPath%20id%3D%22o%22%3E%3Cpolygon%20points%3D%2259.72%2C43.48%2043.48%2C59.72%2020.52%2C59.72%204.28%2C43.48%204.28%2C20.52%2020.52%2C4.28%2043.48%2C4.28%2059.72%2C20.52%22/%3E%3C/clipPath%3E%3C/defs%3E%3Cg%20clip-path%3D%22url%28%23o%29%22%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%2230.5%22%20height%3D%2264%22%20fill%3D%22%23E5252D%22/%3E%3Crect%20x%3D%2233.5%22%20y%3D%220%22%20width%3D%2230.5%22%20height%3D%2264%22%20fill%3D%22%233B82F6%22/%3E%3C/g%3E%3C/svg%3E") no-repeat left center / 26px 26px;
   }}
   header[data-testid="stHeader"]::after {{
     content: none;
@@ -220,78 +227,122 @@ def inject_css():
   .foot {{ color: {INK_MUTED}; font-size: .86rem; padding: 26px 0 8px; border-top: 1px solid {BORDER};
            margin-top: 40px; display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; }}
   .foot a {{ color: {INK_2}; }}
-  /* ================= programme layer: flat, printed, high contrast ================= */
-  /* nav: plain labels, a solid bar under the current page */
-  header[data-testid="stHeader"] a[data-testid="stTopNavLink"] {{ margin: 0 8px !important; }}
-  header[data-testid="stHeader"] a[data-testid="stTopNavLink"] span {{ text-transform: uppercase; letter-spacing: .05em;
-    font-size: .78rem !important; white-space: nowrap; }}
-  header[data-testid="stHeader"] a[data-testid="stTopNavLink"][aria-current="page"] {{ border-bottom: 3px solid {INK} !important; }}
+  /* ================= broadcast layer: fight-game menu type, red corner, photo banners ================= */
+  h1, h2, h3, .sec, .card .t, .sbh, .kv b, .score, [data-testid="stMetricValue"], .simrow b {{
+    font-style: italic; text-transform: uppercase; letter-spacing: .005em; }}
+  header[data-testid="stHeader"] {{ background: linear-gradient(#141414, #0A0A0A) !important; border-bottom: 1px solid #262628; }}
+  header[data-testid="stHeader"] a[data-testid="stTopNavLink"] {{ margin: 0 5px !important; }}
+  header[data-testid="stHeader"] a[data-testid="stTopNavLink"] span {{ font-family: {DISPLAY}; font-style: italic; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 0; font-size: .95rem !important; color: {INK} !important; white-space: nowrap; }}
+  header[data-testid="stHeader"] a[data-testid="stTopNavLink"][aria-current="page"] {{ border-bottom: 3px solid {ACCENT} !important; }}
+  header[data-testid="stHeader"] a[data-testid="stTopNavLink"][aria-current="page"] span {{ color: {ACCENT} !important; }}
 
-  /* page header: page number and section name as a printed running head, then the title, then a rule */
-  .kicker {{ font-family: {BODY}; font-size: .74rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
-             color: {INK_MUTED}; margin: 0 0 10px; }}
-  .kicker i {{ font-style: normal; color: {INK}; margin-right: 8px; padding-right: 10px; border-right: 1px solid {FIELD_BORDER}; }}
-  .ph {{ max-width: none !important; padding-bottom: 16px; border-bottom: 2px solid {INK}; margin-bottom: 22px !important; }}
-  .ph h1 {{ font-size: 3.1rem !important; letter-spacing: -.005em; }}
-  .ph p {{ max-width: 80ch !important; }}
+  /* page banner: a photo framed in white, the title set over its dark side */
+  .hero {{ position: relative; height: 300px; margin: 0 0 26px; border: 4px solid #E9E9E9;
+           background: #0B0B0B right center / auto 100% no-repeat;
+           box-shadow: 0 18px 40px rgba(0,0,0,.6); overflow: hidden; }}
+  .hero::before {{ content: ""; position: absolute; inset: 0;
+           background: linear-gradient(90deg, #0B0B0B 0%, #0B0B0B 30%, rgba(11,11,11,.75) 50%, rgba(11,11,11,0) 72%); }}
+  .hero .in {{ position: absolute; left: 34px; bottom: 30px; right: 40%; }}
+  .hero .kicker {{ font-family: {DISPLAY}; font-style: italic; font-weight: 800; font-size: 1.05rem; letter-spacing: .03em;
+           text-transform: uppercase; color: {ACCENT}; margin: 0 0 6px; }}
+  .hero .kicker i {{ font-style: italic; color: #fff; background: {ACCENT_FILL}; padding: 0 7px; margin-right: 8px; }}
+  .hero h1 {{ font-family: {DISPLAY} !important; font-weight: 800 !important; font-size: 3.6rem !important; line-height: .95 !important; margin: 0 !important; color: #fff !important;
+           text-shadow: 0 2px 0 rgba(0,0,0,.4); }}
+  .hero p {{ color: #DADADA !important; font-size: 1.02rem !important; margin: 10px 0 0 !important; max-width: 62ch; }}
+  .hero .credit {{ position: absolute; right: 10px; bottom: 6px; font-size: .68rem; color: rgba(255,255,255,.6); }}
 
-  /* panels: flat fill, one hairline, square corners */
-  .card, [data-testid="stPlotlyChart"], [data-testid="stDataFrame"] {{ border-radius: 2px !important; }}
-  [data-testid="stPlotlyChart"] {{ background: {SURFACE} !important; }}
+  /* panels: dark boxes with a hairline and a lighter top edge, like the game's menu tiles */
+  .card, [data-testid="stPlotlyChart"], [data-testid="stDataFrame"] {{ border-radius: 0 !important;
+    background: linear-gradient(#1A1A1A, #121212 120px) !important; border: 1px solid #2E2E30 !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.05); }}
+  [class*="st-key-oct_"] {{ background: linear-gradient(#1A1A1A, #111 160px) !important; border: 1px solid #2E2E30;
+    clip-path: none !important; }}
+  [class*="st-key-oct_"] .card {{ background: transparent !important; border: none !important; box-shadow: none; }}
 
-  /* section heads: uppercase condensed over a full-width hairline */
-  .sec {{ text-transform: uppercase; letter-spacing: .02em; font-size: 1.5rem !important; border-top: 1px solid {FIELD_BORDER} !important; }}
+  /* section heads: big italic caps over a red underline stub */
+  .sec {{ font-size: 1.9rem !important; font-weight: 800 !important; border-top: 1px solid #2E2E30 !important; padding-top: 18px !important; }}
+  .sec::after {{ content: ""; display: block; width: 48px; height: 3px; background: {ACCENT}; margin-top: 6px; }}
+  .sbh {{ font-weight: 800; font-size: 1.45rem; padding-bottom: 6px; border-bottom: 3px solid {ACCENT}; display: inline-block; }}
 
-  /* sliders: thin ink track, square thumb, value as plain figures */
+  /* controls: the chosen option is a red block */
   [data-testid="stSlider"] [role="group"] > div > div:has(input[type="range"]) {{
-    width: 14px !important; height: 14px !important; border-radius: 1px !important; background: {INK} !important;
-    border: none !important; box-shadow: none !important; }}
-  [data-testid="stSliderThumbValue"] p {{ font-family: {DISPLAY}; font-weight: 800; font-size: 1.05rem !important; color: {INK} !important; }}
+    width: 16px !important; height: 16px !important; border-radius: 50% !important; background: #fff !important;
+    border: 3px solid {ACCENT_FILL} !important; box-shadow: none !important; }}
+  [data-testid="stSliderThumbValue"] p {{ font-family: {DISPLAY}; font-style: italic; font-weight: 800; font-size: 1.05rem !important; color: #fff !important; }}
   [data-testid="stSliderTickBar"] p {{ color: {INK_MUTED} !important; font-size: .74rem !important; }}
-
-  /* radios as a printed switch, same as segmented controls: the chosen option is ink on paper */
   [data-testid="stRadioGroup"] {{ display: inline-flex !important; flex-direction: row !important; gap: 0 !important;
-    border: 1px solid {FIELD_BORDER}; border-radius: 2px; overflow: hidden; }}
-  [data-testid="stRadioGroup"] > div {{ margin: 0 !important; }}
+    border: 1px solid {FIELD_BORDER}; overflow: hidden; }}
+  [data-testid="stRadioGroup"] {{ flex-wrap: nowrap !important; width: auto !important; }}
+  [data-testid="stRadioGroup"] > div {{ margin: 0 !important; width: auto !important; flex: 0 0 auto !important; }}
   [data-testid="stRadioGroup"] > div + div {{ border-left: 1px solid {FIELD_BORDER}; }}
   [data-testid="stRadioOption"] {{ padding: 6px 16px !important; margin: 0 !important; cursor: pointer; }}
   [data-testid="stRadioOption"] > div > div:first-child {{ display: none !important; }}
-  [data-testid="stRadioOption"] p {{ color: {INK_2} !important; font-weight: 600; }}
-  [data-testid="stRadioOption"][data-selected="true"] {{ background: {INK}; }}
-  [data-testid="stRadioOption"][data-selected="true"] p {{ color: {BG} !important; }}
-  [data-testid="stButtonGroup"] button {{ border-color: {FIELD_BORDER} !important; border-radius: 2px !important; }}
-  [data-testid="stButtonGroup"] button p {{ font-weight: 600; color: {INK_2}; }}
+  [data-testid="stRadioOption"] p {{ color: {INK_2} !important; font-weight: 700; text-transform: uppercase; font-size: .82rem; letter-spacing: .04em; }}
+  [data-testid="stRadioOption"][data-selected="true"] {{ background: {ACCENT_FILL}; }}
+  [data-testid="stRadioOption"][data-selected="true"] p {{ color: #fff !important; }}
+  [data-testid="stButtonGroup"] button {{ border-color: {FIELD_BORDER} !important; border-radius: 0 !important;
+    padding-left: 12px !important; padding-right: 12px !important; }}
+  [data-testid="stButtonGroup"] button p {{ font-weight: 700; color: {INK_2}; text-transform: uppercase; font-size: .8rem; letter-spacing: .02em; }}
   [data-testid="stButtonGroup"] button[aria-checked="true"], [data-testid="stButtonGroup"] button[aria-pressed="true"],
   [data-testid="stBaseButton-segmented_controlActive"], [data-testid="stBaseButton-pillsActive"] {{
-    background: {INK} !important; border-color: {INK} !important; }}
+    background: {ACCENT_FILL} !important; border-color: {ACCENT_FILL} !important; }}
   [data-testid="stButtonGroup"] button[aria-checked="true"] p, [data-testid="stButtonGroup"] button[aria-pressed="true"] p,
-  [data-testid="stBaseButton-segmented_controlActive"] p, [data-testid="stBaseButton-pillsActive"] p {{ color: {BG} !important; }}
+  [data-testid="stBaseButton-segmented_controlActive"] p, [data-testid="stBaseButton-pillsActive"] p {{ color: #fff !important; }}
 
-  /* tabs: uppercase labels, a solid bar under the open one */
-  [data-testid="stTabs"] [role="tablist"] {{ gap: 26px; border-bottom: 1px solid {FIELD_BORDER}; }}
+  /* tabs: italic caps, red bar under the open one */
+  [data-testid="stTabs"] [role="tablist"] {{ gap: 28px; border-bottom: 1px solid #2E2E30; }}
   [data-testid="stTab"] {{ padding: 10px 0 !important; }}
-  [data-testid="stTab"] p {{ font-weight: 700; font-size: .82rem !important; letter-spacing: .1em; text-transform: uppercase; color: {INK_MUTED}; }}
-  [data-testid="stTab"][aria-selected="true"] p {{ color: {INK}; }}
-  [data-testid="stTabs"] .react-aria-SelectionIndicator {{ background: {INK} !important; height: 3px !important; }}
+  [data-testid="stTab"] p {{ font-family: {DISPLAY}; font-style: italic; font-weight: 800; font-size: 1.15rem !important;
+    text-transform: uppercase; color: {INK_MUTED}; }}
+  [data-testid="stTab"][aria-selected="true"] p {{ color: #fff; }}
+  [data-testid="stTabs"] .react-aria-SelectionIndicator {{ background: {ACCENT} !important; height: 3px !important; }}
 
-  /* inputs and buttons: square; the download is the one solid ink button */
-  [data-baseweb="select"] > div, [data-testid="stTextInputRootElement"], .stButton button, .stDownloadButton button {{ border-radius: 2px !important; }}
-  .stDownloadButton button, .stButton button[kind="primary"] {{ background: {INK} !important; border: 1px solid {INK} !important; }}
-  .stDownloadButton button p, .stButton button[kind="primary"] p {{ color: {BG} !important; font-weight: 700; }}
+  /* buttons: red with a play arrow, the game's "Watch trailer" button */
+  [data-baseweb="select"] > div, [data-testid="stTextInputRootElement"] {{ border-radius: 0 !important; }}
+  .stDownloadButton button, .stButton button[kind="primary"] {{ border-radius: 0 !important;
+    background: linear-gradient(#E0202B, #A80D1A) !important; border: 1px solid #FF5A62 !important; }}
+  .stDownloadButton button p, .stButton button[kind="primary"] p {{ color: #fff !important; font-family: {DISPLAY};
+    font-style: italic; font-weight: 800; text-transform: uppercase; font-size: 1.05rem; letter-spacing: .02em; }}
+  .stDownloadButton button p::after {{ content: ""; display: inline-block; margin-left: 8px; border: 6px solid transparent; border-left: 9px solid #fff; border-right: 0; vertical-align: 1px; }}
   [data-testid="stMetricDelta"] {{ color: {INK_2} !important; }}
-  .sbh {{ text-transform: uppercase; letter-spacing: .02em; padding-bottom: 8px; border-bottom: 2px solid {INK}; }}
-  section[data-testid="stSidebar"] {{ background: {SURFACE} !important; }}
+  section[data-testid="stSidebar"] {{ background: linear-gradient(#161616, #0C0C0C) !important; border-right: 1px solid #262628 !important; }}
+  .callout {{ border-left-color: {ACCENT} !important; }}
+  .st-key-globepanel [data-testid="stButtonGroup"] button p {{ text-transform: none; font-size: .9rem; letter-spacing: 0; }}
+  .ph h1 {{ font-weight: 800; }}
   @media (prefers-reduced-motion: reduce) {{ * {{ animation: none !important; transition: none !important; }} }}
 </style>""", unsafe_allow_html=True)
 
 
-KICKER = {"value": ""}   # "02 · Explorer", set per page by the app before it renders
+KICKER = {"value": "", "slug": ""}   # "02 · Explorer" and its photo slug, set per page by the app
+HERO_DIR = Path(__file__).parent / "static" / "hero"
+
+
+@st.cache_data
+def _hero_photo(slug: str) -> tuple[str, str]:
+    """(data URI, credit) for static/hero/<slug>.*, falling back to default.*; ("", "") when none."""
+    credits = {}
+    f = HERO_DIR / "credits.csv"
+    if f.exists():
+        import csv
+        credits = {r["key"]: r["credit"] for r in csv.DictReader(f.open())}
+    for key in (slug, "default"):
+        for img in sorted(HERO_DIR.glob(f"{key}.*")):
+            if img.suffix.lower() in (".jpg", ".jpeg", ".png", ".webp"):
+                mime = "image/jpeg" if img.suffix.lower() in (".jpg", ".jpeg") else f"image/{img.suffix[1:].lower()}"
+                return (f"data:{mime};base64,{base64.b64encode(img.read_bytes()).decode()}", credits.get(key, ""))
+    return "", ""
 
 
 def page_header(title: str, dek: str | None = None):
+    """The page banner: a photo from static/hero, the page number and title over its dark side."""
     k = KICKER["value"]
-    st.markdown(f'<div class="ph">' + (f'<div class="kicker">{k}</div>' if k else "") + f'<h1>{escape(title)}</h1>'
-                + (f'<p>{escape(dek)}</p>' if dek else "") + '</div>', unsafe_allow_html=True)
+    uri, credit = _hero_photo(KICKER["slug"])
+    bg = f' style="background-image:url({uri})"' if uri else ""
+    st.markdown(f'<div class="hero"{bg}><div class="in">' + (f'<div class="kicker">{k}</div>' if k else "")
+                + f'<h1>{escape(title)}</h1>' + (f'<p>{escape(dek)}</p>' if dek else "") + '</div>'
+                + (f'<div class="credit">Photo: {escape(credit)}</div>' if credit else "") + '</div>',
+                unsafe_allow_html=True)
 
 
 def layout(fig: go.Figure, height: int = 320, title: str | None = None, **kw) -> go.Figure:

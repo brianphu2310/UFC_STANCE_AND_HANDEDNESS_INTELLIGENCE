@@ -1,16 +1,16 @@
-# Stance Intelligence: future-purple fight night. Keep in step with the tokens in ui.py.
+# Stance Intelligence: fight-night broadcast, red corner and blue corner. Keep in step with the tokens in ui.py.
 [server]
 enableStaticServing = true          # serves static/ (self-hosted fonts, mark, globe topology)
 
 [theme]
 base = "dark"
-primaryColor = "#7C4DFF"            # ACCENT_FILL: sliders, toggles, radios, selected widgets
-backgroundColor = "#0F0F11"         # BG
-secondaryBackgroundColor = "#202026" # SURFACE_2: inputs, selects, code
-textColor = "#F3F1EC"               # INK
+primaryColor = "#C8102E"            # ACCENT_FILL: sliders, toggles, radios, selected widgets
+backgroundColor = "#0A0A0A"         # BG
+secondaryBackgroundColor = "#1F1F20" # SURFACE_2: inputs, selects, code
+textColor = "#F5F5F5"               # INK
 font = "sans serif"
-baseRadius = "2px"
-borderColor = "#3A3A42"               # widget and table hairlines, a step lighter than BORDER
+baseRadius = "0px"
+borderColor = "#3A3A3C"               # widget and table hairlines, a step lighter than BORDER
 dataframeBorderColor = "#2C2C33"
-dataframeHeaderBackgroundColor = "#202026"
+dataframeHeaderBackgroundColor = "#1F1F20"
 dataframeHeaderTextColor = "#C4C1BA"

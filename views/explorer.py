@@ -9,7 +9,7 @@ import ufc_core as core
 import ui
 from body3d import body3d
 
-A_COLOR, B_COLOR = ui.PALETTE[0], ui.PALETTE[1]      # violet corner vs cyan corner
+A_COLOR, B_COLOR = ui.PALETTE[0], ui.PALETTE[1]      # red corner vs blue corner
 
 
 @st.cache_data
