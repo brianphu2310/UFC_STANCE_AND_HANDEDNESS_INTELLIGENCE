@@ -46,3 +46,13 @@ def test_build_fighter_cross_dominant_grappler():
     at.selectbox(key="bf_style").set_value("Grappler").run()
     at.slider(key="bf_freq").set_value(1).run()
     assert not at.exception
+
+
+def test_build_fighter_gear_budget():
+    at = AppTest.from_string(SCRIPT.format(page="build_fighter"), default_timeout=60)
+    at.run()
+    for budget in ["Tight", "Best kit"]:
+        at.segmented_control(key="bf_budget").set_value(budget).run()
+        assert not at.exception, budget
+    at.selectbox(key="bf_style").set_value("Grappler").run()
+    assert not at.exception

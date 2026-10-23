@@ -138,3 +138,86 @@ def test_globe_payload(df):
     usa = next(r for r in rows if r["iso3"] == "USA")
     assert usa["fighters"][0] == df[df["country"] == "USA"].sort_values(
         "popularity_index", ascending=False)["fighter"].iloc[0]
+
+
+def _gear(style, goal="Amateur competition", sessions=4, level="Beginner", **kw):
+    rm = core.roadmap(style=style, stance="Orthodox", hand="Right", foot="Right",
+                      sessions=sessions, goal=goal, level=level)
+    args = dict(height_cm=179, weight_kg=69, gender="Men", goal=goal, style=style, rm=rm)
+    args.update(kw)
+    return core.recommend_gear(**args), rm
+
+
+def test_gear_sizes():
+    assert [core.glove_oz(w) for w in (52, 57, 74, 75, 110)] == [12, 14, 14, 16, 16]
+    assert [core.shin_size(h) for h in (160, 170, 180, 195)] == ["S", "M", "L", "XL"]
+    assert core.gi_size(179, 69, "Men") == "A2"           # height decides
+    assert core.gi_size(170, 95, "Men") == "A3"           # weight decides
+    assert core.gi_size(165, 60, "Women").startswith("F")
+
+
+def test_gear_follows_the_classes():
+    g, rm = _gear("Grappler")
+    items = set(g["item"])
+    assert "BJJ gi" in items and "Mouthguard" in items
+    assert not items & {"Boxing gloves", "Shin guards", "Headgear", "MMA fight gloves (4 oz)"}
+    s, _ = _gear("Striker", goal="Pro debut")
+    assert {"Boxing gloves", "Hand wraps", "Mouthguard"} <= set(s["item"])
+    assert not set(s["item"]) & {"BJJ gi", "Rash guard", "MMA fight gloves (4 oz)"}
+    # every item says which of the user's classes needs it, and those classes are in the roadmap
+    classes = {c for w in rm["week"] for c in w}
+    for r in g.itertuples():
+        assert set(r.needed_for) <= classes
+
+
+def test_gear_timing_and_budget():
+    g, rm = _gear("All-rounder", goal="Pro debut", sessions=5)
+    starts = set(rm["start_month"].round().astype(int))
+    assert set(g["buy_by_month"]) <= starts | {0}
+    need = g[~g["optional"]]
+    assert list(need["buy_by_month"]) == sorted(need["buy_by_month"])
+    assert "MMA fight gloves (4 oz)" in set(g["item"])
+    tight, _ = _gear("All-rounder", goal="Pro debut", sessions=5, budget="Tight")
+    best, _ = _gear("All-rounder", goal="Pro debut", sessions=5, budget="Best kit")
+    assert tight["price_aud"].sum() < g["price_aud"].sum() < best["price_aud"].sum()
+
+
+def test_gear_women_protector_and_glove_weight():
+    g, _ = _gear("Striker", gender="Women", weight_kg=56)
+    assert g.set_index("item").loc["Boxing gloves", "size"] == "12 oz"
+    assert "Chest" in g.set_index("item").loc["Groin guard", "size"]
+
+
+def test_gear_optional_extras_last_and_outside_totals():
+    g, _ = _gear("Striker")
+    assert "Bag mitts" in set(g["item"])
+    opt = g[g["optional"]]
+    assert set(opt["priority"]) == {"Optional extras"}
+    assert g["optional"].tolist() == sorted(g["optional"].tolist())      # extras come last
+    plan = core.plan_markdown(dict(goal="Amateur competition", height_cm=179, weight_kg=69, reach_cm=181,
+                                   hand="Right", foot="Right", style="Striker", sessions=4, level="Beginner"),
+                              "Orthodox", core.recommend_stance("Right", "Right", "Striker"),
+                              pd.DataFrame(columns=["fighter"]), core.roadmap(
+                                  style="Striker", stance="Orthodox", hand="Right", foot="Right", sessions=4,
+                                  goal="Amateur competition", level="Beginner"),
+                              pd.DataFrame(columns=["class", "discipline", "level", "focus"]),
+                              pd.DataFrame(columns=["coach", "discipline", "specialty"]), {}, g)
+    assert f"A${g.loc[~g['optional'], 'price_aud'].sum():,} in total" in plan
+
+
+def test_gear_grappling_extras():
+    g, _ = _gear("Grappler")
+    by = g.set_index("item")
+    assert "Ear guards" in by.index and by.loc["Ear guards", "optional"]
+    assert "Boxing shoes" not in by.index
+    a, _ = _gear("All-rounder", goal="Pro debut", sessions=5)
+    assert {"MMA shorts", "Rash guard"} <= set(a["item"])
+
+
+def test_gear_extras_for_everyone():
+    for style in core.STYLES:
+        g, _ = _gear(style)
+        opt = set(g.loc[g["optional"], "item"])
+        assert {"Round timer", "Gym backpack"} <= opt
+    g, _ = _gear("Grappler")
+    assert "Ankle supports" not in set(g["item"])
