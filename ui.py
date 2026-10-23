@@ -66,19 +66,19 @@ def inject_css():
     st.markdown(f"""
 <style>
   @font-face {{ font-family: "Instrument Sans"; font-weight: 400; font-display: swap;
-               src: url("/app/static/fonts/instrument-sans-latin-400-normal.woff2") format("woff2"); }}
+               src: url("app/static/fonts/instrument-sans-latin-400-normal.woff2") format("woff2"); }}
   @font-face {{ font-family: "Instrument Sans"; font-weight: 500; font-display: swap;
-               src: url("/app/static/fonts/instrument-sans-latin-500-normal.woff2") format("woff2"); }}
+               src: url("app/static/fonts/instrument-sans-latin-500-normal.woff2") format("woff2"); }}
   @font-face {{ font-family: "Instrument Sans"; font-weight: 600; font-display: swap;
-               src: url("/app/static/fonts/instrument-sans-latin-600-normal.woff2") format("woff2"); }}
+               src: url("app/static/fonts/instrument-sans-latin-600-normal.woff2") format("woff2"); }}
   @font-face {{ font-family: "Instrument Sans"; font-weight: 700; font-display: swap;
-               src: url("/app/static/fonts/instrument-sans-latin-700-normal.woff2") format("woff2"); }}
+               src: url("app/static/fonts/instrument-sans-latin-700-normal.woff2") format("woff2"); }}
   @font-face {{ font-family: "Big Shoulders Display"; font-weight: 500; font-display: swap;
-               src: url("/app/static/fonts/big-shoulders-display-latin-500-normal.woff2") format("woff2"); }}
+               src: url("app/static/fonts/big-shoulders-display-latin-500-normal.woff2") format("woff2"); }}
   @font-face {{ font-family: "Big Shoulders Display"; font-weight: 700; font-display: swap;
-               src: url("/app/static/fonts/big-shoulders-display-latin-700-normal.woff2") format("woff2"); }}
+               src: url("app/static/fonts/big-shoulders-display-latin-700-normal.woff2") format("woff2"); }}
   @font-face {{ font-family: "Big Shoulders Display"; font-weight: 800; font-display: swap;
-               src: url("/app/static/fonts/big-shoulders-display-latin-800-normal.woff2") format("woff2"); }}
+               src: url("app/static/fonts/big-shoulders-display-latin-800-normal.woff2") format("woff2"); }}
 
   .stApp {{ font-family: {BODY}; }}
   /* arena light from above, and the cage's chain-link diamond at 3% in the background */

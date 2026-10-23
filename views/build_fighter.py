@@ -153,7 +153,7 @@ def _gear_photos() -> dict:
     out = {}
     for img in sorted(GEAR_DIR.glob("*")):
         if img.suffix.lower() in (".jpg", ".jpeg", ".png", ".webp"):
-            out[img.stem] = (f"/app/static/gear/{img.name}", credits.get(img.stem, ""))
+            out[img.stem] = (f"app/static/gear/{img.name}", credits.get(img.stem, ""))
     return out
 
 
