@@ -31,8 +31,10 @@ except Exception as exc:  # surfaced in the UI
     st.stop()
 
 
-def _page(render, footer=True):
+def _page(render, title, footer=True):
     def run():
+        i = [p.title for p in pages].index(title) + 1
+        ui.KICKER["value"] = f'<i>{i:02d}</i>{title}'
         render(df)
         if footer:
             ui.footer(len(df))
@@ -41,13 +43,13 @@ def _page(render, footer=True):
 
 
 pages = [
-    st.Page(_page(overview.render, footer=False), title="Overview",
+    st.Page(_page(overview.render, "Overview", footer=False), title="Overview",
             url_path="overview", default=True),
-    st.Page(_page(explorer.render), title="Explorer", url_path="explorer"),
-    st.Page(_page(build_fighter.render), title="Build a fighter",
+    st.Page(_page(explorer.render, "Explorer"), title="Explorer", url_path="explorer"),
+    st.Page(_page(build_fighter.render, "Build a fighter"), title="Build a fighter",
             url_path="build-your-fighter"),
-    st.Page(_page(stance_lab.render), title="Stance lab", url_path="stance-lab"),
-    st.Page(_page(brian.render), title="Spar vs Brian", url_path="spar-vs-brian"),
-    st.Page(_page(data_notes.render), title="Data", url_path="data-methods"),
+    st.Page(_page(stance_lab.render, "Stance lab"), title="Stance lab", url_path="stance-lab"),
+    st.Page(_page(brian.render, "Spar vs Brian"), title="Spar vs Brian", url_path="spar-vs-brian"),
+    st.Page(_page(data_notes.render, "Data"), title="Data", url_path="data-methods"),
 ]
 st.navigation(pages, position="top").run()

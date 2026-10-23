@@ -5,7 +5,12 @@ enableStaticServing = true          # serves static/ (self-hosted fonts, mark, g
 [theme]
 base = "dark"
 primaryColor = "#7C4DFF"            # ACCENT_FILL: sliders, toggles, radios, selected widgets
-backgroundColor = "#0B0A12"         # BG
-secondaryBackgroundColor = "#1D1A2A" # SURFACE_2: inputs, selects, code
-textColor = "#F1EEF8"               # INK
+backgroundColor = "#0F0F11"         # BG
+secondaryBackgroundColor = "#202026" # SURFACE_2: inputs, selects, code
+textColor = "#F3F1EC"               # INK
 font = "sans serif"
+baseRadius = "2px"
+borderColor = "#3A3A42"               # widget and table hairlines, a step lighter than BORDER
+dataframeBorderColor = "#2C2C33"
+dataframeHeaderBackgroundColor = "#202026"
+dataframeHeaderTextColor = "#C4C1BA"

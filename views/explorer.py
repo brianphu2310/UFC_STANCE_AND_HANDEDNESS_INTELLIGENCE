@@ -28,10 +28,11 @@ def _filters(df):
         q = st.text_input("Search by name", placeholder="e.g. Adesanya")
         gender = st.selectbox("Division", ["All", "Men", "Women"], key="ex_g")
         divs = st.multiselect("Weight class",
-                              [d for d in core.DIVISION_ORDER if d in set(df["weight_class"])])
-        stances = st.multiselect("Stance", ["Orthodox", "Southpaw", "Switch"])
-        hands = st.multiselect("Dominant hand", ["Right", "Left"])
-        styles = st.multiselect("Fighting style", core.STYLES)
+                              [d for d in core.DIVISION_ORDER if d in set(df["weight_class"])],
+                              placeholder="Any")
+        stances = st.multiselect("Stance", ["Orthodox", "Southpaw", "Switch"], placeholder="Any")
+        hands = st.multiselect("Dominant hand", ["Right", "Left"], placeholder="Any")
+        styles = st.multiselect("Fighting style", core.STYLES, placeholder="Any")
         champs = st.toggle("Champions only", False)
     v = df
     if q:

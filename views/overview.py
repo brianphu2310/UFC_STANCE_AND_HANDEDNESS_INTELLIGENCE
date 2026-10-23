@@ -232,7 +232,8 @@ CSS = f"""
                       max-width: none !important; padding-left: 2rem !important; padding-right: 2rem !important; }}
   div[data-testid="stVerticalBlock"] {{ gap: .5rem; }}
   .ph h1 {{ font-size: 2.15rem !important; max-width: 30ch; line-height: 1.02 !important; }}
-  .sb-note {{ color: {ui.INK_MUTED}; font-size: .74rem; margin-top: 12px; line-height: 1.45; }}
+  .ph {{ margin-bottom: 14px !important; }}
+  .sb-note {{ color: {ui.INK_MUTED}; font-size: .82rem; margin-top: 12px; line-height: 1.45; }}
 
   .score4 {{ display: grid; grid-template-columns: repeat(4, 1fr); margin-top: 4px; }}
   .score4 div {{ padding: 2px 10px 0; border-left: 1px solid {ui.BORDER}; }}
@@ -244,7 +245,7 @@ CSS = f"""
 
   /* the one bold element: globe in an octagon-cut panel */
   .st-key-globepanel {{ position: relative; padding: 10px 18px 4px;
-      background: radial-gradient(600px 380px at 50% 42%, rgba(124,77,255,.14), transparent 70%), {ui.SURFACE};
+      background: {ui.SURFACE};
       clip-path: polygon(0 0, calc(100% - 34px) 0, 100% 34px, 100% 100%, 34px 100%, 0 calc(100% - 34px)); }}
   .st-key-globepanel [data-testid="stPlotlyChart"] {{ border: none; background: transparent; }}
   .st-key-globepanel [data-testid="stPills"] label {{ display: none; }}
