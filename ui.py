@@ -15,22 +15,22 @@ import streamlit as st
 import ufc_core as core
 
 # ---------------------------------------------------------------- tokens
-BG = "#0B0A12"          # canvas: violet-black arena
-SURFACE = "#14121E"     # panels
-SURFACE_2 = "#1D1A2A"   # raised / hover, inputs
-BORDER = "#2B2740"      # decorative hairlines only
-INK = "#F1EEF8"         # near-white with a violet cast
-INK_2 = "#C6C0D8"
-INK_MUTED = "#958EAD"   # 6.3:1 on BG, 5.3:1 on SURFACE_2
+BG = "#0F0F11"          # canvas: neutral charcoal, like a printed fight programme at night
+SURFACE = "#17171B"     # panels
+SURFACE_2 = "#202026"   # raised / hover, inputs
+BORDER = "#2C2C33"      # hairlines
+INK = "#F3F1EC"         # warm paper white
+INK_2 = "#C4C1BA"
+INK_MUTED = "#8F8C86"   # 5.6:1 on BG, 4.9:1 on SURFACE_2
 ACCENT = "#A77BFF"      # violet corner: lines, marks and text (6.4:1 on BG)
 ACCENT_FILL = "#7C4DFF" # violet for filled buttons, chips, sliders (white text 4.8:1)
 ACCENT_2 = "#48D1E0"    # cyan corner (10.6:1 on BG)
 ACCENT_2_TEXT = "#48D1E0"
 ON_ACCENT = "#FFFFFF"   # text on ACCENT_FILL
-FIELD_BORDER = "#6F6890"  # input outlines: 3.3:1 on SURFACE_2 (WCAG 1.4.11)
+FIELD_BORDER = "#5E5D66"  # input outlines: 3.1:1 on SURFACE_2 (WCAG 1.4.11)
 RULE = "#E9B44C"        # gold: reference lines, dominant side, focus ring
 ACCENT_SOFT = "rgba(167, 123, 255, 0.14)"
-MUTED_FILL = "#2A2640"   # de-emphasised bars (outside a selection)
+MUTED_FILL = "#2A2A31"   # de-emphasised bars (outside a selection)
 SHADOW = "none"
 
 DISPLAY = "'Big Shoulders Display', 'Oswald', 'Arial Narrow', sans-serif"
@@ -85,12 +85,7 @@ def inject_css():
 {_font_faces()}
 
   .stApp {{ font-family: {BODY}; }}
-  /* arena light from above, and the cage's chain-link diamond at 3% in the background */
-  .stApp {{ background:
-      radial-gradient(1000px 560px at 88% -14%, rgba(124, 77, 255, .20), transparent 62%),
-      radial-gradient(800px 520px at -8% 110%, rgba(72, 209, 224, .07), transparent 60%),
-      repeating-linear-gradient(45deg, rgba(167, 123, 255, .03) 0 1px, transparent 1px 22px),
-      repeating-linear-gradient(-45deg, rgba(167, 123, 255, .03) 0 1px, transparent 1px 22px), {BG}; }}
+  .stApp {{ background: {BG}; }}
   .block-container {{ padding-top: 4.5rem; max-width: 1440px; }}
   .stApp p, .stApp li, .stApp label, .stApp input, .stApp textarea, .stApp button {{ font-family: {BODY}; }}
   h1, h2, h3, h4 {{ font-family: {DISPLAY}; color: {INK}; letter-spacing: .005em; }}
@@ -104,7 +99,7 @@ def inject_css():
 
   /* ---------- top bar: wordmark + underline tabs ---------- */
   header[data-testid="stHeader"] {{
-    background: rgba(11, 10, 18, .9); backdrop-filter: blur(10px); height: 3.7rem;
+    background: {BG}; height: 3.7rem;
     border-bottom: 1px solid {BORDER};
   }}
   header[data-testid="stHeader"]::before {{
@@ -180,8 +175,7 @@ def inject_css():
   .callout b {{ color: {INK}; }}
 
   /* keyed hero containers: st.container(key="oct_...") */
-  [class*="st-key-oct_"] {{ padding: 18px 22px; background:
-      radial-gradient(700px 360px at 50% 30%, rgba(124,77,255,.14), transparent 70%), {SURFACE};
+  [class*="st-key-oct_"] {{ padding: 18px 22px; background: {SURFACE};
       clip-path: polygon(0 0, calc(100% - 30px) 0, 100% 30px, 100% 100%, 30px 100%, 0 calc(100% - 30px)); }}
   [class*="st-key-oct_"] .card {{ background: transparent; border: none; padding: 4px 0; }}
   [class*="st-key-oct_"] [data-testid="stPlotlyChart"] {{ border: none; background: transparent; }}
@@ -192,7 +186,7 @@ def inject_css():
   .simrow b {{ display: block; font-family: {DISPLAY}; font-size: 1.15rem; font-weight: 700; color: {INK}; }}
   .simrow span {{ font-size: .84rem; color: {INK_MUTED}; }}
   .simbar {{ height: 4px; background: {SURFACE_2}; }}
-  .simbar i {{ display: block; height: 4px; background: linear-gradient(90deg, {ACCENT_2}, {ACCENT}); }}
+  .simbar i {{ display: block; height: 4px; background: {INK}; }}
   .simrow em {{ font-style: normal; font-family: {DISPLAY}; font-weight: 800; font-size: 1.35rem;
                 color: {INK}; text-align: right; }}
 
@@ -226,113 +220,67 @@ def inject_css():
   .foot {{ color: {INK_MUTED}; font-size: .86rem; padding: 26px 0 8px; border-top: 1px solid {BORDER};
            margin-top: 40px; display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; }}
   .foot a {{ color: {INK_2}; }}
-  /* ================= fight-night layer: one panel language, broadcast controls ================= */
-  :root {{ --glow: rgba(124, 77, 255, .55); --edge: rgba(167, 123, 255, .20); --edge-hi: rgba(167, 123, 255, .42); }}
+  /* ================= programme layer: flat, printed, high contrast ================= */
+  /* nav: plain labels, a solid bar under the current page */
+  header[data-testid="stHeader"] a[data-testid="stTopNavLink"] {{ margin: 0 8px !important; }}
+  header[data-testid="stHeader"] a[data-testid="stTopNavLink"] span {{ text-transform: uppercase; letter-spacing: .05em;
+    font-size: .78rem !important; white-space: nowrap; }}
+  header[data-testid="stHeader"] a[data-testid="stTopNavLink"][aria-current="page"] {{ border-bottom: 3px solid {INK} !important; }}
 
-  /* nav: active page is a lit pill, not an underline */
-  header[data-testid="stHeader"] a[data-testid="stTopNavLink"] {{
-    margin: 0 3px; padding: 7px 14px !important; border-radius: 999px !important; border-bottom: none !important;
-    transition: background .15s ease; }}
-  header[data-testid="stHeader"] a[data-testid="stTopNavLink"]:hover {{ background: rgba(167,123,255,.10) !important; }}
-  header[data-testid="stHeader"] a[data-testid="stTopNavLink"][aria-current="page"] {{
-    background: linear-gradient(135deg, rgba(124,77,255,.95), rgba(91,52,184,.95)) !important;
-    box-shadow: 0 0 0 1px rgba(201,169,255,.35) inset, 0 6px 22px -6px var(--glow); }}
-  header[data-testid="stHeader"] a[data-testid="stTopNavLink"][aria-current="page"] span {{ color: #fff !important; }}
-  header[data-testid="stHeader"] {{ box-shadow: 0 1px 0 rgba(167,123,255,.12), 0 12px 30px -20px rgba(124,77,255,.6); }}
+  /* page header: page number and section name as a printed running head, then the title, then a rule */
+  .kicker {{ font-family: {BODY}; font-size: .74rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+             color: {INK_MUTED}; margin: 0 0 10px; }}
+  .kicker i {{ font-style: normal; color: {INK}; margin-right: 8px; padding-right: 10px; border-right: 1px solid {FIELD_BORDER}; }}
+  .ph {{ max-width: none !important; padding-bottom: 16px; border-bottom: 2px solid {INK}; margin-bottom: 22px !important; }}
+  .ph h1 {{ font-size: 3.1rem !important; letter-spacing: -.005em; }}
+  .ph p {{ max-width: 80ch !important; }}
 
-  /* page header: kicker, gradient title, corner-colour rule */
-  .kicker {{ font-family: {BODY}; font-size: .78rem; font-weight: 700; letter-spacing: .16em;
-             text-transform: uppercase; color: {ACCENT}; margin: 0 0 12px; display: flex; align-items: center; gap: 10px; }}
-  .kicker i {{ font-style: normal; color: {ACCENT_2}; }}
-  .kicker::after {{ content: ""; width: 42px; height: 2px; background: linear-gradient(90deg, {ACCENT}, {ACCENT_2}); }}
-  .ph h1 {{ font-size: 3rem !important; background: linear-gradient(180deg, #FFFFFF 10%, #CDB8FF 120%);
-            -webkit-background-clip: text; background-clip: text; color: transparent !important; }}
-  .ph p {{ font-size: 1.06rem !important; }}
+  /* panels: flat fill, one hairline, square corners */
+  .card, [data-testid="stPlotlyChart"], [data-testid="stDataFrame"] {{ border-radius: 2px !important; }}
+  [data-testid="stPlotlyChart"] {{ background: {SURFACE} !important; }}
 
-  /* one panel language: glass with a violet edge and a lit top */
-  .card, [data-testid="stPlotlyChart"], [data-testid="stDataFrame"] {{
-    background: linear-gradient(180deg, rgba(167,123,255,.07), rgba(20,18,30,.72) 38%) !important;
-    border: 1px solid var(--edge) !important; border-radius: 10px !important;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 20px 44px -30px var(--glow); }}
-  [data-testid="stPlotlyChart"] {{ padding: 4px 2px; }}
-  [class*="st-key-oct_"] {{ background:
-      radial-gradient(760px 380px at 50% 0%, rgba(124,77,255,.20), transparent 70%),
-      linear-gradient(180deg, rgba(167,123,255,.06), rgba(20,18,30,.85)) !important;
-      box-shadow: inset 0 0 0 1px var(--edge), inset 0 1px 0 var(--edge-hi); }}
-  [class*="st-key-oct_"] .card {{ background: transparent !important; border: none !important; box-shadow: none; }}
-  [class*="st-key-oct_"] iframe {{ border-radius: 10px; box-shadow: 0 0 0 1px var(--edge), 0 24px 60px -28px var(--glow); }}
+  /* section heads: uppercase condensed over a full-width hairline */
+  .sec {{ text-transform: uppercase; letter-spacing: .02em; font-size: 1.5rem !important; border-top: 1px solid {FIELD_BORDER} !important; }}
 
-  /* sections: corner chip + gradient hairline */
-  .sec {{ border-top: none !important; padding-top: 18px !important; position: relative; display: flex; align-items: center; gap: 12px; }}
-  .sec::before {{ content: ""; width: 10px; height: 10px; flex: none; background: linear-gradient(135deg, {ACCENT}, {ACCENT_2});
-                  clip-path: polygon(30% 0, 70% 0, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0 70%, 0 30%); }}
-  .sec::after {{ content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px;
-                 background: linear-gradient(90deg, var(--edge-hi), rgba(72,209,224,.18) 40%, transparent); }}
-
-  /* sliders: thicker lit track, glowing thumb, value in a chip */
-  [data-testid="stSlider"] [role="group"] {{ margin-top: 12px; }}
-  [data-testid="stSlider"] [role="group"] > div > div:first-child {{ height: 6px !important; border-radius: 99px !important;
-    box-shadow: 0 0 14px -3px var(--glow); }}
+  /* sliders: thin ink track, square thumb, value as plain figures */
   [data-testid="stSlider"] [role="group"] > div > div:has(input[type="range"]) {{
-    width: 18px !important; height: 18px !important; border-radius: 50% !important; background: #fff !important;
-    border: none !important; box-shadow: 0 0 0 4px rgba(124,77,255,.4), 0 0 18px 2px var(--glow) !important; }}
-  [data-testid="stSliderThumbValue"] {{ top: -28px !important; }}
-  [data-testid="stSliderThumbValue"] p {{ font-family: {DISPLAY}; font-weight: 800; font-size: 1rem !important;
-    color: #fff !important; background: #2A2147; border: 1px solid var(--edge-hi);
-    padding: 0 7px; border-radius: 4px; line-height: 1.35; white-space: nowrap; }}
+    width: 14px !important; height: 14px !important; border-radius: 1px !important; background: {INK} !important;
+    border: none !important; box-shadow: none !important; }}
+  [data-testid="stSliderThumbValue"] p {{ font-family: {DISPLAY}; font-weight: 800; font-size: 1.05rem !important; color: {INK} !important; }}
   [data-testid="stSliderTickBar"] p {{ color: {INK_MUTED} !important; font-size: .74rem !important; }}
 
-  /* radios become a segmented switch, matching st.segmented_control */
+  /* radios as a printed switch, same as segmented controls: the chosen option is ink on paper */
   [data-testid="stRadioGroup"] {{ display: inline-flex !important; flex-direction: row !important; gap: 0 !important;
-    border: 1px solid {FIELD_BORDER}; border-radius: 8px; overflow: hidden; background: rgba(11,10,18,.5); }}
+    border: 1px solid {FIELD_BORDER}; border-radius: 2px; overflow: hidden; }}
   [data-testid="stRadioGroup"] > div {{ margin: 0 !important; }}
   [data-testid="stRadioGroup"] > div + div {{ border-left: 1px solid {FIELD_BORDER}; }}
   [data-testid="stRadioOption"] {{ padding: 6px 16px !important; margin: 0 !important; cursor: pointer; }}
   [data-testid="stRadioOption"] > div > div:first-child {{ display: none !important; }}
   [data-testid="stRadioOption"] p {{ color: {INK_2} !important; font-weight: 600; }}
-  [data-testid="stRadioOption"][data-selected="true"] {{ background: linear-gradient(135deg, {ACCENT_FILL}, #5B34B8); }}
-  [data-testid="stRadioOption"][data-selected="true"] p {{ color: #fff !important; }}
-
-  /* segmented controls and pills: same switch (1.66 marks the selected button with aria-checked) */
-  [data-testid="stButtonGroup"] button {{ border-color: {FIELD_BORDER} !important; background-color: rgba(11,10,18,.5); }}
+  [data-testid="stRadioOption"][data-selected="true"] {{ background: {INK}; }}
+  [data-testid="stRadioOption"][data-selected="true"] p {{ color: {BG} !important; }}
+  [data-testid="stButtonGroup"] button {{ border-color: {FIELD_BORDER} !important; border-radius: 2px !important; }}
   [data-testid="stButtonGroup"] button p {{ font-weight: 600; color: {INK_2}; }}
   [data-testid="stButtonGroup"] button[aria-checked="true"], [data-testid="stButtonGroup"] button[aria-pressed="true"],
   [data-testid="stBaseButton-segmented_controlActive"], [data-testid="stBaseButton-pillsActive"] {{
-    background: linear-gradient(135deg, {ACCENT_FILL}, #5B34B8) !important; border-color: rgba(201,169,255,.45) !important;
-    box-shadow: 0 6px 18px -8px var(--glow); }}
-  [data-testid="stButtonGroup"] button[aria-checked="true"] p, [data-testid="stButtonGroup"] button[aria-pressed="true"] p {{
-    color: #fff !important; }}
+    background: {INK} !important; border-color: {INK} !important; }}
+  [data-testid="stButtonGroup"] button[aria-checked="true"] p, [data-testid="stButtonGroup"] button[aria-pressed="true"] p,
+  [data-testid="stBaseButton-segmented_controlActive"] p, [data-testid="stBaseButton-pillsActive"] p {{ color: {BG} !important; }}
 
-  /* tabs: lit pills on a rail */
-  [data-testid="stTabs"] [role="tablist"] {{ gap: 6px; border-bottom: 1px solid var(--edge); padding-bottom: 8px; }}
-  [data-testid="stTab"] {{ padding: 8px 16px !important; border-radius: 999px; transition: background .15s ease; }}
-  [data-testid="stTab"] p {{ font-weight: 600; font-size: .95rem !important; color: {INK_MUTED}; }}
-  [data-testid="stTab"]:hover {{ background: rgba(167,123,255,.10); }}
-  [data-testid="stTab"][aria-selected="true"] {{ background: rgba(124,77,255,.22); box-shadow: inset 0 0 0 1px var(--edge-hi); }}
-  [data-testid="stTab"][aria-selected="true"] p {{ color: #fff; }}
-  [data-testid="stTabs"] .react-aria-SelectionIndicator {{ display: none; }}
+  /* tabs: uppercase labels, a solid bar under the open one */
+  [data-testid="stTabs"] [role="tablist"] {{ gap: 26px; border-bottom: 1px solid {FIELD_BORDER}; }}
+  [data-testid="stTab"] {{ padding: 10px 0 !important; }}
+  [data-testid="stTab"] p {{ font-weight: 700; font-size: .82rem !important; letter-spacing: .1em; text-transform: uppercase; color: {INK_MUTED}; }}
+  [data-testid="stTab"][aria-selected="true"] p {{ color: {INK}; }}
+  [data-testid="stTabs"] .react-aria-SelectionIndicator {{ background: {INK} !important; height: 3px !important; }}
 
-  /* inputs, toggles, buttons */
-  [data-baseweb="select"] > div, [data-testid="stTextInputRootElement"] {{ border-radius: 8px !important;
-    background: rgba(11,10,18,.55) !important; }}
-  .stDownloadButton button, .stButton button {{ border-radius: 8px !important; }}
-  .stDownloadButton button[kind="primary"], .stButton button[kind="primary"], .stDownloadButton button {{
-    background: linear-gradient(135deg, {ACCENT_FILL}, #5B34B8) !important; border: 1px solid rgba(201,169,255,.35) !important;
-    box-shadow: 0 10px 26px -12px var(--glow); color: #fff !important; }}
-  .stDownloadButton button p {{ color: #fff !important; }}
-
-  /* numbers: scoreboard gradient */
-  [data-testid="stMetricValue"], .kv b, .score {{ background: linear-gradient(180deg, #FFFFFF, #D6C6FF);
-    -webkit-background-clip: text; background-clip: text; color: transparent !important; }}
-  [data-testid="stMetricDelta"] {{ background: rgba(72,209,224,.10) !important; color: {ACCENT_2} !important; }}
-
-  /* sidebar */
-  section[data-testid="stSidebar"] {{ background: linear-gradient(180deg, rgba(29,26,42,.92), rgba(14,12,22,.92)) !important;
-    border-right: 1px solid var(--edge) !important; }}
-  .sbh {{ display: flex; align-items: center; gap: 10px; }}
-  .sbh::before {{ content: ""; width: 4px; height: 20px; border-radius: 2px; background: linear-gradient({ACCENT}, {ACCENT_2}); }}
-  .callout {{ background: linear-gradient(90deg, rgba(233,180,76,.08), transparent 70%) !important;
-              padding: 10px 14px 10px 16px !important; border-radius: 0 8px 8px 0; }}
+  /* inputs and buttons: square; the download is the one solid ink button */
+  [data-baseweb="select"] > div, [data-testid="stTextInputRootElement"], .stButton button, .stDownloadButton button {{ border-radius: 2px !important; }}
+  .stDownloadButton button, .stButton button[kind="primary"] {{ background: {INK} !important; border: 1px solid {INK} !important; }}
+  .stDownloadButton button p, .stButton button[kind="primary"] p {{ color: {BG} !important; font-weight: 700; }}
+  [data-testid="stMetricDelta"] {{ color: {INK_2} !important; }}
+  .sbh {{ text-transform: uppercase; letter-spacing: .02em; padding-bottom: 8px; border-bottom: 2px solid {INK}; }}
+  section[data-testid="stSidebar"] {{ background: {SURFACE} !important; }}
   @media (prefers-reduced-motion: reduce) {{ * {{ animation: none !important; transition: none !important; }} }}
 </style>""", unsafe_allow_html=True)
 

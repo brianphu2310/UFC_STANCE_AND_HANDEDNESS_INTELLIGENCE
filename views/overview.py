@@ -245,7 +245,7 @@ CSS = f"""
 
   /* the one bold element: globe in an octagon-cut panel */
   .st-key-globepanel {{ position: relative; padding: 10px 18px 4px;
-      background: radial-gradient(600px 380px at 50% 42%, rgba(124,77,255,.14), transparent 70%), {ui.SURFACE};
+      background: {ui.SURFACE};
       clip-path: polygon(0 0, calc(100% - 34px) 0, 100% 34px, 100% 100%, 34px 100%, 0 calc(100% - 34px)); }}
   .st-key-globepanel [data-testid="stPlotlyChart"] {{ border: none; background: transparent; }}
   .st-key-globepanel [data-testid="stPills"] label {{ display: none; }}
