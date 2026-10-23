@@ -167,19 +167,20 @@ def _gear(p, rm):
     if gear.empty:
         st.info("Your plan needs no special kit yet.")
         return gear
-    first = gear[gear["buy_by_month"] == 0]
+    need = gear[~gear["optional"]]
+    first = need[need["buy_by_month"] == 0]
     st.markdown(f'''<div class="gearsum"><div><b>A${first["price_aud"].sum():,}</b><span>before day one,
-      {len(first)} items</span></div><div><b>A${gear["price_aud"].sum():,}</b><span>for the whole plan,
-      {len(gear)} items</span></div><div class="gearnote">Sizes come from your height and weight; each item is
+      {len(first)} items</span></div><div><b>A${need["price_aud"].sum():,}</b><span>for the whole plan,
+      {len(need)} items</span></div><div class="gearnote">Sizes come from your height and weight; each item is
       listed because a class in your roadmap needs it. Prices are typical Australian ranges, not quotes.
       Try gloves and shin guards on in a shop before buying.</div></div>''', unsafe_allow_html=True)
-    for when, g in gear.groupby("buy_by_month", sort=True):
-        label = g["priority"].iloc[0]
-        phase = g["phase"].iloc[0]
-        st.markdown(f'<div class="gearwhen">{escape(label)}<span>{escape(phase)} phase, '
-                    f'A${g["price_aud"].sum():,}</span></div>', unsafe_allow_html=True)
+    for label, g in gear.groupby("priority", sort=False):
+        sub = ("not in the totals" if g["optional"].iloc[0]
+               else f'{g["phase"].iloc[0]} phase, A${g["price_aud"].sum():,}')
+        st.markdown(f'<div class="gearwhen">{escape(label)}<span>{escape(sub)}</span></div>',
+                    unsafe_allow_html=True)
         photos = _gear_photos()
-        cols = st.columns(min(len(g), 4))
+        cols = st.columns(4)                      # fixed width, so a group of one stays card-sized
         for i, (_, r) in enumerate(g.iterrows()):
             n = r["needed_for"]
             need = ("Everyone, from week one" if not n else ", ".join(n[:2])

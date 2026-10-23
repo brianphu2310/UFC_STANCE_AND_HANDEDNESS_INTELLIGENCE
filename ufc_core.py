@@ -318,8 +318,9 @@ def plan_markdown(profile: dict, stance: str, advice: dict, models: pd.DataFrame
     L += ["", "## Classes"] + [f"- {r['class']} ({r['discipline']}, {r['level']}) — {r['focus']}"
                               for _, r in classes.iterrows()]
     if gear is not None and len(gear):
-        L += ["", f"## Gear (≈ A${gear['price_aud'].sum():,} in total, typical prices)"]
-        for when, g in gear.groupby("buy_by_month", sort=True):
+        need = gear[~gear["optional"]]
+        L += ["", f"## Gear (≈ A${need['price_aud'].sum():,} in total, typical prices)"]
+        for _, g in gear.groupby("priority", sort=False):
             L.append(f"### {g['priority'].iloc[0]}")
             L += [f"- {r['item']} — {r['size']} (≈ A${r['price_aud']}). {r['why']}" for _, r in g.iterrows()]
     L += ["", "## Coaches (sample roster)"] + [f"- {r['coach']} — {r['discipline']}, {r['specialty']}"
@@ -534,7 +535,8 @@ def pick_coaches(coaches: pd.DataFrame, *, style: str, stance: str, hand: str, g
 # Gear: what to buy, in what size, and when — driven by the classes in the roadmap
 # ============================================================================
 # Every item names the classes that need it, so a recommendation can always say why.
-# `styles` limits an item to some fighting styles. Prices are typical Australian retail ranges
+# `styles` limits an item to some fighting styles; `optional` items are nice to have and are left
+# out of the totals. Prices are typical Australian retail ranges
 # in AUD (low, high), not quotes; no brands.
 GEAR = {
     "hand_wraps": dict(item="Hand wraps", cat="Hands", price=(12, 30),
@@ -542,10 +544,13 @@ GEAR = {
                               "Kickboxing Conditioning", "Controlled Sparring", "MMA Integration",
                               "Competition Team"},
                        why="Protect the small bones of the hand and the wrist under every glove."),
-    "bag_gloves": dict(item="Boxing gloves", cat="Hands", price=(60, 220),
+    "boxing_gloves": dict(item="Boxing gloves", cat="Hands", price=(60, 220),
                        needs={"Boxing Fundamentals", "Southpaw & Open-Stance Lab", "Muay Thai Technique",
                               "Kickboxing Conditioning", "Controlled Sparring", "Competition Team"},
                        why="For pads, bag work and striking sparring."),
+    "bag_mitts": dict(item="Bag mitts", cat="Hands", price=(40, 120), optional=True,
+                      needs={"Boxing Fundamentals", "Kickboxing Conditioning", "Muay Thai Technique"},
+                      why="Light gloves for heavy-bag rounds that spare your sparring gloves; never spar in them."),
     "mouthguard": dict(item="Mouthguard", cat="Protection", price=(15, 60),
                        needs={"Controlled Sparring", "Competition Team", "MMA Integration",
                               "Wrestling for MMA", "No-Gi Grappling", "BJJ Fundamentals (Gi)"},
@@ -604,7 +609,7 @@ def gi_size(height_cm: float, weight_kg: float, gender: str) -> str:
 
 # For a grappler, sparring and the fight team mean live rolls, not striking rounds.
 GRAPPLER_ROLLS = {"Controlled Sparring", "Competition Team"}
-STRIKING_KIT = {"hand_wraps", "bag_gloves", "groin", "shins", "headgear"}
+STRIKING_KIT = {"hand_wraps", "boxing_gloves", "bag_mitts", "groin", "shins", "headgear"}
 
 
 def recommend_gear(*, height_cm: float, weight_kg: float, gender: str, goal: str, style: str,
@@ -612,7 +617,8 @@ def recommend_gear(*, height_cm: float, weight_kg: float, gender: str, goal: str
     """
     Gear for this person's roadmap. One row per item with its size, the month to buy it by (the start
     of the phase where a class first needs it), the classes that need it, and a price for the budget.
-    `priority` is "Before day one" for anything the first phase needs, else "Before month N".
+    `priority` is "Before day one" for anything the first phase needs, else "Before month N";
+    optional items come last as "Optional extras" and are not part of any total.
     """
     competitive = GOALS[goal][1]
     first_need = {}                                     # class -> (phase index, start month)
@@ -622,7 +628,7 @@ def recommend_gear(*, height_cm: float, weight_kg: float, gender: str, goal: str
     oz = glove_oz(weight_kg)
     size = {
         "hand_wraps": "4.5 m (180 in)" if weight_kg >= 55 else "3 m (120 in)",
-        "bag_gloves": f"{oz} oz",
+        "boxing_gloves": f"{oz} oz", "bag_mitts": "Your glove size (S/M/L)",
         "mouthguard": "Boil-and-bite" + ("; a dentist-made one before you compete" if competitive else ""),
         "groin": "Chest and groin protector" if gender == "Women" else "Cup with jock or compression short",
         "shins": shin_size(height_cm),
@@ -649,12 +655,14 @@ def recommend_gear(*, height_cm: float, weight_kg: float, gender: str, goal: str
         lo, hi = g["price"]
         rows.append(dict(key=key, item=g["item"], category=g["cat"], size=size[key], why=g["why"],
                          needed_for=by, phase=PHASES[phase][0], buy_by_month=round(month),
-                         priority="Before day one" if phase == 0 else f"Before month {round(month)}",
+                         optional=bool(g.get("optional")),
+                         priority="Optional extras" if g.get("optional")
+                         else "Before day one" if phase == 0 else f"Before month {round(month)}",
                          price_aud=int(round((lo + k * (hi - lo)) / 5) * 5)))
     out = pd.DataFrame(rows)
     if out.empty:
         return out
-    return out.sort_values(["buy_by_month", "category", "item"]).reset_index(drop=True)
+    return out.sort_values(["optional", "buy_by_month", "category", "item"]).reset_index(drop=True)
 
 
 # ============================================================================

@@ -2,7 +2,7 @@
 
 Drop one photo per item here, named after its key in `ufc_core.GEAR`, as `.jpg`, `.png` or `.webp`:
 
-`hand_wraps`, `bag_gloves`, `mouthguard`, `groin`, `shins`, `headgear`, `mma_spar`, `mma_fight`,
+`hand_wraps`, `boxing_gloves`, `bag_mitts`, `mouthguard`, `groin`, `shins`, `headgear`, `mma_spar`, `mma_fight`,
 `gi`, `rash`, `wrestling_shoes`, `rope`
 
 The Gear tab shows a photo when its file exists and falls back to a plain card when it doesn't.

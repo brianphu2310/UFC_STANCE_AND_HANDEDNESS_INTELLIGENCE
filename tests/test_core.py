@@ -174,7 +174,8 @@ def test_gear_timing_and_budget():
     g, rm = _gear("All-rounder", goal="Pro debut", sessions=5)
     starts = set(rm["start_month"].round().astype(int))
     assert set(g["buy_by_month"]) <= starts | {0}
-    assert list(g["buy_by_month"]) == sorted(g["buy_by_month"])
+    need = g[~g["optional"]]
+    assert list(need["buy_by_month"]) == sorted(need["buy_by_month"])
     assert "MMA fight gloves (4 oz)" in set(g["item"])
     tight, _ = _gear("All-rounder", goal="Pro debut", sessions=5, budget="Tight")
     best, _ = _gear("All-rounder", goal="Pro debut", sessions=5, budget="Best kit")
@@ -185,3 +186,20 @@ def test_gear_women_protector_and_glove_weight():
     g, _ = _gear("Striker", gender="Women", weight_kg=56)
     assert g.set_index("item").loc["Boxing gloves", "size"] == "12 oz"
     assert "Chest" in g.set_index("item").loc["Groin guard", "size"]
+
+
+def test_gear_optional_extras_last_and_outside_totals():
+    g, _ = _gear("Striker")
+    assert "Bag mitts" in set(g["item"])
+    opt = g[g["optional"]]
+    assert set(opt["priority"]) == {"Optional extras"}
+    assert g["optional"].tolist() == sorted(g["optional"].tolist())      # extras come last
+    plan = core.plan_markdown(dict(goal="Amateur competition", height_cm=179, weight_kg=69, reach_cm=181,
+                                   hand="Right", foot="Right", style="Striker", sessions=4, level="Beginner"),
+                              "Orthodox", core.recommend_stance("Right", "Right", "Striker"),
+                              pd.DataFrame(columns=["fighter"]), core.roadmap(
+                                  style="Striker", stance="Orthodox", hand="Right", foot="Right", sessions=4,
+                                  goal="Amateur competition", level="Beginner"),
+                              pd.DataFrame(columns=["class", "discipline", "level", "focus"]),
+                              pd.DataFrame(columns=["coach", "discipline", "specialty"]), {}, g)
+    assert f"A${g.loc[~g['optional'], 'price_aud'].sum():,} in total" in plan
