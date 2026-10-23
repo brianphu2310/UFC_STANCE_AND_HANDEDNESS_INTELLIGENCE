@@ -310,6 +310,12 @@ def inject_css():
   .callout {{ border-left-color: {ACCENT} !important; }}
   .st-key-globepanel [data-testid="stButtonGroup"] button p {{ text-transform: none; font-size: .9rem; letter-spacing: 0; }}
   .ph h1 {{ font-weight: 800; }}
+  /* phones: the sidebar starts closed; keep its open and close buttons so the filters stay reachable */
+  @media (max-width: 640px) {{
+    [data-testid="stSidebarCollapseButton"], [data-testid="stExpandSidebarButton"] {{ display: inline-flex !important; }}
+    header[data-testid="stHeader"]::before {{ display: none; }}
+    header[data-testid="stHeader"] [data-testid="stToolbar"] {{ padding-left: 8px; }}
+  }}
   @media (prefers-reduced-motion: reduce) {{ * {{ animation: none !important; transition: none !important; }} }}
 </style>""", unsafe_allow_html=True)
 
