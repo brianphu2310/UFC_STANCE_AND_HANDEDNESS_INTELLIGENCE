@@ -1,4 +1,5 @@
 """Build your fighter: body → 3D model → stance, then tabs for fighters, roadmap, gear, classes."""
+import base64
 from html import escape
 from pathlib import Path
 
@@ -144,7 +145,10 @@ GEAR_DIR = Path(__file__).resolve().parents[1] / "static" / "gear"
 
 @st.cache_data
 def _gear_photos() -> dict:
-    """key -> (static URL, credit line) for every photo in static/gear (see its README)."""
+    """key -> (data URI, credit line) for every photo in static/gear (see its README).
+
+    Embedded rather than linked: Community Cloud serves the app under a path prefix, and the
+    photos are small, so inlining them is the one form that loads everywhere."""
     credits = {}
     f = GEAR_DIR / "credits.csv"
     if f.exists():
@@ -153,7 +157,9 @@ def _gear_photos() -> dict:
     out = {}
     for img in sorted(GEAR_DIR.glob("*")):
         if img.suffix.lower() in (".jpg", ".jpeg", ".png", ".webp"):
-            out[img.stem] = (f"app/static/gear/{img.name}", credits.get(img.stem, ""))
+            mime = "image/jpeg" if img.suffix.lower() in (".jpg", ".jpeg") else f"image/{img.suffix[1:].lower()}"
+            uri = f"data:{mime};base64,{base64.b64encode(img.read_bytes()).decode()}"
+            out[img.stem] = (uri, credits.get(img.stem, ""))
     return out
 
 
