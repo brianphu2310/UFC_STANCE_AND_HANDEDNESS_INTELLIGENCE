@@ -34,7 +34,7 @@ except Exception as exc:  # surfaced in the UI
 def _page(render, title, footer=True):
     def run():
         i = [p.title for p in pages].index(title) + 1
-        ui.KICKER["value"] = f'<i>{i:02d}</i>{title}'
+        ui.KICKER.update(value=f'<i>{i:02d}</i>{title}', slug=title.lower().replace(' ', '-'))
         render(df)
         if footer:
             ui.footer(len(df))

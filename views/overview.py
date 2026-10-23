@@ -18,7 +18,7 @@ import ui
 from globe3d import ISO3, country_payload, globe3d
 
 STANCES = ["Orthodox", "Southpaw", "Switch"]
-SC = dict(zip(STANCES, ui.PALETTE))            # violet, cyan, gold
+SC = dict(zip(STANCES, ui.PALETTE))            # red, blue, gold
 CONTINENTS = ["Africa", "Asia", "Europe", "North America", "Oceania", "South America"]
 ALL = "All"
 H_GLOBE = 372
