@@ -57,10 +57,9 @@ def _intro_video() -> str:
 
 
 def _intro() -> float:
-    """Once per session, before the page: a southpaw and an orthodox 3D fighter trade until the
-    southpaw dips under a right hand and digs a left to the liver. The orthodox folds, kneels and falls,
-    K.O., the camera swings behind the winner and the scene dissolves into the real thing: Davis's
-    left to Garcia's body. Then the page fades in.
+    """Once per session, before the page: a short knockout clip (static/hero/intro.*: an AI-generated
+    mannequin fight by @fightingapex on TikTok, shown with its watermark and credited on screen), K.O.,
+    then it dissolves into the real thing, Davis's left to Garcia's body, and the page fades in.
 
     It runs in a component iframe stretched over the whole window, so its script can follow the
     video's own clock (static/hero/intro.json holds the beats) and remove itself when the clip ends.
@@ -103,12 +102,15 @@ __FONTS__
   button { position: absolute; right: 18px; bottom: 18px; color: #fff; border: 1px solid rgba(255,255,255,.6);
            padding: 8px 16px; font: 600 13px system-ui, sans-serif; text-transform: uppercase; letter-spacing: .08em;
            background: rgba(0,0,0,.5); cursor: pointer; }
+  .credit { position: absolute; left: 18px; bottom: 22px; color: rgba(255,255,255,.75); font: 500 12px system-ui, sans-serif;
+            letter-spacing: .02em; text-shadow: 0 1px 4px #000; }
   button:focus-visible { outline: 2px solid __RED__; outline-offset: 2px; }
 </style></head><body><div id="wrap">
   <video id="v" muted playsinline preload="auto">__VIDEO__</video>
   <div class="photo" id="ph"></div>
   <div class="cap" id="cap"><b>Davis vs Garcia</b><span>The southpaw's left to the liver</span></div>
   <div class="ko" id="ko">K.O.</div>
+  <div class="credit" id="credit">Video: @fightingapex on TikTok (AI-generated)</div>
   <button id="skip" type="button">Skip intro</button>
 </div><script>
 const T = __T__, v = document.getElementById("v"), ph = document.getElementById("ph"),
