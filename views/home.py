@@ -58,8 +58,9 @@ def _intro_video() -> str:
 
 def _intro() -> float:
     """Once per session, before the page: a southpaw and an orthodox 3D fighter trade until the
-    southpaw's left straight lands. That frame is staged like the Topuria vs Holloway photo and
-    dissolves into it, the photo dissolves back as the orthodox falls, K.O., then the page fades in.
+    southpaw dips under a right hand and digs a left to the liver. The orthodox folds, kneels and falls,
+    K.O., the camera swings behind the winner and the scene dissolves into the real thing: Davis's
+    left to Garcia's body. Then the page fades in.
 
     It runs in a component iframe stretched over the whole window, so its script can follow the
     video's own clock (static/hero/intro.json holds the beats) and remove itself when the clip ends.
@@ -67,7 +68,7 @@ def _intro() -> float:
     if st.session_state.get("intro_done"):
         return 0.0
     st.session_state["intro_done"] = True
-    video, photo = _intro_video(), ui._hero_photo("explorer")[0]
+    video, photo = _intro_video(), ui._hero_photo("intro-photo")[0]
     tf = INTRO / "intro.json"
     if not video or not tf.exists():
         return 0.0
@@ -106,14 +107,15 @@ __FONTS__
 </style></head><body><div id="wrap">
   <video id="v" muted playsinline preload="auto">__VIDEO__</video>
   <div class="photo" id="ph"></div>
-  <div class="cap" id="cap"><b>Topuria vs Holloway</b><span>Every fight starts with a stance</span></div>
+  <div class="cap" id="cap"><b>Davis vs Garcia</b><span>The southpaw's left to the liver</span></div>
   <div class="ko" id="ko">K.O.</div>
   <button id="skip" type="button">Skip intro</button>
 </div><script>
 const T = __T__, v = document.getElementById("v"), ph = document.getElementById("ph"),
       cap = document.getElementById("cap"), ko = document.getElementById("ko"), wrap = document.getElementById("wrap");
 const clamp = x => Math.max(0, Math.min(1, x)), ease = x => x * x * (3 - 2 * x);
-let done = false;
+let done = false, held = false;
+const hold = () => { if (!held) { held = true; setTimeout(finish, Math.max(0, (T.total - v.duration) * 1000)); } };
 function finish() {
   if (done) return; done = true;
   wrap.style.opacity = 0;
@@ -123,18 +125,16 @@ function finish() {
 function tick() {
   if (done) return;
   const t = v.currentTime;
-  // the match cut: the real photo dissolves in over the held 3D frame, then out as he falls
-  const inn = ease(clamp((t - T.impact + .05) / .7)), out = ease(clamp((t - (T.ko - .55)) / .6));
-  const a = inn * (1 - out);
-  ph.style.opacity = a; ph.style.transform = `scale(${1.04 - .04 * inn + .02 * clamp((t - T.impact) / T.hold)})`;
-  cap.style.opacity = ease(clamp((t - T.impact - .45) / .5)) * (1 - out);
-  const k = clamp((t - T.ko - .55) / .35);
-  ko.style.opacity = k; ko.style.transform = `scale(${2.4 - 1.4 * ease(k)}) skewX(${-10 * (1 - k)}deg)`;
-  if (t >= T.total - .25 || v.ended) finish();
+  // K.O. slams in as he lands, then the 3D shot from behind the winner dissolves into the photo
+  const k = clamp((t - T.ko + .1) / .35), kout = ease(clamp((t - T.photo - .2) / .5));
+  ko.style.opacity = k * (1 - kout); ko.style.transform = `scale(${2.4 - 1.4 * ease(k)}) skewX(${-10 * (1 - k)}deg)`;
+  const inn = ease(clamp((t - T.photo) / .9));
+  ph.style.opacity = inn; ph.style.transform = `scale(${1.06 - .06 * inn})`;
+  cap.style.opacity = ease(clamp((t - T.photo - .6) / .5));
   requestAnimationFrame(tick);
 }
 document.getElementById("skip").onclick = finish;
-v.addEventListener("ended", finish);
+v.addEventListener("ended", hold);     // the photo stays up past the clip, then the page
 v.addEventListener("error", finish);
 const go = v.play();
 if (go && go.catch) go.catch(finish);          // autoplay refused: go straight to the page
