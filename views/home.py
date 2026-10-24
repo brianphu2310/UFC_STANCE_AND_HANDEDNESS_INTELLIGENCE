@@ -121,6 +121,10 @@ const hold = () => { if (!held) { held = true; setTimeout(finish, Math.max(0, (T
 function finish() {
   if (done) return; done = true;
   wrap.style.opacity = 0;
+  // skipped early: the title's entrance was timed for the full clip, so play it now instead
+  try { const h = window.parent.document.querySelector(".land .h1");
+        if (h) { h.style.animation = "none"; void h.offsetWidth; h.style.animation = ""; h.style.animationDelay = ".3s"; } }
+  catch (e) {}
   setTimeout(() => { try { window.frameElement.closest('[class*="st-key-introbox"]').style.display = "none"; }
                      catch (e) { document.body.style.display = "none"; } }, 850);
 }
