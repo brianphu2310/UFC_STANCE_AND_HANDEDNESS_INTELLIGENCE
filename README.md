@@ -67,8 +67,11 @@ distance in the range table; **Height** and **Reach** line the two fighters up a
 
 ## The app
 
-The app opens on a short intro (a credited AI fight clip by @fightingapex on TikTok, a "K.O." and
-then Gervonta Davis's body shot on Ryan Garcia), shown once per visit with a **Skip intro** button.
+The app opens on a 7-second fight-night intro drawn in HTML and CSS, no video: a red and a blue
+light streak meet, the orthodox and southpaw corners slide in with "VS" between them, the roster
+counts up, "Which side do you lead with?" lands word by word, and the two halves open like doors on
+the landing page. It plays once per visit, has a **Skip intro** button, and is skipped under
+reduced motion.
 Every page then sits on a slow slideshow of real fight photos behind a dark veil, with a
 broadcast-style banner at the top.
 
@@ -116,7 +119,7 @@ explains every measure. Stance, hand and weight-class filters apply on every pag
 | Derived | Strike accuracy/defence, output, damage absorbed, takedowns, control time, fighting style, popularity index |
 | Estimated | **Dominant foot only** — no public source records it; clearly marked "≈" / "EST" everywhere |
 | [MakeHuman](https://github.com/makehumancommunity/makehuman) (CC0) | 3D body mesh, skeleton, skin weights and body-shape targets for the fighter model |
-| Press photos, a broadcast still and the intro clip | Page banners, background slideshow and intro; each one is credited on screen and listed in `static/hero/credits.csv` (gear photos in `static/gear/credits.csv`) |
+| Press photos and a broadcast still | Page banners and the background slideshow; each one is credited on screen and listed in `static/hero/credits.csv` (gear photos in `static/gear/credits.csv`) |
 
 Every column's source is listed in `data/data_dictionary.csv`. Coaches and classes on the
 Build-a-fighter page are a fictional sample catalogue you can replace with a real gym's roster.
@@ -158,7 +161,7 @@ ui.py                       theme tokens, fonts, banners, background slideshow, 
 views/                      one module per page (home.py holds the landing page and intro)
 components/globe3d/         three.js globe (bundled locally, no CDN)
 components/body3d/          three.js face-off: skinned MakeHuman body (fighter.glb) driven by a joint solver
-static/hero/                banner and background photos, intro clip and its timings, credits.csv
+static/hero/                banner and background photos, credits.csv
 static/gear/                gear photos for Build a fighter, credits.csv
 static/fonts/               self-hosted Big Shoulders Display and Instrument Sans
 pipeline/                   ETL into a SQLite star schema with data-quality checks (schema.sql)
@@ -180,7 +183,7 @@ legacy/                     first-version scripts kept for reference
 - **Dominant hand** comes from the project spreadsheet and is not independently verified.
 - **UFC-only stats** — fighters with little UFC time (e.g. Fedor) have no fight-log stats.
 - The Tableau dashboard and Colab notebook predate the stance corrections.
-- Fight photos and the intro clip belong to their owners and are used with credit for a class project;
+- Fight photos belong to their owners and are used with credit for a class project;
   the app is not affiliated with the UFC.
 
 ## About

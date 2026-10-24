@@ -1,9 +1,6 @@
 """Home: the landing page. A fight-poster hero, the tale of the tape for orthodox vs southpaw, then
 the app's pages as tonight's fight card."""
-import base64
-import json
 from html import escape
-from pathlib import Path
 
 import pandas as pd
 import streamlit as st
@@ -11,7 +8,6 @@ import streamlit.components.v1 as components
 
 import ui
 
-INTRO = Path(__file__).resolve().parents[1] / "static" / "hero"   # intro.webm and intro.mp4
 
 CARD = [  # (page url, slug for the photo, billing, title, what you get)
     ("build-your-fighter", "default", "Main event", "Build your fighter",
@@ -45,112 +41,162 @@ def _tape(df: pd.DataFrame) -> str:
       The lab tests whether that gap is real.</p></div>"""
 
 
-@st.cache_data
-def _intro_video() -> str:
-    """<source> tags for the intro clip: WebM for Chrome and Firefox, MP4 for Safari."""
-    out = ""
-    for ext in ("webm", "mp4"):
-        f = INTRO / f"intro.{ext}"
-        if f.exists():
-            out += f'<source src="data:video/{ext};base64,{base64.b64encode(f.read_bytes()).decode()}" type="video/{ext}">'
-    return out
+INTRO_LEN = 7.4   # seconds, the end of the doors opening below
 
 
-def _intro() -> float:
-    """Once per session, before the page: a short knockout clip (static/hero/intro.*: an AI-generated
-    mannequin fight by @fightingapex on TikTok, shown with its watermark and credited on screen), K.O.,
-    then it dissolves into the real thing, Davis's left to Garcia's body, and the page fades in.
+def _intro(df: pd.DataFrame) -> float:
+    """Once per session, before the page: a fight-night opener drawn in HTML and CSS, no video.
+    A red and a blue light streak meet, the orthodox and southpaw corners slide in with VS between
+    them, the roster counts up, the question lands, then the two halves open like doors on the page.
 
-    It runs in a component iframe stretched over the whole window, so its script can follow the
-    video's own clock (static/hero/intro.json holds the beats) and remove itself when the clip ends.
-    Returns the seconds the landing page should wait before its own entrance."""
+    It runs in a transparent component iframe stretched over the whole window, so the landing page is
+    already there behind the doors. Returns the seconds the landing title should wait."""
     if st.session_state.get("intro_done"):
         return 0.0
     st.session_state["intro_done"] = True
-    video, photo = _intro_video(), ui._hero_photo("intro-photo")[0]
-    tf = INTRO / "intro.json"
-    if not video or not tf.exists():
-        return 0.0
-    T = json.loads(tf.read_text())
+    o, s = (df["stance"] == "Orthodox").sum(), (df["stance"] == "Southpaw").sum()
     st.markdown("""<style>
-  .st-key-introbox {{ position: relative; z-index: 1000002 !important; height: 0; overflow: visible; }}
-  .st-key-introbox iframe {{ position: fixed !important; inset: 0; width: 100vw !important; height: 100vh !important;
-                             height: 100dvh !important; border: 0; z-index: 1000002; background: #000; }}
-  @media (prefers-reduced-motion: reduce) {{ .st-key-introbox {{ display: none; }} }}
-</style>""".format(), unsafe_allow_html=True)
-    page = INTRO_HTML.replace("__FONTS__", ui._font_faces()).replace("__VIDEO__", video).replace("__PHOTO__", photo) \
-        .replace("__T__", json.dumps(T)).replace("__RED__", ui.ACCENT).replace("__DISPLAY__", ui.DISPLAY)
+  .st-key-introbox { position: relative; z-index: 1000002 !important; height: 0; overflow: visible; }
+  .st-key-introbox iframe { position: fixed !important; inset: 0; width: 100vw !important; height: 100vh !important;
+                            height: 100dvh !important; border: 0; z-index: 1000002; background: transparent; }
+  @media (prefers-reduced-motion: reduce) { .st-key-introbox { display: none; } }
+</style>""", unsafe_allow_html=True)
+    vals = {"__FONTS__": ui._font_faces(), "__RED__": ui.ACCENT, "__REDF__": ui.ACCENT_FILL, "__BLUE__": ui.ACCENT_2,
+            "__DISPLAY__": ui.DISPLAY, "__O__": str(o), "__S__": str(s), "__N__": str(len(df)),
+            "__C__": str(df["country"].nunique()), "__LEN__": str(INTRO_LEN)}
+    page = INTRO_HTML
+    for k, v in vals.items():
+        page = page.replace(k, v)
     with st.container(key="introbox"):
         components.html(page, height=0)
-    return T["total"] + .3
+    return INTRO_LEN - .8
 
 
+# Beats (s): 0-.7 streaks meet, .7 flash, .8 corners slide in, 1.35 VS, 2.5-3.9 the counts,
+# 3.95 the question, 6.4 doors open, 7.4 gone.
 INTRO_HTML = """<!doctype html><html><head><meta charset="utf-8"><style>
 __FONTS__
-  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
-  #wrap { position: fixed; inset: 0; transition: opacity .8s ease; }
-  video, .photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-  .photo { background: center / cover no-repeat url(__PHOTO__); opacity: 0; transform-origin: 60% 45%; }
-  .cap { position: absolute; left: 0; right: 0; bottom: 9vh; text-align: center; opacity: 0; }
-  .cap b { display: block; font-family: __DISPLAY__; font-style: italic; font-weight: 800; text-transform: uppercase;
-           color: #fff; font-size: clamp(2rem, 5vw, 3.8rem); line-height: 1; text-shadow: 0 3px 18px #000; }
-  .cap span { color: __RED__; font-family: __DISPLAY__; font-style: italic; font-weight: 800; text-transform: uppercase;
-              font-size: 1.25rem; letter-spacing: .06em; text-shadow: 0 2px 10px #000; }
-  .ko { position: absolute; inset: 0; display: grid; place-items: center; font-family: __DISPLAY__; font-style: italic;
-        font-weight: 800; color: __RED__; font-size: clamp(6rem, 22vw, 20rem); letter-spacing: -.02em; opacity: 0;
-        text-shadow: 0 8px 0 #000, 0 0 60px rgba(229,37,45,.6); }
-  button { position: absolute; right: 18px; bottom: 18px; color: #fff; border: 1px solid rgba(255,255,255,.6);
+  html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; }
+  * { box-sizing: border-box; }
+  #wrap { position: fixed; inset: 0; font-family: __DISPLAY__; font-style: italic; font-weight: 800;
+          text-transform: uppercase; color: #fff; }
+  .door { position: absolute; top: 0; bottom: 0; width: 50.5%; overflow: hidden; background: #070707;
+          animation: open .95s cubic-bezier(.7,0,.25,1) 6.4s forwards; }
+  .door.l { left: 0; --dir: -1; }
+  .door.r { right: 0; --dir: 1; }
+  .door::before { content: ""; position: absolute; inset: 0; opacity: 0; animation: fadeIn .5s ease .75s forwards; }
+  .door.l::before { background: radial-gradient(120% 80% at 100% 50%, rgba(200,16,46,.55), rgba(200,16,46,.08) 55%, transparent 75%); }
+  .door.r::before { background: radial-gradient(120% 80% at 0% 50%, rgba(59,130,246,.5), rgba(59,130,246,.07) 55%, transparent 75%); }
+  /* chain-link fence over both halves */
+  .door::after { content: ""; position: absolute; inset: 0; opacity: .16;
+    background: repeating-linear-gradient(45deg, transparent 0 22px, #9a9a9a 22px 23.5px),
+                repeating-linear-gradient(-45deg, transparent 0 22px, #9a9a9a 22px 23.5px); }
+  .door.l { border-right: 3px solid __RED__; } .door.r { border-left: 3px solid __BLUE__; }
+  @keyframes open { to { transform: translateX(calc(var(--dir) * 102%)); } }
+  @keyframes fadeIn { to { opacity: 1; } }
+  @keyframes fadeOut { to { opacity: 0; } }
+
+  .streak { position: absolute; top: 50%; height: 4px; width: 50%; margin-top: -2px; z-index: 3;
+            animation: streak .7s cubic-bezier(.6,0,.3,1) forwards, fadeOut .25s ease .75s forwards; }
+  .streak.l { left: 0; background: linear-gradient(90deg, transparent, __RED__); transform-origin: left; transform: scaleX(0);
+              box-shadow: 0 0 24px __RED__; }
+  .streak.r { right: 0; background: linear-gradient(270deg, transparent, __BLUE__); transform-origin: right; transform: scaleX(0);
+              box-shadow: 0 0 24px __BLUE__; }
+  @keyframes streak { to { transform: scaleX(1); } }
+  .flash { position: absolute; inset: 0; background: #fff; opacity: 0; z-index: 4; pointer-events: none;
+           animation: flash .45s ease-out .7s; }
+  @keyframes flash { 0% { opacity: .85; } 100% { opacity: 0; } }
+
+  .corner { position: absolute; top: 50%; width: 100%; transform: translateY(-50%); padding: 0 6vw; z-index: 2; }
+  .door.l .corner { text-align: right; } .door.r .corner { text-align: left; }
+  .corner small { display: block; font-size: clamp(.9rem, 1.6vw, 1.3rem); letter-spacing: .14em; opacity: .85; }
+  .corner b { display: block; font-size: clamp(3rem, 9.5vw, 9rem); line-height: .9; letter-spacing: -.01em; }
+  .door.l .corner b { color: __RED__; text-shadow: 0 0 40px rgba(200,16,46,.55); }
+  .door.r .corner b { color: __BLUE__; text-shadow: 0 0 40px rgba(59,130,246,.55); }
+  .corner span { display: block; font-size: clamp(1rem, 2vw, 1.6rem); margin-top: 8px; color: #ddd; }
+  .door.l .corner { opacity: 0; animation: inL .55s cubic-bezier(.2,.9,.3,1.15) .8s forwards, fadeOut .35s ease 2.25s forwards; }
+  .door.r .corner { opacity: 0; animation: inR .55s cubic-bezier(.2,.9,.3,1.15) .95s forwards, fadeOut .35s ease 2.25s forwards; }
+  @keyframes inL { from { opacity: 0; transform: translate(-40vw, -50%) skewX(-12deg); } to { opacity: 1; transform: translate(0, -50%); } }
+  @keyframes inR { from { opacity: 0; transform: translate(40vw, -50%) skewX(-12deg); } to { opacity: 1; transform: translate(0, -50%); } }
+
+  .mid { position: absolute; inset: 0; display: grid; place-items: center; z-index: 5; pointer-events: none;
+         animation: fadeOut .3s ease 6.3s forwards; }
+  .vs { grid-area: 1 / 1; font-size: clamp(3rem, 8vw, 7rem); color: #fff; opacity: 0;
+        text-shadow: 0 0 0 #000, 4px 4px 0 __REDF__, -4px -4px 0 __BLUE__;
+        animation: slam .45s cubic-bezier(.2,.9,.3,1.3) 1.35s forwards, fadeOut .3s ease 2.25s forwards; }
+  @keyframes slam { from { opacity: 0; transform: scale(3.2) rotate(-8deg); } to { opacity: 1; transform: none; } }
+  #wrap.shake { animation: shake .35s linear 1.6s; }
+  @keyframes shake { 20% { transform: translate(-7px, 4px); } 40% { transform: translate(6px, -5px); }
+                     60% { transform: translate(-4px, 3px); } 80% { transform: translate(3px, -2px); } }
+
+  .count { grid-area: 1 / 1; display: flex; gap: 6vw; opacity: 0; animation: fadeIn .01s linear 2.5s forwards, fadeOut .3s ease 3.85s forwards; }
+  .count div { text-align: center; opacity: 0; transform: translateY(24px); }
+  .count div:nth-child(1) { animation: up .4s ease-out 2.5s forwards; }
+  .count div:nth-child(2) { animation: up .4s ease-out 2.8s forwards; }
+  .count div:nth-child(3) { animation: up .4s ease-out 3.1s forwards; }
+  @keyframes up { to { opacity: 1; transform: none; } }
+  .count b { display: block; font-size: clamp(3rem, 8vw, 7.5rem); line-height: 1; }
+  .count div:nth-child(2) b { color: __RED__; } .count div:nth-child(3) b { color: __BLUE__; }
+  .count span { font-size: clamp(.85rem, 1.5vw, 1.2rem); letter-spacing: .14em; color: #cfcfcf; }
+
+  .q { grid-area: 1 / 1; text-align: center; font-size: clamp(2.6rem, 7.4vw, 7rem); line-height: .9; }
+  .q i { display: inline-block; font-style: inherit; opacity: 0; }
+  .q i:nth-of-type(1) { animation: word .35s cubic-bezier(.2,.9,.3,1.3) 3.95s forwards; }
+  .q i:nth-of-type(2) { animation: word .35s cubic-bezier(.2,.9,.3,1.3) 4.1s forwards; }
+  .q i:nth-of-type(3) { animation: word .35s cubic-bezier(.2,.9,.3,1.3) 4.35s forwards; }
+  .q i:nth-of-type(4) { animation: word .35s cubic-bezier(.2,.9,.3,1.3) 4.5s forwards; }
+  .q i:nth-of-type(5) { animation: word .45s cubic-bezier(.2,.9,.3,1.4) 4.7s forwards; color: __RED__;
+                        text-shadow: 0 0 36px rgba(229,37,45,.6); }
+  .q i:nth-of-type(6) { animation: word .35s cubic-bezier(.2,.9,.3,1.3) 4.92s forwards; }
+  @keyframes word { from { opacity: 0; transform: scale(1.9) skewX(-10deg); } to { opacity: 1; transform: none; } }
+
+  button { position: absolute; right: 18px; bottom: 18px; z-index: 6; color: #fff; border: 1px solid rgba(255,255,255,.6);
            padding: 8px 16px; font: 600 13px system-ui, sans-serif; text-transform: uppercase; letter-spacing: .08em;
-           background: rgba(0,0,0,.5); cursor: pointer; }
-  .credit { position: absolute; left: 18px; bottom: 22px; color: rgba(255,255,255,.75); font: 500 12px system-ui, sans-serif;
-            letter-spacing: .02em; text-shadow: 0 1px 4px #000; }
+           background: rgba(0,0,0,.5); cursor: pointer; animation: fadeOut .3s ease 6.3s forwards; }
   button:focus-visible { outline: 2px solid __RED__; outline-offset: 2px; }
-</style></head><body><div id="wrap">
-  <video id="v" muted playsinline preload="auto">__VIDEO__</video>
-  <div class="photo" id="ph"></div>
-  <div class="cap" id="cap"><b>Davis vs Garcia</b><span>The southpaw's left to the liver</span></div>
-  <div class="ko" id="ko">K.O.</div>
-  <div class="credit" id="credit">Video: @fightingapex on TikTok (AI-generated)</div>
+  #wrap.gone { opacity: 0; transition: opacity .45s ease; }
+</style></head><body><div id="wrap" class="shake">
+  <div class="door l"><div class="corner"><small>Red corner</small><b>Orthodox</b><span>__O__ fighters</span></div></div>
+  <div class="door r"><div class="corner"><small>Blue corner</small><b>Southpaw</b><span>__S__ fighters</span></div></div>
+  <div class="streak l"></div><div class="streak r"></div><div class="flash"></div>
+  <div class="mid">
+    <div class="vs">VS</div>
+    <div class="count"><div><b data-n="__N__">0</b><span>Fighters</span></div><div><b data-n="__C__">0</b><span>Countries</span></div>
+      <div><b data-n="9">0</b><span>Skills each</span></div></div>
+    <div class="q" role="heading" aria-level="2"><i>Which</i> <i>side</i><br><i>do</i> <i>you</i> <i>lead</i> <i>with?</i></div>
+  </div>
   <button id="skip" type="button">Skip intro</button>
 </div><script>
-const T = __T__, v = document.getElementById("v"), ph = document.getElementById("ph"),
-      cap = document.getElementById("cap"), ko = document.getElementById("ko"), wrap = document.getElementById("wrap");
-const clamp = x => Math.max(0, Math.min(1, x)), ease = x => x * x * (3 - 2 * x);
-let done = false, held = false;
-const hold = () => { if (!held) { held = true; setTimeout(finish, Math.max(0, (T.total - v.duration) * 1000)); } };
-function finish() {
+const LEN = __LEN__, wrap = document.getElementById("wrap");
+let done = false;
+// the counts tick up as each one rises in
+document.querySelectorAll(".count b").forEach((b, i) => {
+  const n = +b.dataset.n, t0 = 2500 + i * 300;
+  setTimeout(() => { const s = performance.now();
+    const step = now => { const k = Math.min(1, (now - s) / 650); b.textContent = Math.round(n * (1 - Math.pow(1 - k, 3)));
+                          if (k < 1) requestAnimationFrame(step); };
+    requestAnimationFrame(step); }, t0);
+});
+function remove() { try { window.frameElement.closest('[class*="st-key-introbox"]').style.display = "none"; }
+                    catch (e) { document.body.style.display = "none"; } }
+function finish(skipped) {
   if (done) return; done = true;
-  wrap.style.opacity = 0;
-  // skipped early: the title's entrance was timed for the full clip, so play it now instead
-  try { const h = window.parent.document.querySelector(".land .h1");
-        if (h) { h.style.animation = "none"; void h.offsetWidth; h.style.animation = ""; h.style.animationDelay = ".3s"; } }
-  catch (e) {}
-  setTimeout(() => { try { window.frameElement.closest('[class*="st-key-introbox"]').style.display = "none"; }
-                     catch (e) { document.body.style.display = "none"; } }, 850);
+  if (skipped) {
+    wrap.classList.add("gone");
+    // the landing title was timed for the full intro, so play it now instead
+    try { const h = window.parent.document.querySelector(".land .h1");
+          if (h) { h.style.animation = "none"; void h.offsetWidth; h.style.animation = ""; h.style.animationDelay = ".2s"; } }
+    catch (e) {}
+    setTimeout(remove, 480);
+  } else remove();
 }
-function tick() {
-  if (done) return;
-  const t = v.currentTime;
-  // K.O. slams in as he lands, then the 3D shot from behind the winner dissolves into the photo
-  const k = clamp((t - T.ko + .1) / .35), kout = ease(clamp((t - T.photo - .2) / .5));
-  ko.style.opacity = k * (1 - kout); ko.style.transform = `scale(${2.4 - 1.4 * ease(k)}) skewX(${-10 * (1 - k)}deg)`;
-  const inn = ease(clamp((t - T.photo) / .9));
-  ph.style.opacity = inn; ph.style.transform = `scale(${1.06 - .06 * inn})`;
-  cap.style.opacity = ease(clamp((t - T.photo - .6) / .5));
-  requestAnimationFrame(tick);
-}
-document.getElementById("skip").onclick = finish;
-v.addEventListener("ended", hold);     // the photo stays up past the clip, then the page
-v.addEventListener("error", finish);
-const go = v.play();
-if (go && go.catch) go.catch(finish);          // autoplay refused: go straight to the page
-requestAnimationFrame(tick);
-setTimeout(finish, (T.total + 6) * 1000);       // never trap the page behind the intro
+document.getElementById("skip").onclick = () => finish(true);
+setTimeout(() => finish(false), LEN * 1000);
 </script></body></html>"""
 
 
 def render(df: pd.DataFrame):
-    wait = _intro()
+    wait = _intro(df)
     delay = f"--land-delay: {wait:.1f}s; " if wait else ""
     hero, _ = ui._hero_photo("home")
     southpaw = (df["stance"] == "Southpaw").mean()
@@ -252,7 +298,6 @@ CSS = f"""<style>
              color: #fff; font-size: 1.05rem; margin-top: 4px; }}
   .bout u::after {{ content: ""; display: inline-block; margin-left: 8px; border: 6px solid transparent;
                     border-left: 9px solid {ui.ACCENT}; border-right: 0; vertical-align: 1px; }}
-  /* intro: 0-4.8s the 3D fight, 4.8s K.O., 6.6s flash to the photo, 9.2s fade into the page */
   @keyframes punch {{ from {{ opacity: 0; transform: translateX(-30px) skewX(-8deg); }} to {{ opacity: 1; transform: none; }} }}
   @media (max-width: 900px) {{
     .bouts {{ grid-template-columns: 1fr; }} .bout:first-child, .bout:not(:first-child) {{ grid-row: auto; grid-column: 1; }}
