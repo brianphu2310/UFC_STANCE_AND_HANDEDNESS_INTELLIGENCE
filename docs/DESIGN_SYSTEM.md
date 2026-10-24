@@ -1,7 +1,8 @@
 # Stance Intelligence design system
 
-The app is built to look like a future fight night: a violet-black arena, a violet corner and a
-cyan corner, and violet neon light on the 3D stage. A gold rule marks reference lines and the
+The app is built to look like a fight-night broadcast: an arena-black canvas, a red corner and a
+blue corner, real fight photos in the page banners and in a slow slideshow behind every page, and
+red neon light on the 3D stage. A gold rule marks reference lines and the
 dominant hand and foot. The signature shape is the octagon: it appears in the logo mark, the hero
 panels and the 3D mat. A faint chain-link diamond from the cage fence sits in the page background.
 
@@ -16,24 +17,24 @@ components, and those mirror these tokens.
 
 | Token | Hex | Use | Contrast on BG |
 |---|---|---|---|
-| `BG` | `#0B0A12` | Page canvas | — |
-| `SURFACE` | `#14121E` | Panels, charts | — |
-| `SURFACE_2` | `#1D1A2A` | Raised areas, inputs, hover | — |
-| `BORDER` | `#2B2740` | Decorative hairlines only | decorative |
-| `FIELD_BORDER` | `#6F6890` | Input and select outlines | 3.3:1 on SURFACE_2 |
-| `INK` | `#F1EEF8` | Headings, values | 17.6:1 |
-| `INK_2` | `#C6C0D8` | Body text | 11.4:1 |
-| `INK_MUTED` | `#958EAD` | Labels, captions | 6.3:1 |
-| `ACCENT` | `#A77BFF` | Violet corner: marks, lines and text | 6.4:1 |
-| `ACCENT_FILL` | `#7C4DFF` | Filled buttons, selected pills, sliders | white text 4.8:1 |
-| `ACCENT_2` | `#48D1E0` | Cyan corner: marks, lines and text | 10.6:1 |
-| `ON_ACCENT` | `#FFFFFF` | Text on `ACCENT_FILL` | 4.8:1 |
-| `RULE` | `#E9B44C` | Reference lines, dominant side, focus ring | 10.4:1 |
-| `MUTED_FILL` | `#2A2640` | Bars outside a selection | — |
+| `BG` | `#0A0A0A` | Page canvas | — |
+| `SURFACE` | `#151515` | Panels, charts | — |
+| `SURFACE_2` | `#1F1F20` | Raised areas, inputs, hover | — |
+| `BORDER` | `#2E2E30` | Decorative hairlines only | decorative |
+| `FIELD_BORDER` | `#6E6E72` | Input and select outlines | 3.2:1 on SURFACE_2 |
+| `INK` | `#F5F5F5` | Headings, values | 18.2:1 |
+| `INK_2` | `#C8C8C8` | Body text | 11.8:1 |
+| `INK_MUTED` | `#8E8E8E` | Labels, captions | 6.0:1 |
+| `ACCENT` | `#EB3F45` | Red corner: marks, lines and text | 5.0:1 (4.6:1 on SURFACE) |
+| `ACCENT_FILL` | `#C8102E` | Filled buttons, selected pills, sliders | white text 5.9:1 |
+| `ACCENT_2` | `#3B82F6` | Blue corner: marks and lines (text uses `ACCENT_2_TEXT` `#5B9BFF`, 7.1:1) | 5.4:1 |
+| `ON_ACCENT` | `#FFFFFF` | Text on `ACCENT_FILL` | 5.9:1 |
+| `RULE` | `#E9B44C` | Reference lines, dominant side, focus ring | 10.5:1 |
+| `MUTED_FILL` | `#2A2A2C` | Bars outside a selection | — |
 
 Categorical palette (dark surface, assigned in a fixed order):
-`#A77BFF`, `#48D1E0`, `#E9B44C`, `#F062A8`, `#6BDB9A`, `#7D7896`.
-Sequential scale (globe, bubbles): violet-black `#1E1733` → violet `#5B34B8` → lavender `#C9A9FF`.
+`#EB3F45`, `#3B82F6`, `#E9B44C`, `#2DBE8C`, `#B8B8B8`, `#6E6E72`.
+Sequential scale (globe, bubbles): red-black `#2A0A0E` → red `#B3121A` → pale red `#FFB3B3`.
 
 Helpers:
 - `ui.text_color(c)`: use whenever a series colour is drawn as text (returns a text-safe variant where one exists).
@@ -59,11 +60,14 @@ numbers come with their unit ("4 cm short", not "−4").
 
 - Radius is 3–4px on controls. Panels use the octagon cut (`clip-path`, 22–30px corner) instead of rounding.
 - Spacing steps: 4, 8, 12, 16, 22, 30px. Sections open with 30px above them and a hairline.
-- Motion is only used for the 3D views. It stops when the user presses Pause, and it starts paused when `prefers-reduced-motion` is set. CSS transitions are switched off under reduced motion.
+- Motion: pages rise in on load, sections reveal as they scroll into view, tab panels slide in, a red
+  sweep bar runs under the header while a request is running, and the background photos cross-fade
+  slowly. The 3D views stop when the user presses Pause. Under `prefers-reduced-motion` the 3D views
+  start paused and every CSS animation and transition is switched off.
 
 ## Iconography
 
-`static/mark.svg` / `mark.png` is an octagon split down the middle into violet and cyan, the two corner colours. It
+`static/mark.svg` / `mark.png` is an octagon split down the middle into red and blue, the two corner colours. It
 is the favicon and sits beside the wordmark in the top bar. It is an original mark and is
 deliberately not the UFC logo: the app uses public fight data, but it is not affiliated with UFC.
 
@@ -73,11 +77,12 @@ The app uses no other icons. Words label every control.
 
 | Component | Where | Notes |
 |---|---|---|
-| `ui.page_header(title, dek)` | Top of every page | `h1` plus one-sentence dek |
+| `ui.page_header(title, dek)` | Top of every page | Broadcast banner: page number and name, `h1`, one-sentence dek, and the page's fight photo with its credit (`static/hero/`, inlined as data URIs) |
+| `ui.backdrop()` | Behind every page | Seven fight photos cross-fading in a random order under a dark veil |
 | `ui.section(title, sub, estimated)` | Section breaks | Heading role level 2; `estimated` adds the dashed gold badge |
 | Octagon hero (`st.container(key="oct_…")`) | Main panel of each page | The only place the octagon cut is used on a page |
 | `.card` | Tale of the tape, plans | Title, meta line, `.kv` stat grid, `.pill` tags |
-| `ui.callout(html)` | Verdicts and explanations | Tan left rule |
+| `ui.callout(html)` | Verdicts and explanations | Red left rule |
 | `.simlist / .simrow` | "Fights most like" | Name, meta, bar, score |
 | `ui.chart(fig, key, alt)` | Every Plotly chart | Writes a screen-reader description (auto-built from title and series, or `alt`) |
 | `globe3d` | Overview | Rotatable globe with country name cards |
@@ -87,16 +92,16 @@ The app uses no other icons. Words label every control.
 
 | Control | Type | States | Keyboard |
 |---|---|---|---|
-| Face-off / Height / Reach | Segmented, `aria-pressed` | Selected = violet fill, white text | Tab, Enter or Space |
+| Face-off / Height / Reach | Segmented, `aria-pressed` | Selected = red fill, white text | Tab, Enter or Space |
 | Spar / Jab / Cross / Kick | Segmented, Face-off only | Same | Same |
 | Pause / Play | Toggle | Label and `aria-pressed` follow the state | Same |
 | Rotate | Toggle | `aria-pressed` | Same |
 | Reset | Button | — | Same |
 | 3D canvas | `role="img"`, focusable | Accessible name follows the on-screen headline | Arrow keys turn, + and − zoom |
 
-Stage: a full-size Octagon (30 ft across) with a lilac-grey canvas, purple boundary and centre
-markings, a metallic chain-link fence with violet neon strips, violet and cyan corner posts, violet
-rim lights and fog. Fighters have graphite skin; the Neon button switches them to a glowing violet.
+Stage: a full-size Octagon (30 ft across) with a white canvas, red boundary and centre markings, a
+metallic chain-link fence with red neon strips, red and blue corner posts, red rim lights and fog.
+Fighters have graphite skin; the Neon button switches them to a glowing red.
 
 Body: a skinned human mesh (MakeHuman CC0 base mesh shaped into an athletic male, about 13,000
 vertices, 36 bones), built by `scripts/build_body_model.py`. The joint solver computes hips, knees,

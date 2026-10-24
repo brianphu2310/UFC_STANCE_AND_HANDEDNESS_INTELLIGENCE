@@ -21,12 +21,12 @@ BORDER = "#2E2E30"      # hairlines
 INK = "#F5F5F5"
 INK_2 = "#C8C8C8"
 INK_MUTED = "#8E8E8E"   # 5.9:1 on BG, 5.0:1 on SURFACE_2
-ACCENT = "#E5252D"      # red corner: lines, marks and text (4.9:1 on BG)
+ACCENT = "#EB3F45"      # red corner: lines, marks and text (5.0:1 on BG, 4.6:1 on SURFACE)
 ACCENT_FILL = "#C8102E" # red for filled buttons, chips, sliders (white text 5.9:1)
 ACCENT_2 = "#3B82F6"    # blue corner (5.4:1 on BG)
 ACCENT_2_TEXT = "#5B9BFF"
 ON_ACCENT = "#FFFFFF"   # text on ACCENT_FILL
-FIELD_BORDER = "#5C5C60"  # input outlines: 3.1:1 on SURFACE_2 (WCAG 1.4.11)
+FIELD_BORDER = "#6E6E72"  # input outlines: 3.2:1 on SURFACE_2 (WCAG 1.4.11)
 RULE = "#E9B44C"        # gold: reference lines, dominant side, focus ring
 ACCENT_SOFT = "rgba(229, 37, 45, 0.14)"
 MUTED_FILL = "#2A2A2C"   # de-emphasised bars (outside a selection)
@@ -36,9 +36,9 @@ DISPLAY = "'Big Shoulders Display', 'Oswald', 'Arial Narrow', sans-serif"
 BODY = "'Instrument Sans', 'Segoe UI', system-ui, sans-serif"
 
 # Categorical palette (dark surface), assigned in a fixed order per dimension.
-PALETTE = ["#E5252D", "#3B82F6", "#E9B44C", "#2DBE8C", "#B8B8B8", "#6E6E72"]
+PALETTE = ["#EB3F45", "#3B82F6", "#E9B44C", "#2DBE8C", "#B8B8B8", "#6E6E72"]
 SEQ_BLUE = [[0, "#2A0A0E"], [0.5, "#B3121A"], [1, "#FFB3B3"]]   # black -> red -> pale red
-GRAD_BAR = ["#3B82F6", "#E5252D"]
+GRAD_BAR = ["#3B82F6", "#EB3F45"]
 STYLE_COLORS = dict(zip(core.STYLES, PALETTE))
 
 PLOTLY_CONFIG = {"displaylogo": False, "displayModeBar": False, "topojsonURL": "app/static/"}
