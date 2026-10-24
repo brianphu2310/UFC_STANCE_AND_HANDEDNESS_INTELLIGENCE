@@ -361,6 +361,25 @@ def inject_css():
                filter: grayscale(.35) contrast(1.05); animation: bgCycle var(--cycle) linear infinite; animation-delay: var(--d); }}
   @keyframes bgCycle {{ 0% {{ opacity: 0; transform: scale(1.08); }} 4% {{ opacity: 1; }} 18% {{ opacity: 1; }}
                         24% {{ opacity: 0; transform: scale(1); }} 100% {{ opacity: 0; transform: scale(1); }} }}
+  /* the nav takes the whole header row, so all pages fit before "N more" kicks in */
+  header[data-testid="stHeader"] [data-testid="stToolbar"] > div {{ flex: 1 1 auto !important; min-width: 0; }}
+  header[data-testid="stHeader"] nav[data-testid="stTopNav"] {{ flex: 1 1 auto !important; min-width: 0; max-width: none !important; }}
+  /* the deploy / menu group keeps only the room its buttons need */
+  header[data-testid="stHeader"] [data-testid="stToolbar"] > div > div:has(> [data-testid="stToolbarActions"]) {{ min-width: 0 !important; width: auto !important; }}
+  /* laptops with the sidebar open: tighter items so the whole nav still fits */
+  @media (max-width: 1400px) {{
+    .stApp:has(section[data-testid="stSidebar"]) header[data-testid="stHeader"] [data-testid="stToolbar"] {{ padding-left: 236px; }}
+    .stApp:has(section[data-testid="stSidebar"]) header[data-testid="stHeader"] a[data-testid="stTopNavLink"] {{ margin: 0 1px !important; padding-left: 4px !important; padding-right: 4px !important; }}
+    .stApp:has(section[data-testid="stSidebar"]) header[data-testid="stHeader"] a[data-testid="stTopNavLink"] span {{ font-size: .86rem !important; letter-spacing: 0 !important; }}
+  }}
+  /* phones: the banner grows with its text, photo behind a top-down fade */
+  @media (max-width: 640px) {{
+    .hero {{ height: auto; min-height: 220px; background-position: 70% center; background-size: cover; }}
+    .hero::before {{ background: linear-gradient(0deg, rgba(0,0,0,.94) 0%, rgba(0,0,0,.75) 55%, rgba(0,0,0,.35) 100%); }}
+    .hero .in {{ position: relative; left: auto; right: auto; bottom: auto; padding: 70px 18px 20px; }}
+    .hero h1 {{ font-size: 2.3rem !important; }}
+    .hero p {{ font-size: .92rem !important; }}
+  }}
   @media (prefers-reduced-motion: reduce) {{ * {{ animation: none !important; transition: none !important; }} }}
 </style>""", unsafe_allow_html=True)
 
