@@ -316,6 +316,42 @@ def inject_css():
     header[data-testid="stHeader"]::before {{ display: none; }}
     header[data-testid="stHeader"] [data-testid="stToolbar"] {{ padding-left: 8px; }}
   }}
+  /* ================= motion: page entrance, scroll reveal, tab switch, running state ================= */
+  [data-testid="stMain"] {{ scroll-behavior: smooth; }}
+  /* page entrance: the blocks of a page rise in one after another the first time it renders */
+  .block-container > div > [data-testid="stVerticalBlock"] > div:not(:has([class*="st-key-introbox"])) {{ animation: riseIn .55s cubic-bezier(.2,.7,.2,1) both; }}
+  .block-container > div > [data-testid="stVerticalBlock"] > div:nth-child(2) {{ animation-delay: .06s; }}
+  .block-container > div > [data-testid="stVerticalBlock"] > div:nth-child(3) {{ animation-delay: .12s; }}
+  .block-container > div > [data-testid="stVerticalBlock"] > div:nth-child(4) {{ animation-delay: .18s; }}
+  .block-container > div > [data-testid="stVerticalBlock"] > div:nth-child(n+5) {{ animation-delay: .24s; }}
+  /* scrolling: cards, charts and tables slide up and sharpen as they come into view, in both directions */
+  @supports (animation-timeline: view()) {{
+    .card, .mcard, .bout, .tape, [data-testid="stPlotlyChart"], [data-testid="stDataFrame"], .simrow, .sec {{
+      animation: scrollIn linear both; animation-timeline: view(); animation-range: entry 0% entry 70%; }}
+  }}
+  /* tabs: the new panel fades and slides in, the red bar glides under the tab */
+  [role="tabpanel"] {{ animation: tabIn .38s cubic-bezier(.2,.7,.2,1) both; }}
+  [data-testid="stTabs"] .react-aria-SelectionIndicator {{ transition: left .3s cubic-bezier(.2,.7,.2,1), width .3s ease !important; }}
+  [data-testid="stTab"] p {{ transition: color .2s ease; }}
+  /* hover: panels lift, buttons press */
+  .card, .bout, [data-testid="stPlotlyChart"] {{ transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease; }}
+  .card:hover, [data-testid="stPlotlyChart"]:hover {{ border-color: #4a4a4e !important; box-shadow: 0 14px 30px -18px rgba(0,0,0,.9); }}
+  .stButton button, .stDownloadButton button, [data-testid="stButtonGroup"] button, [data-testid="stRadioOption"] {{
+    transition: transform .12s ease, background-color .2s ease, filter .2s ease; }}
+  .stButton button:active, .stDownloadButton button:active, [data-testid="stButtonGroup"] button:active {{ transform: scale(.96); }}
+  /* running: a red bar sweeps under the nav and the stale content dims and blurs a touch */
+  .stApp[data-test-script-state="running"] header[data-testid="stHeader"]::after {{
+    content: "" !important; position: absolute; left: 0; bottom: -1px; height: 3px; width: 32%;
+    background: linear-gradient(90deg, transparent, {ACCENT}, #FF7A7F, {ACCENT}, transparent);
+    animation: sweep 1s cubic-bezier(.4,0,.2,1) infinite; z-index: 5; }}
+  .stApp[data-test-script-state="running"] [data-stale="true"] {{ opacity: .45 !important; filter: blur(1.5px) saturate(.6);
+    transition: opacity .25s ease .15s, filter .25s ease .15s; }}
+  [data-stale="false"] {{ transition: opacity .3s ease, filter .3s ease; }}
+  @keyframes riseIn {{ from {{ opacity: 0; transform: translateY(18px); }} to {{ opacity: 1; transform: none; }} }}
+  @keyframes scrollIn {{ from {{ opacity: .15; transform: translateY(36px) scale(.985); filter: blur(3px); }}
+                         to {{ opacity: 1; transform: none; filter: none; }} }}
+  @keyframes tabIn {{ from {{ opacity: 0; transform: translateY(10px); }} to {{ opacity: 1; transform: none; }} }}
+  @keyframes sweep {{ from {{ left: -32%; }} to {{ left: 100%; }} }}
   @media (prefers-reduced-motion: reduce) {{ * {{ animation: none !important; transition: none !important; }} }}
 </style>""", unsafe_allow_html=True)
 
