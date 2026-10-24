@@ -10,7 +10,7 @@ import streamlit as st
 
 import ufc_core as core
 import ui
-from matchup import matchup_card
+from body3d import body3d
 
 PHASE_COLORS = dict(zip([p for p, _ in core.PHASES], ui.PALETTE))
 
@@ -260,7 +260,7 @@ def render(df: pd.DataFrame):
                              reach_cm=float(f["reach_cm"] if pd.notna(f["reach_cm"]) else f["height_cm"]),
                              stance="Orthodox" if f["stance"] == "Switch" else f["stance"],
                              hand=f["hand"], foot=f["foot"], ghost=True))
-        matchup_card(figs)
+        body3d(figs, height=560, key="body")
 
     st.markdown(GEAR_CSS, unsafe_allow_html=True)
     t_models, t_road, t_gear, t_gym = st.tabs(["Fighters to study", "Training roadmap", "Gear to buy",

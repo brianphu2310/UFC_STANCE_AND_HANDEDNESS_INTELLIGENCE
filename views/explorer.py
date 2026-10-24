@@ -7,7 +7,7 @@ import streamlit as st
 
 import ufc_core as core
 import ui
-from matchup import matchup_card
+from body3d import body3d
 
 A_COLOR, B_COLOR = ui.PALETTE[0], ui.PALETTE[1]      # red corner vs blue corner
 
@@ -124,14 +124,15 @@ def render(df: pd.DataFrame):
     with right:
         st.markdown(_tape(fb, B_COLOR), unsafe_allow_html=True)
     with mid:
-        matchup_card([dict(label=a, height_cm=float(fa["height_cm"]), weight_kg=float(fa["weight_kg"]),
+        body3d([dict(label=a, height_cm=float(fa["height_cm"]), weight_kg=float(fa["weight_kg"]),
                      reach_cm=float(fa["reach_cm"] if pd.notna(fa["reach_cm"]) else fa["height_cm"]),
                      stance="Orthodox" if fa["stance"] == "Switch" else fa["stance"],
                      hand=fa["hand"], foot=fa["foot"]),
                 dict(label=b, height_cm=float(fb["height_cm"]), weight_kg=float(fb["weight_kg"]),
                      reach_cm=float(fb["reach_cm"] if pd.notna(fb["reach_cm"]) else fb["height_cm"]),
                      stance="Orthodox" if fb["stance"] == "Switch" else fb["stance"],
-                     hand=fb["hand"], foot=fb["foot"], ghost=True)])
+                     hand=fb["hand"], foot=fb["foot"], ghost=True)],
+               height=480, autorotate=False, key="ex_body")
 
     reach = (f"{a} has {abs(h['reach_gap']):.0f} cm {'more' if h['reach_gap'] > 0 else 'less'} reach"
              if h["reach_gap"] not in (None, 0) else "Reach is even")
