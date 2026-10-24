@@ -1,0 +1,51 @@
+// Measures for the Stance Intelligence report. Create them on the fighters table
+// (Modeling > New measure), one block at a time.
+
+Fighters = COUNTROWS ( fighters )
+
+Southpaw share =
+DIVIDE ( CALCULATE ( [Fighters], fighters[stance] = "Southpaw" ), [Fighters] )
+
+Switch share =
+DIVIDE ( CALCULATE ( [Fighters], fighters[stance] = "Switch" ), [Fighters] )
+
+Left-handed share =
+DIVIDE ( CALCULATE ( [Fighters], fighters[hand] = "Left" ), [Fighters] )
+
+// "Leads with the other side": southpaw or switch, as on the app's Overview (29% of all fighters)
+Other side share =
+DIVIDE ( CALCULATE ( [Fighters], fighters[stance] IN { "Southpaw", "Switch" } ), [Fighters] )
+
+Mean win rate = AVERAGE ( fighters[win_rate] )
+
+Median win rate = MEDIAN ( fighters[win_rate] )
+
+Champions = CALCULATE ( [Fighters], fighters[champion] = TRUE () )
+
+Median reach = MEDIAN ( fighters[reach_cm] )
+
+Countries = DISTINCTCOUNT ( fighters[country] )
+
+// Tale of the tape: the same measure for orthodox and for southpaw, side by side
+Orthodox win rate = CALCULATE ( [Mean win rate], fighters[stance] = "Orthodox" )
+Southpaw win rate = CALCULATE ( [Mean win rate], fighters[stance] = "Southpaw" )
+
+// Explorer: two disconnected slicer tables, Fighter A and Fighter B
+// (Modeling > New table:  Fighter A = DISTINCT ( fighters[fighter] ), same for Fighter B)
+A percentile =
+CALCULATE ( AVERAGE ( skills[percentile] ), skills[fighter] = SELECTEDVALUE ( 'Fighter A'[fighter] ) )
+
+B percentile =
+CALCULATE ( AVERAGE ( skills[percentile] ), skills[fighter] = SELECTEDVALUE ( 'Fighter B'[fighter] ) )
+
+// for the butterfly chart: plot A as negative so it grows to the left
+A percentile (left) = - [A percentile]
+
+Reach gap (A - B) =
+CALCULATE ( MAX ( fighters[reach_cm] ), fighters[fighter] = SELECTEDVALUE ( 'Fighter A'[fighter] ) )
+    - CALCULATE ( MAX ( fighters[reach_cm] ), fighters[fighter] = SELECTEDVALUE ( 'Fighter B'[fighter] ) )
+
+Stance geometry =
+VAR a = CALCULATE ( MAX ( fighters[stance] ), fighters[fighter] = SELECTEDVALUE ( 'Fighter A'[fighter] ) )
+VAR b = CALCULATE ( MAX ( fighters[stance] ), fighters[fighter] = SELECTEDVALUE ( 'Fighter B'[fighter] ) )
+RETURN IF ( ( a = "Southpaw" ) <> ( b = "Southpaw" ), "Open stance", "Closed stance" )
