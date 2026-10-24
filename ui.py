@@ -85,14 +85,16 @@ def inject_css():
 
   .stApp {{ font-family: {BODY}; }}
   /* smoky arena: haze from the lights, a few soft bokeh discs and film grain */
-  .stApp {{ background:
+  html, body {{ background: {BG}; }}
+  .stApp {{ background: transparent !important; }}
+  .bgshow .smoke {{ position: absolute; inset: 0; background:
       radial-gradient(circle at 8% 22%, rgba(255,255,255,.05) 0 70px, transparent 120px),
       radial-gradient(circle at 92% 12%, rgba(255,255,255,.045) 0 90px, transparent 150px),
       radial-gradient(circle at 78% 64%, rgba(255,255,255,.03) 0 60px, transparent 110px),
       radial-gradient(circle at 20% 86%, rgba(255,255,255,.03) 0 80px, transparent 140px),
       radial-gradient(1400px 700px at 50% -20%, rgba(255,255,255,.07), transparent 60%),
       url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
-      {BG}; background-attachment: fixed; }}
+      rgba(10,10,10,.82); }}
   .block-container {{ padding-top: 4.5rem; max-width: 1440px; }}
   .stApp p, .stApp li, .stApp label, .stApp input, .stApp textarea, .stApp button {{ font-family: {BODY}; }}
   h1, h2, h3, h4 {{ font-family: {DISPLAY}; color: {INK}; letter-spacing: .005em; }}
@@ -319,7 +321,7 @@ def inject_css():
   /* ================= motion: page entrance, scroll reveal, tab switch, running state ================= */
   [data-testid="stMain"] {{ scroll-behavior: smooth; }}
   /* page entrance: the blocks of a page rise in one after another the first time it renders */
-  .block-container > div > [data-testid="stVerticalBlock"] > div:not(:has([class*="st-key-introbox"])) {{ animation: riseIn .55s cubic-bezier(.2,.7,.2,1) both; }}
+  .block-container > div > [data-testid="stVerticalBlock"] > div:not(:has([class*="st-key-introbox"])):not(:has(.bgshow)) {{ animation: riseIn .55s cubic-bezier(.2,.7,.2,1) both; }}
   .block-container > div > [data-testid="stVerticalBlock"] > div:nth-child(2) {{ animation-delay: .06s; }}
   .block-container > div > [data-testid="stVerticalBlock"] > div:nth-child(3) {{ animation-delay: .12s; }}
   .block-container > div > [data-testid="stVerticalBlock"] > div:nth-child(4) {{ animation-delay: .18s; }}
@@ -344,7 +346,7 @@ def inject_css():
     content: "" !important; position: absolute; left: 0; bottom: -1px; height: 3px; width: 32%;
     background: linear-gradient(90deg, transparent, {ACCENT}, #FF7A7F, {ACCENT}, transparent);
     animation: sweep 1s cubic-bezier(.4,0,.2,1) infinite; z-index: 5; }}
-  .stApp[data-test-script-state="running"] [data-stale="true"] {{ opacity: .45 !important; filter: blur(1.5px) saturate(.6);
+  .stApp[data-test-script-state="running"] [data-stale="true"]:not(:has(.bgshow)) {{ opacity: .45 !important; filter: blur(1.5px) saturate(.6);
     transition: opacity .25s ease .15s, filter .25s ease .15s; }}
   [data-stale="false"] {{ transition: opacity .3s ease, filter .3s ease; }}
   @keyframes riseIn {{ from {{ opacity: 0; transform: translateY(18px); }} to {{ opacity: 1; transform: none; }} }}
@@ -352,6 +354,13 @@ def inject_css():
                          to {{ opacity: 1; transform: none; filter: none; }} }}
   @keyframes tabIn {{ from {{ opacity: 0; transform: translateY(10px); }} to {{ opacity: 1; transform: none; }} }}
   @keyframes sweep {{ from {{ left: -32%; }} to {{ left: 100%; }} }}
+  /* backdrop: fight photos cross-fading behind every page, in a random order, under a dark smoky veil */
+  .st-key-backdrop {{ position: absolute; height: 0; overflow: visible; margin: 0 !important; }}
+  .bgshow {{ position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; background: {BG}; }}
+  .bgshow i {{ position: absolute; inset: -4%; background: center 30% / cover no-repeat; opacity: 0;
+               filter: grayscale(.35) contrast(1.05); animation: bgCycle var(--cycle) linear infinite; animation-delay: var(--d); }}
+  @keyframes bgCycle {{ 0% {{ opacity: 0; transform: scale(1.08); }} 4% {{ opacity: 1; }} 18% {{ opacity: 1; }}
+                        24% {{ opacity: 0; transform: scale(1); }} 100% {{ opacity: 0; transform: scale(1); }} }}
   @media (prefers-reduced-motion: reduce) {{ * {{ animation: none !important; transition: none !important; }} }}
 </style>""", unsafe_allow_html=True)
 
@@ -374,6 +383,25 @@ def _hero_photo(slug: str) -> tuple[str, str]:
                 mime = "image/jpeg" if img.suffix.lower() in (".jpg", ".jpeg") else f"image/{img.suffix[1:].lower()}"
                 return (f"data:{mime};base64,{base64.b64encode(img.read_bytes()).decode()}", credits.get(key, ""))
     return "", ""
+
+
+BACKDROP = ["home", "explorer", "stance-lab", "build-a-fighter", "spar-vs-brian", "data", "intro-photo"]
+
+
+def backdrop():
+    """Fight photos cross-fading behind every page, in a fresh random order each session."""
+    import random
+    order = st.session_state.setdefault("bg_order", random.sample(BACKDROP, len(BACKDROP)))
+    photos = [u for u in (_hero_photo(k)[0] for k in order) if u]
+    if not photos:
+        return
+    step = 6.0                                           # seconds each photo leads
+    cycle = step * len(photos)
+    layers = "".join(f'<i style="background-image:url({u});--d:{i * step:.1f}s"></i>' for i, u in enumerate(photos))
+    # every photo holds about a fifth of the cycle; with seven photos that overlaps a little, a slow dissolve
+    with st.container(key="backdrop"):
+        st.markdown(f'<div class="bgshow" aria-hidden="true" style="--cycle:{cycle:.0f}s">{layers}'
+                    '<div class="smoke"></div></div>', unsafe_allow_html=True)
 
 
 def page_header(title: str, dek: str | None = None):

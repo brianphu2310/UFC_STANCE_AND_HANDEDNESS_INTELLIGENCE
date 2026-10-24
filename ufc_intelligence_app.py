@@ -35,6 +35,7 @@ def _page(render, title, footer=True):
     def run():
         i = [p.title for p in pages].index(title) + 1
         ui.KICKER.update(value=f'<i>{i:02d}</i>{title}', slug=title.lower().replace(' ', '-'))
+        ui.backdrop()
         render(df)
         if footer:
             ui.footer(len(df))
