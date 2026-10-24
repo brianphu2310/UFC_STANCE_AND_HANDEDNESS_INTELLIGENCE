@@ -1,9 +1,6 @@
 """Home: the landing page. A fight-poster hero, the tale of the tape for orthodox vs southpaw, then
 the app's pages as tonight's fight card."""
-import base64
-import json
 from html import escape
-from pathlib import Path
 
 import pandas as pd
 import streamlit as st
@@ -11,7 +8,6 @@ import streamlit.components.v1 as components
 
 import ui
 
-INTRO = Path(__file__).resolve().parents[1] / "static" / "hero"   # intro.webm and intro.mp4
 
 CARD = [  # (page url, slug for the photo, billing, title, what you get)
     ("build-your-fighter", "default", "Main event", "Build your fighter",
@@ -45,104 +41,96 @@ def _tape(df: pd.DataFrame) -> str:
       The lab tests whether that gap is real.</p></div>"""
 
 
-@st.cache_data
-def _intro_video() -> str:
-    """<source> tags for the intro clip: WebM for Chrome and Firefox, MP4 for Safari."""
-    out = ""
-    for ext in ("webm", "mp4"):
-        f = INTRO / f"intro.{ext}"
-        if f.exists():
-            out += f'<source src="data:video/{ext};base64,{base64.b64encode(f.read_bytes()).decode()}" type="video/{ext}">'
-    return out
+# intro slides: (photo slug, line over it). Real fight photos only, cut like a fight-night opener.
+SLIDES = [("explorer", "Topuria"), ("stance-lab", "McGregor"), ("build-a-fighter", "Oliveira"),
+          ("spar-vs-brian", "Every exchange"), ("intro-photo", "Davis")]
 
 
 def _intro() -> float:
-    """Once per session, before the page: a short knockout clip (static/hero/intro.*: an AI-generated
-    mannequin fight by @fightingapex on TikTok, shown with its watermark and credited on screen), K.O.,
-    then it dissolves into the real thing, Davis's left to Garcia's body, and the page fades in.
-
-    It runs in a component iframe stretched over the whole window, so its script can follow the
-    video's own clock (static/hero/intro.json holds the beats) and remove itself when the clip ends.
-    Returns the seconds the landing page should wait before its own entrance."""
+    """Once per session, before the page: a fast cut of real fight photos (Ken Burns push, a white flash
+    on every cut), the roster's numbers slam in, then the question, and the page fades in. Runs in a
+    component iframe stretched over the window; Skip or reduced motion removes it. Returns the seconds
+    the landing page waits before its own entrance."""
     if st.session_state.get("intro_done"):
         return 0.0
     st.session_state["intro_done"] = True
-    video, photo = _intro_video(), ui._hero_photo("intro-photo")[0]
-    tf = INTRO / "intro.json"
-    if not video or not tf.exists():
+    photos = [(ui._hero_photo(slug)[0], line) for slug, line in SLIDES]
+    if not all(uri for uri, _ in photos):
         return 0.0
-    T = json.loads(tf.read_text())
     st.markdown("""<style>
-  .st-key-introbox {{ position: relative; z-index: 1000002 !important; height: 0; overflow: visible; }}
-  .st-key-introbox iframe {{ position: fixed !important; inset: 0; width: 100vw !important; height: 100vh !important;
-                             height: 100dvh !important; border: 0; z-index: 1000002; background: #000; }}
-  @media (prefers-reduced-motion: reduce) {{ .st-key-introbox {{ display: none; }} }}
-</style>""".format(), unsafe_allow_html=True)
-    page = INTRO_HTML.replace("__FONTS__", ui._font_faces()).replace("__VIDEO__", video).replace("__PHOTO__", photo) \
-        .replace("__T__", json.dumps(T)).replace("__RED__", ui.ACCENT).replace("__DISPLAY__", ui.DISPLAY)
+  .st-key-introbox { position: relative; z-index: 1000002 !important; height: 0; overflow: visible; }
+  .st-key-introbox iframe { position: fixed !important; inset: 0; width: 100vw !important; height: 100vh !important;
+                            height: 100dvh !important; border: 0; z-index: 1000002; background: #000; }
+  @media (prefers-reduced-motion: reduce) { .st-key-introbox { display: none; } }
+</style>""", unsafe_allow_html=True)
+    slides = "".join(f'<div class="sl" style="background-image:url({u})"><b>{escape(t)}</b></div>' for u, t in photos)
+    page = (INTRO_HTML.replace("__FONTS__", ui._font_faces()).replace("__SLIDES__", slides)
+            .replace("__RED__", ui.ACCENT).replace("__DISPLAY__", ui.DISPLAY))
     with st.container(key="introbox"):
         components.html(page, height=0)
-    return T["total"] + .3
+    return INTRO_LEN + .3
 
 
+INTRO_LEN = 7.6
 INTRO_HTML = """<!doctype html><html><head><meta charset="utf-8"><style>
 __FONTS__
   html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
-  #wrap { position: fixed; inset: 0; transition: opacity .8s ease; }
-  video, .photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-  .photo { background: center / cover no-repeat url(__PHOTO__); opacity: 0; transform-origin: 60% 45%; }
-  .cap { position: absolute; left: 0; right: 0; bottom: 9vh; text-align: center; opacity: 0; }
-  .cap b { display: block; font-family: __DISPLAY__; font-style: italic; font-weight: 800; text-transform: uppercase;
-           color: #fff; font-size: clamp(2rem, 5vw, 3.8rem); line-height: 1; text-shadow: 0 3px 18px #000; }
-  .cap span { color: __RED__; font-family: __DISPLAY__; font-style: italic; font-weight: 800; text-transform: uppercase;
-              font-size: 1.25rem; letter-spacing: .06em; text-shadow: 0 2px 10px #000; }
-  .ko { position: absolute; inset: 0; display: grid; place-items: center; font-family: __DISPLAY__; font-style: italic;
-        font-weight: 800; color: __RED__; font-size: clamp(6rem, 22vw, 20rem); letter-spacing: -.02em; opacity: 0;
-        text-shadow: 0 8px 0 #000, 0 0 60px rgba(229,37,45,.6); }
+  #wrap { position: fixed; inset: 0; transition: opacity .7s ease; }
+  .sl { position: absolute; inset: 0; background: center 30% / cover no-repeat; opacity: 0; }
+  .sl::after { content: ""; position: absolute; inset: 0;
+               background: linear-gradient(0deg, rgba(0,0,0,.75), rgba(0,0,0,0) 45%), rgba(0,0,0,.15); }
+  .sl b { position: absolute; z-index: 1; left: 6vw; bottom: 9vh; font-family: __DISPLAY__; font-style: italic; font-weight: 800;
+          text-transform: uppercase; color: #fff; font-size: clamp(3rem, 9vw, 8rem); line-height: .9; letter-spacing: -.01em;
+          text-shadow: 0 6px 30px rgba(0,0,0,.6); }
+  .fl { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
+  .end { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; background: #0A0A0A; opacity: 0; }
+  .end .n { font-family: __DISPLAY__; font-style: italic; font-weight: 800; color: #fff; text-transform: uppercase;
+            font-size: clamp(2.6rem, 7vw, 6rem); line-height: .95; }
+  .end .n span { color: __RED__; }
+  .end .q { margin-top: 18px; font-family: __DISPLAY__; font-style: italic; font-weight: 800; color: __RED__;
+            text-transform: uppercase; font-size: clamp(1.4rem, 3vw, 2.4rem); letter-spacing: .03em; opacity: 0; }
   button { position: absolute; right: 18px; bottom: 18px; color: #fff; border: 1px solid rgba(255,255,255,.6);
            padding: 8px 16px; font: 600 13px system-ui, sans-serif; text-transform: uppercase; letter-spacing: .08em;
-           background: rgba(0,0,0,.5); cursor: pointer; }
-  .credit { position: absolute; left: 18px; bottom: 22px; color: rgba(255,255,255,.75); font: 500 12px system-ui, sans-serif;
-            letter-spacing: .02em; text-shadow: 0 1px 4px #000; }
+           background: rgba(0,0,0,.5); cursor: pointer; z-index: 3; }
   button:focus-visible { outline: 2px solid __RED__; outline-offset: 2px; }
 </style></head><body><div id="wrap">
-  <video id="v" muted playsinline preload="auto">__VIDEO__</video>
-  <div class="photo" id="ph"></div>
-  <div class="cap" id="cap"><b>Davis vs Garcia</b><span>The southpaw's left to the liver</span></div>
-  <div class="ko" id="ko">K.O.</div>
-  <div class="credit" id="credit">Video: @fightingapex on TikTok (AI-generated)</div>
+  __SLIDES__
+  <div class="end" id="end"><div class="n" id="n">117 fighters<br><span>28</span> countries</div>
+    <div class="q" id="q">Which side do you lead with?</div></div>
+  <div class="fl" id="fl"></div>
   <button id="skip" type="button">Skip intro</button>
 </div><script>
-const T = __T__, v = document.getElementById("v"), ph = document.getElementById("ph"),
-      cap = document.getElementById("cap"), ko = document.getElementById("ko"), wrap = document.getElementById("wrap");
+const S = [...document.querySelectorAll(".sl")], fl = document.getElementById("fl"), end = document.getElementById("end"),
+      q = document.getElementById("q"), n = document.getElementById("n"), wrap = document.getElementById("wrap");
+const D = .95, END = S.length * D, LEN = __LEN__;
 const clamp = x => Math.max(0, Math.min(1, x)), ease = x => x * x * (3 - 2 * x);
-let done = false, held = false;
-const hold = () => { if (!held) { held = true; setTimeout(finish, Math.max(0, (T.total - v.duration) * 1000)); } };
+let done = false; const t0 = performance.now();
 function finish() {
-  if (done) return; done = true;
-  wrap.style.opacity = 0;
+  if (done) return; done = true; wrap.style.opacity = 0;
   setTimeout(() => { try { window.frameElement.closest('[class*="st-key-introbox"]').style.display = "none"; }
-                     catch (e) { document.body.style.display = "none"; } }, 850);
+                     catch (e) { document.body.style.display = "none"; } }, 750);
 }
 function tick() {
   if (done) return;
-  const t = v.currentTime;
-  // K.O. slams in as he lands, then the 3D shot from behind the winner dissolves into the photo
-  const k = clamp((t - T.ko + .1) / .35), kout = ease(clamp((t - T.photo - .2) / .5));
-  ko.style.opacity = k * (1 - kout); ko.style.transform = `scale(${2.4 - 1.4 * ease(k)}) skewX(${-10 * (1 - k)}deg)`;
-  const inn = ease(clamp((t - T.photo) / .9));
-  ph.style.opacity = inn; ph.style.transform = `scale(${1.06 - .06 * inn})`;
-  cap.style.opacity = ease(clamp((t - T.photo - .6) / .5));
-  requestAnimationFrame(tick);
+  const t = (performance.now() - t0) / 1000;
+  S.forEach((el, i) => {
+    const u = (t - i * D) / D, on = u >= 0 && u < 1;
+    el.style.opacity = on ? 1 : 0;
+    el.style.transform = `scale(${1.12 - .1 * clamp(u)}) translateX(${(i % 2 ? -1 : 1) * 1.5 * clamp(u)}%)`;
+    el.querySelector("b").style.transform = `translateX(${-40 * (1 - ease(clamp(u * 3)))}px)`;
+    el.querySelector("b").style.opacity = ease(clamp(u * 3));
+  });
+  const cut = t % D;                                   // a white flash on every cut
+  fl.style.opacity = t < END + .1 ? Math.max(0, .7 - cut * 5) : 0;
+  const e = clamp((t - END) / .25);
+  end.style.opacity = e;
+  n.style.transform = `scale(${1.6 - .6 * ease(e)})`;
+  q.style.opacity = ease(clamp((t - END - .7) / .4));
+  if (t >= LEN) finish(); else requestAnimationFrame(tick);
 }
 document.getElementById("skip").onclick = finish;
-v.addEventListener("ended", hold);     // the photo stays up past the clip, then the page
-v.addEventListener("error", finish);
-const go = v.play();
-if (go && go.catch) go.catch(finish);          // autoplay refused: go straight to the page
 requestAnimationFrame(tick);
-setTimeout(finish, (T.total + 6) * 1000);       // never trap the page behind the intro
-</script></body></html>"""
+</script></body></html>""".replace("__LEN__", str(INTRO_LEN))
 
 
 def render(df: pd.DataFrame):

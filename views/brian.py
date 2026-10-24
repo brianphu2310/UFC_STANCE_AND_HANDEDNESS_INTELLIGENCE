@@ -6,7 +6,7 @@ import streamlit as st
 
 import ufc_core as core
 import ui
-from body3d import body3d
+from matchup import matchup_card
 
 
 def render(df: pd.DataFrame):
@@ -25,11 +25,11 @@ def render(df: pd.DataFrame):
         r = st.slider("Reach (cm)", 145, 225, 180, key="br_r")
         w = st.slider("Weight (kg)", 45, 130, 72, key="br_w")
     with mid:
-        body3d([dict(label="You", height_cm=h, weight_kg=w, reach_cm=r,
+        matchup_card([dict(label="You", height_cm=h, weight_kg=w, reach_cm=r,
                      stance="Orthodox" if stance == "Switch" else stance, hand=hand, foot=foot),
                 dict(label="Brian", height_cm=B["height_cm"], weight_kg=B["weight_kg"],
                      reach_cm=B["reach_cm"], stance=B["stance"], hand=B["hand"], foot=B["foot"],
-                     ghost=True)], height=500, key="brian_body")
+                     ghost=True)])
     with right:
         m1, m2, m3 = st.columns(3)
         m1.metric("Height", f"{h}", f"{h - B['height_cm']:+d} cm", delta_color="off", delta_arrow="off")
