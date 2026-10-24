@@ -11,11 +11,11 @@ import streamlit as st
 
 import ufc_core as core
 import ui
-from views import brian, build_fighter, data_notes, explorer, overview, stance_lab
+from views import brian, build_fighter, data_notes, explorer, home, overview, stance_lab
 
 st.set_page_config(page_title="UFC Stance Intelligence", layout="wide",
                    page_icon=str(Path(__file__).parent / "static" / "mark.png"),
-                   initial_sidebar_state="expanded")
+                   initial_sidebar_state="auto")
 ui.inject_css()
 
 
@@ -35,6 +35,7 @@ def _page(render, title, footer=True):
     def run():
         i = [p.title for p in pages].index(title) + 1
         ui.KICKER.update(value=f'<i>{i:02d}</i>{title}', slug=title.lower().replace(' ', '-'))
+        ui.backdrop()
         render(df)
         if footer:
             ui.footer(len(df))
@@ -43,8 +44,8 @@ def _page(render, title, footer=True):
 
 
 pages = [
-    st.Page(_page(overview.render, "Overview", footer=False), title="Overview",
-            url_path="overview", default=True),
+    st.Page(_page(home.render, "Home"), title="Home", url_path="home", default=True),
+    st.Page(_page(overview.render, "Overview", footer=False), title="Overview", url_path="overview"),
     st.Page(_page(explorer.render, "Explorer"), title="Explorer", url_path="explorer"),
     st.Page(_page(build_fighter.render, "Build a fighter"), title="Build a fighter",
             url_path="build-your-fighter"),

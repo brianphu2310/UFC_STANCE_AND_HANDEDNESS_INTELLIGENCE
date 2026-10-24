@@ -173,7 +173,7 @@ controls.autoRotate = !REDUCE;
 // fight-night arena: red and blue corner rims, dark fog, neutral key light so skin and kit keep their colours
 const NEON = "#FF3B3B", NEON_DEEP = "#B3121A";
 scene.fog = new THREE.Fog("#0B0B0C", 6.5, 17);
-scene.add(new THREE.HemisphereLight("#e6e3df", "#1a1717", 0.7));
+const hemi = new THREE.HemisphereLight("#e6e3df", "#1a1717", 0.7); scene.add(hemi);
 const spot = new THREE.SpotLight("#fff6ee", 6, 0, 0.55, 0.85, 0);
 spot.position.set(0.8, 7, 1.4);
 spot.target.position.set(0, 0.9, 0);
@@ -630,6 +630,7 @@ function shortsMaterial(base, panel) {
     sheenColor: new THREE.Color("#4a4a52"), side: THREE.DoubleSide });
   const u = { uBase: { value: new THREE.Color(base) }, uPanel: { value: new THREE.Color(panel) },
               uGold: { value: new THREE.Color("#D9A93E") } };
+  m.userData.u = u;
   m.onBeforeCompile = (sh) => {
     Object.assign(sh.uniforms, u);
     sh.vertexShader = sh.vertexShader
@@ -1163,12 +1164,12 @@ class Fighter {
       this.parts["strap" + sfx].material = dom ? this.mats.strapDom : this.mats.strap;
       this.parts["strapPatch" + sfx].material = this.mats.patch;
     }
-    this.parts.ankleL.visible = this.foot === LEFT;
-    this.parts.ankleR.visible = this.foot === RIGHT;
+    this.parts.ankleL.visible = this.foot === LEFT && !STUDIO;
+    this.parts.ankleR.visible = this.foot === RIGHT && !STUDIO;
     // Neon button: red glowing skin (eases in and out)
     const nu = this.mats.skin.userData.neon;
     nu.value += ((NEON_MODE ? 1 : 0) - nu.value) * .12;
-    this.mats.skin.color.set(COL.skin).lerp(NEON_SKIN, nu.value);
+    this.mats.skin.color.set(STUDIO ? "#8a8a8e" : COL.skin).lerp(NEON_SKIN, nu.value);
     // glow: a slow breathing pulse, flaring when that hand or foot throws
     const pulse = REDUCE ? .5 : .5 + .5 * Math.sin(time * 3.2);
     const hb = this.domHand || 0, fb = this.domFoot || 0;
@@ -1568,7 +1569,7 @@ function flyTo(m, instant = false) {
 const clock = new THREE.Clock();
 let time = 0;
 const CAPTURE = new URLSearchParams(location.search).has("capture");
-let paused = REDUCE;
+let paused = REDUCE, STUDIO = false;
 // world point -> fighter-local point
 const toLocal = (F, w) => w.clone().applyMatrix4(new THREE.Matrix4().copy(F.group.matrixWorld).invert());
 function targetsFor(F, O, OJ) {
@@ -1615,6 +1616,8 @@ function frame(dtFixed) {
     let dy = pb.yaw - pa.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy));
     F.group.position.set(pa.x + (pb.x - pa.x) * k, 0, pa.z + (pb.z - pa.z) * k);
     F.group.rotation.y = pa.yaw + dy * k;
+    if (F.koF) { F.group.rotation.order = "YXZ"; F.group.rotation.x = (F.koStyle === "liver" ? 1.2 : -1.38) * F.koF; F.group.rotation.z = (F.koRoll || 0) * F.koF;
+      F.group.position.y = F.koLift || 0; F.group.position.addScaledVector(F.koSlide || V(0, 0, 0), F.koF); }
     F.group.updateMatrixWorld();
     const so = st.out[i];
     F.stepOpt = so.step && faceW > .5 ? { D: so.step.D, u: so.step.u,
@@ -1643,7 +1646,17 @@ function frame(dtFixed) {
     const Jp = solve(F.p, MODES[prevMode], opts), Jc = solve(F.p, MODES[mode], opts);
     F.J = blendJ(Jp, Jc, k);
     if (F.kd > 0) F.J = blendJ(F.J, solve(F.p, "down", opts), F.kd * faceW);
+    if (F.koF && F.koStyle !== "liver") F.J = blendJ(F.J, solve(F.p, "stand", { t: time }), Math.min(1, F.koF * 1.4));   // knocked out: limp, legs together
     F.place(F.J);
+    if (F.koF) {                                         // keep every joint on or above the canvas while falling
+      F.group.updateMatrixWorld(true);
+      let lo = 9;
+      const pts = [F.J.head, F.J.neck, ...[1, -1].flatMap(sd => [F.J.ankle[sd], F.J.knee[sd], F.J.hip[sd], F.J.sh[sd], F.J.elbow[sd], F.J.wrist[sd]])];
+      for (const q of pts) if (q && q.isVector3) lo = Math.min(lo, q.clone().applyMatrix4(F.group.matrixWorld).y);
+      const need = .075 - lo;                            // limb and head radius above the joint centre
+      F.koLift = Math.max(0, (F.koLift || 0) + need);
+      if (need > 0) { F.group.position.y += need; F.group.updateMatrixWorld(true); }
+    }
     const op = (prevMode === "reach" && i === 1 ? 1 - k : 0) + (mode === "reach" && i === 1 ? k : 0);
     const target = 1 - .62 * op;
     if (Math.abs(target - F.opacity) > .004) F.setOpacity(target);
@@ -1692,9 +1705,13 @@ function frame(dtFixed) {
     const br = sinceBody >= 0 && sinceBody < .3 ? (F.hitSide || 1) * .03 * F.p.H : 0;
     F.recoil += (hr - F.recoil) * Math.min(dt * 18, 1);
     F.flinch += (br - F.flinch) * Math.min(dt * 14, 1);
-    if (F.kdT >= 0) { F.kdT += dt; if (F.kdT > 2.0) F.kdT = -1; }
+    if (F.kdT >= 0) { F.kdT += dt; if (F.kdT > 2.0 && !F.koHold) F.kdT = -1; }
     const kt = F.kdT;
-    F.kd = kt < 0 ? 0 : kt < .3 ? easeOut(kt / .3) : kt < 1.3 ? 1 : 1 - ease(clamp((kt - 1.3) / .7, 0, 1));
+    F.kd = kt < 0 ? 0 : F.koStyle === "liver" ? easeOut(clamp((kt - .28) / .5, 0, 1)) : F.koHold ? .32 * easeOut(clamp(kt / .25, 0, 1)) * (1 - .6 * (F.koF || 0)) : kt < .3 ? easeOut(kt / .3) : kt < 1.3 ? 1 : 1 - ease(clamp((kt - 1.3) / .7, 0, 1));
+    // a held knockout (capture only, for the landing-page intro): after the buckle, fall flat
+    // liver shot: a beat, the knees go, he kneels folded over, then tips forward onto his side
+    if (F.koStyle === "liver") { const f = clamp((kt - 1.2) / .85, 0, 1); F.koF = ease(f) * (f < 1 ? 1 : 1); }
+    else if (F.koHold) { const f = clamp((kt - .22) / .62, 0, 1); F.koF = f < 1 ? f * f * (1.6 - .6 * f) : 1 - .025 * Math.sin(clamp((kt - .84) / .3, 0, 1) * Math.PI); }
   });
   stepFlashes(dt);
 
@@ -1746,6 +1763,7 @@ if (CAPTURE) {
     }
     return { name: F.info.label, hand: F.info.hand, foot: F.info.foot, stance: F.info.stance, ...out };
   });
+  window.__pos = () => fighters.map(F => [F.group.position.x, F.group.position.z]);
   window.__plan = () => PLAN && PLAN.ev.map(e => ({ kind: e.kind, m: e.m, who: e.who, t0: e.t0, dur: e.dur, combo: e.combo }));
   window.__set = (o) => {
     if (o.strike) setStrike(o.strike === "combo" ? "spar" : o.strike);
@@ -1757,6 +1775,43 @@ if (CAPTURE) {
       args: { height: window.innerHeight, figures: o.figures } }, "*");
     if (o.neon !== undefined) { NEON_MODE = o.neon; for (const F of fighters) if (F.mats) F.mats.skin.userData.neon.value = o.neon ? 1 : 0; }
     if (o.clearFlashes) { for (const f of flashes) scene.remove(f.m); flashes.length = 0; }
+    if (o.ko !== undefined && fighters[o.ko]) { const F = fighters[o.ko]; F.kdT = 0; F.koHold = true;
+      F.koStyle = o.koStyle || ""; F.koRoll = o.koRoll || 0; F.koSlide = o.koSlide ? V(...o.koSlide) : null; F.koLift = 0; }
+    if (o.plan) { PLAN = { ev: o.plan.ev.slice().sort((p, q) => p.t0 - q.t0), len: o.plan.len, spar: true,
+                           n: fighters.length, sel: strikeSel }; }
+    if (o.hold !== undefined) paused = !!o.hold;
+    // studio look (capture only, for the landing intro): grey clay mannequins, satin red vs black-and-gold
+    // kit, a plain grey cage under soft white light, after the fight-render reference
+    if (o.look === "studio") {
+      const grey = new THREE.Color("#2b2b2e");
+      scene.traverse(m => {
+        if (!m.isMesh || fighters.some(F => { let q = m; while (q) { if (q === F.group) return true; q = q.parent; } return false; })) return;
+        const mt = m.material; if (!mt || !mt.color) return;
+        const hsl = {}; mt.color.getHSL(hsl);
+        if (hsl.s > .12) { mt.color.copy(grey); if (mt.emissive) mt.emissive.set("#000000"); }
+      });
+      canvasMat.material.map = null; canvasMat.material.color.set("#6c6c70"); canvasMat.material.roughness = .85;
+      canvasMat.material.needsUpdate = true;
+      floor.material.color.set("#2a2a2c"); fenceMat.color.set("#2e2e31");
+      scene.fog.color.set("#1b1b1d"); scene.fog.near = 7; scene.fog.far = 20;
+      rimA.color.set("#ffffff"); rimA.intensity = 1.3; rimB.color.set("#dfe6ff"); rimB.intensity = 1.0;
+      fill.color.set("#ffffff"); fill.intensity = .8; hemi.color.set("#ffffff"); hemi.groundColor.set("#3a3a3c"); hemi.intensity = .75;
+      document.getElementById("wrap").style.background = "radial-gradient(120% 90% at 50% 10%, #3a3a3d 0%, #1d1d1f 55%, #0c0c0d 100%)";
+      fighters.forEach((F, i) => {
+        const M = F.mats, red = i === 0;
+        M.skin.color.set("#8a8a8e"); M.skin.roughness = .55; M.skin.sheen = .1; M.skin.sheenColor.set("#ffffff");
+        M.skin.clearcoat = .05;
+        const glove = red ? "#C8141C" : "#C99A3B";
+        for (const g of [M.pad, M.padDom, M.palmDom, M.strapDom, M.leather, M.strap]) {
+          g.color.set(glove); g.metalness = red ? 0 : .7; g.roughness = red ? .32 : .3; if (g.clearcoat !== undefined) g.clearcoat = .7;
+        }
+        M.kit.roughness = .34; M.kit.sheen = .55; M.kit.sheenColor.set("#9a9a9a");
+        M.kit.onBeforeCompile && M.kit.needsUpdate !== undefined && (M.kit.needsUpdate = true);
+        M.kit.userData.u.uBase.value.set(red ? "#C4161C" : "#0e0e10"); M.kit.userData.u.uPanel.value.set(red ? "#9c0f14" : "#0e0e10");
+        F.footRing.visible = false;
+      });
+      STUDIO = true;
+    }
   };
 } else {
   renderer.setAnimationLoop(() => frame());
