@@ -251,7 +251,7 @@ def render(df: pd.DataFrame):
                        f"For your frame the plan is <b>{escape(stance.lower())}</b>"
                        f"{' (suggested)' if choice == 'Suggested' else ''}, and the pro closest to you is "
                        f"<b>{escape(top.iloc[0]['fighter'])}</b>, a {top.iloc[0]['match_score']:.0f}/100 match. "
-                       "Change your body on the left; every tab below follows.")
+                       "Change your body on the left; every tab below follows.", kicker="Personal plan")
     with mid:
         show_ghost = st.toggle(f"Compare with {top.iloc[0]['fighter']}", True, key="bf_ghost")
         figs = [dict(label="You", height_cm=p["height_cm"], weight_kg=p["weight_kg"],

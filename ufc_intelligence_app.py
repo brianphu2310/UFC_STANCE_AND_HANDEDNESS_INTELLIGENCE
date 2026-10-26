@@ -11,7 +11,7 @@ import streamlit as st
 
 import ufc_core as core
 import ui
-from views import brian, build_fighter, data_notes, explorer, home, overview, stance_lab
+from views import brian, build_fighter, data_notes, fighters, home, matchup, overview, stance_lab
 
 st.set_page_config(page_title="UFC Stance Intelligence", layout="wide",
                    page_icon=str(Path(__file__).parent / "static" / "mark.png"),
@@ -42,12 +42,13 @@ def _page(render, title, footer=True):
 
 pages = [
     st.Page(_page(home.render, "Home"), title="Home", url_path="home", default=True),
-    st.Page(_page(overview.render, "Overview", footer=False), title="Overview", url_path="overview"),
-    st.Page(_page(explorer.render, "Explorer"), title="Explorer", url_path="explorer"),
-    st.Page(_page(build_fighter.render, "Build a fighter"), title="Build a fighter",
-            url_path="build-your-fighter"),
-    st.Page(_page(stance_lab.render, "Stance lab"), title="Stance lab", url_path="stance-lab"),
-    st.Page(_page(brian.render, "Spar vs Brian"), title="Spar vs Brian", url_path="spar-vs-brian"),
-    st.Page(_page(data_notes.render, "Data"), title="Data", url_path="data-methods"),
+    st.Page(_page(overview.render, "Dashboard", footer=False), title="Dashboard", url_path="dashboard"),
+    st.Page(_page(fighters.render, "Fighters"), title="Fighters", url_path="fighters"),
+    st.Page(_page(matchup.render, "Matchup"), title="Matchup", url_path="matchup"),
+    st.Page(_page(stance_lab.render, "Analysis"), title="Analysis", url_path="analysis"),
+    st.Page(_page(build_fighter.render, "Build"), title="Build", url_path="build-your-fighter"),
+    st.Page(_page(brian.render, "Spar"), title="Spar", url_path="spar-vs-brian"),
+    st.Page(_page(data_notes.render, "Methodology"), title="Methodology", url_path="methodology"),
 ]
+ui.PAGES.update(zip(["home", "dashboard", "fighters", "matchup", "analysis", "build", "spar", "methodology"], pages))
 st.navigation(pages, position="top").run()

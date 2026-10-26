@@ -5,12 +5,12 @@
 <title>Body 3D</title>
 <style>
   @font-face { font-family: "Inter"; src: url("fonts/inter-latin-variable.woff2") format("woff2"); font-weight: 400 600; }
-  :root { --bg:#0D0D0D; --ink:#FFFFFF; --ink2:#B4B4B4; --mute:#949494; --line:#444444;
-          --a:#EB3F45; --afill:#2A2A2A; --b:#3B82F6; --rule:#E9B44C; --neon:#FF3B3B; }
-  html, body { margin:0; height:100%; background:#111111; overflow:hidden; color:var(--ink);
+  :root { --bg:#0F0F12; --ink:#FFFFFF; --ink2:#B4B4B4; --mute:#949494; --line:#3A3A42;
+          --a:#E5383B; --afill:#24242A; --b:#C9CCD3; --rule:#E9B44C; --neon:#FF3B3B; }
+  html, body { margin:0; height:100%; background:#131316; overflow:hidden; color:var(--ink);
                font-family:"Inter", system-ui, sans-serif; font-variant-numeric: tabular-nums; }
   #wrap { position:relative; width:100%; height:100%; overflow:hidden; box-sizing:border-box;
-          border-radius:8px; background:var(--bg); }
+          border-radius:3px; background:var(--bg); }
   canvas { display:block; position:absolute; inset:0; }
   #labels { position:absolute; inset:0; pointer-events:none; overflow:hidden; }
   .lab { position:absolute; left:0; top:0; white-space:nowrap; will-change:transform; transition:opacity .2s; }
@@ -36,7 +36,7 @@
                margin-top:4px; max-width:460px; }
   .bar { position:absolute; left:12px; right:12px; bottom:12px; display:flex; align-items:center;
          gap:8px; flex-wrap:wrap; }
-  .seg { display:inline-flex; border:1px solid var(--line); border-radius:8px; overflow:hidden; background:#111111; }
+  .seg { display:inline-flex; border:1px solid var(--line); border-radius:3px; overflow:hidden; background:#131316; }
   .seg button, .tool { all:unset; cursor:pointer; font-size:12px; font-weight:500; padding:6px 10px; color:var(--ink2); }
   .seg button + button { border-left:1px solid var(--line); }
   .seg button.on { background:var(--afill); color:#fff; }
@@ -45,7 +45,7 @@
   .seg button:active, .tool:active { transform: scale(.97); }
   canvas:focus-visible { outline:2px solid #fff; outline-offset:-2px; }
   .sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
-  .tool { padding:6px 10px; color:var(--ink2); background:#111111; border:1px solid var(--line); border-radius:8px; }
+  .tool { padding:6px 10px; color:var(--ink2); background:#131316; border:1px solid var(--line); border-radius:3px; }
   .tool.on { color:var(--ink); }
   .seg button:focus-visible, .tool:focus-visible { outline:2px solid #fff; outline-offset:-2px; }
   .seg.tools .tool { border:none; border-radius:0; background:transparent; }
@@ -104,7 +104,7 @@ const send = (type, data = {}) =>
   window.parent.postMessage({ isStreamlitMessage: true, type, ...data }, "*");
 let frameHeight = 520;
 
-const COL = { a: "#E5252D", b: "#3B82F6", rule: "#E9B44C", skin: "#404047", ink: "#F3F1EC", hit: "#FFD25A" };   // corners: red, blue
+const COL = { a: "#E5383B", b: "#C9CCD3", rule: "#E9B44C", skin: "#404047", ink: "#F3F1EC", hit: "#FFD25A" };   // corners: red, blue
 const REDUCE = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const V = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
 const UP = V(0, 1, 0), ZAX = V(0, 0, 1);

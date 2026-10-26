@@ -1,4 +1,4 @@
-"""Explorer: head-to-head comparison, look-alike fighters and a filterable fighter table."""
+"""Matchup lab: two fighters side by side on the attributes the dataset holds. No predictions."""
 from html import escape
 
 import pandas as pd
@@ -9,7 +9,7 @@ import ufc_core as core
 import ui
 from body3d import body3d
 
-A_COLOR, B_COLOR = ui.PALETTE[0], ui.PALETTE[1]      # red corner vs blue corner
+A_COLOR, B_COLOR = ui.ACCENT, ui.STEEL      # fighter A in red, fighter B in steel
 
 
 @st.cache_data
@@ -20,36 +20,6 @@ def _similar(df, name):
 @st.cache_data
 def _h2h(df, a, b):
     return core.head_to_head(df, a, b)
-
-
-def _filters(df):
-    """Search beside a Filters button in the table's own header row."""
-    keys = ("ex_g", "ex_div", "ex_st", "ex_hand", "ex_style", "ex_champ")
-    on = sum(bool(st.session_state.get(k)) and st.session_state.get(k) != "All" for k in keys)
-    c1, c2 = st.columns([3, 1], vertical_alignment="bottom")
-    q = c1.text_input("Search by name", placeholder="Search fighters, e.g. Adesanya", label_visibility="collapsed",
-                      key="ex_q")
-    with c2, st.popover(f"Filters, {on} on" if on else "Filters", width="content"):
-        gender = st.selectbox("Division", ["All", "Men", "Women"], key="ex_g")
-        divs = st.multiselect("Weight class",
-                              [d for d in core.DIVISION_ORDER if d in set(df["weight_class"])],
-                              placeholder="Any", key="ex_div")
-        stances = st.multiselect("Stance", ["Orthodox", "Southpaw", "Switch"], placeholder="Any", key="ex_st")
-        hands = st.multiselect("Dominant hand", ["Right", "Left"], placeholder="Any", key="ex_hand")
-        styles = st.multiselect("Fighting style", core.STYLES, placeholder="Any", key="ex_style")
-        champs = st.toggle("Champions only", False, key="ex_champ")
-    v = df
-    if q:
-        v = v[v["fighter"].str.contains(q, case=False, regex=False)]
-    if gender != "All":
-        v = v[v["gender"] == gender]
-    for col, sel in [("weight_class", divs), ("stance", stances), ("hand", hands),
-                     ("fighting_style", styles)]:
-        if sel:
-            v = v[v[col].isin(sel)]
-    if champs:
-        v = v[v["champion"]]
-    return v
 
 
 def _tape(f, color, skills=None):
@@ -81,6 +51,29 @@ def _best(skills):
 
 
 
+ATTRS = [("Career win rate", "win_rate", "{:.0f}%"), ("Pro fights", "total_fights", "{:.0f}"),
+         ("UFC fights", "ufc_fights", "{:.0f}"), ("Height", "height_cm", "{:.0f} cm"),
+         ("Reach", "reach_cm", "{:.0f} cm"), ("Ape index", "ape_index_cm", "{:+.0f} cm"),
+         ("Strikes landed / min", "slpm", "{:.2f}"), ("Strikes absorbed / min", "sapm", "{:.2f}"),
+         ("Takedowns / 15 min", "td_avg", "{:.2f}")]
+
+
+def _attrs(fa, fb, df):
+    """Each attribute as two bars from a shared centre line, scaled to the dataset's range."""
+    rows = ""
+    for label, col, fmt in ATTRS:
+        x, y = fa.get(col), fb.get(col)
+        lo, hi = df[col].min(), df[col].max()
+        def w(v):
+            return 0 if pd.isna(v) or hi == lo else 8 + 92 * (v - lo) / (hi - lo)
+        def t(v):
+            return fmt.format(v) if pd.notna(v) else "—"
+        rows += (f'<div class="ar"><b class="va">{t(x)}</b><i class="ba"><u style="width:{w(x):.0f}%"></u></i>'
+                 f'<span>{escape(label)}</span><i class="bb"><u style="width:{w(y):.0f}%"></u></i>'
+                 f'<b class="vb">{t(y)}</b></div>')
+    return f'<div class="attrs">{rows}</div>'
+
+
 def _butterfly(h, a, b):
     t = h["table"].iloc[::-1]
     fig = go.Figure()
@@ -102,53 +95,57 @@ def _butterfly(h, a, b):
 
 CSS = f"""<style>
   .card.tape {{ min-height: 480px; box-sizing: border-box; }}
+  @media (max-width: 900px) {{ .card.tape {{ min-height: 0; }} }}
+  .tape .t {{ font-size: 24px; }}
+  .tape .kv b {{ font-size: 18px; }}
   .best {{ margin-top: 22px; }}
   .best .s {{ margin-bottom: 8px; }}
   .br {{ display: grid; grid-template-columns: 1fr 48px 26px; gap: 10px; align-items: center; padding: 5px 0; }}
   .br span {{ font-size: 13px; color: {ui.INK_2}; }}
-  .br i {{ display: block; height: 3px; background: {ui.RAISED}; border-radius: 2px; }}
-  .br u {{ display: block; height: 3px; background: {ui.INK_2}; border-radius: 2px; }}
-  .br b {{ font-weight: 400; font-size: 13px; text-align: right; font-variant-numeric: tabular-nums; }}
-  .tape .t {{ font-size: 18px; }}
-  .tape .kv b {{ font-size: 18px; }}
-  .st-key-oct_tape [data-testid="stColumn"] > div {{ height: 100%; }}
-  .simh {{ font: 500 16px/1.3 {ui.FONT}; color: {ui.INK}; margin: 16px 0 2px; }}
+  .br i {{ display: block; height: 3px; background: {ui.RAISED}; }}
+  .br u {{ display: block; height: 3px; background: {ui.INK_2}; }}
+  .br b {{ font-weight: 500; font-size: 13px; text-align: right; font-variant-numeric: tabular-nums; }}
+  .simh {{ font: 700 19px/1.1 {ui.DISPLAY}; text-transform: uppercase; color: {ui.INK}; margin: 14px 0 4px; }}
   .sims {{ font-size: 12px; color: {ui.INK_MUTED}; margin-bottom: 6px; }}
-  .st-key-ex_sim {{ background: {ui.SURFACE}; border-radius: 10px; padding: 2px 20px 10px; }}
-  .st-key-ex_sim .simlist {{ padding: 0; background: transparent; }}
+  .st-key-ex_sim {{ background: {ui.SURFACE}; border: 1px solid {ui.BORDER}; border-radius: 4px; padding: 2px 20px 10px; }}
+  .attrs {{ background: {ui.SURFACE}; border: 1px solid {ui.BORDER}; border-radius: 4px; padding: 8px 20px; }}
+  .ar {{ display: grid; grid-template-columns: 90px 1fr 190px 1fr 90px; gap: 14px; align-items: center;
+         padding: 9px 0; border-bottom: 1px solid {ui.BORDER}; }}
+  .ar:last-child {{ border-bottom: none; }}
+  .ar span {{ text-align: center; font-size: 13px; color: {ui.INK_2}; }}
+  .ar b {{ font-weight: 500; font-size: 14px; font-variant-numeric: tabular-nums; }}
+  .ar .va {{ text-align: right; }} .ar .vb {{ text-align: left; }}
+  .ar i {{ display: flex; height: 6px; background: {ui.RAISED}; }}
+  .ar .ba {{ justify-content: flex-end; }} .ar .ba u {{ background: {A_COLOR}; }} .ar .bb u {{ background: {B_COLOR}; }}
+  .ar u {{ display: block; height: 6px; transition: width .4s cubic-bezier(.2,.7,.2,1); }}
+  @media (max-width: 640px) {{ .ar {{ grid-template-columns: 56px 1fr 56px; gap: 8px; }} .ar i {{ display: none; }}
+    .ar span {{ grid-column: 2; grid-row: 1; }} .ar .vb {{ text-align: right; }} }}
 </style>"""
 
 
 def render(df: pd.DataFrame):
     st.markdown(CSS, unsafe_allow_html=True)
     names = df.sort_values("popularity_index", ascending=False)["fighter"].tolist()
-    if "ex_a" not in st.session_state:
+    if st.session_state.get("ex_a") not in names:
         st.session_state["ex_a"] = "Conor McGregor"
-    # A row clicked in the table (previous run) becomes Fighter A, applied before the widget exists.
-    tbl = st.session_state.get("ex_table_rows")
-    sel = (st.session_state.get("ex_table") or {}).get("selection", {}).get("rows", [])
-    if sel and tbl and sel[0] < len(tbl):
-        picked = tbl[sel[0]]
-        if picked != st.session_state.get("ex_last_pick"):
-            st.session_state["ex_last_pick"] = picked
-            st.session_state["ex_a"] = picked
     a = st.session_state["ex_a"]
     b_opts = [n for n in names if n != a]
-    if st.session_state.get("ex_b") == a:
-        del st.session_state["ex_b"]
-    b = st.session_state.get("ex_b") or ("Khabib Nurmagomedov" if "Khabib Nurmagomedov" in b_opts else b_opts[0])
+    if st.session_state.get("ex_b") not in b_opts:
+        st.session_state["ex_b"] = "Khabib Nurmagomedov" if "Khabib Nurmagomedov" in b_opts else b_opts[0]
+    b = st.session_state["ex_b"]
     fa = df[df["fighter"] == a].iloc[0]
     fb = df[df["fighter"] == b].iloc[0]
     h = _h2h(df, a, b)
     reach = (f"{escape(a)} has <b>{abs(h['reach_gap']):.0f} cm</b> {'more' if h['reach_gap'] > 0 else 'less'} reach"
              if h["reach_gap"] not in (None, 0) else "Reach is even")
     ui.page_header(f"{a} vs {b}",
-                   f"{escape(h['geometry'])}. {escape(a)} leads on <b>{h['wins_a']}</b> of 9 skills and "
-                   f"{escape(b)} on <b>{h['wins_b']}</b>. {reach}.")
+                   f"{escape(h['geometry'])}. {escape(a)} is ahead on <b>{h['wins_a']}</b> of 9 skill percentiles "
+                   f"and {escape(b)} on <b>{h['wins_b']}</b> (a lead is more than 5 points). {reach}. "
+                   "This compares records and styles; it does not predict a result.", kicker="Matchup lab")
 
     c1, c2 = st.columns(2)
-    c1.selectbox("Red corner", names, key="ex_a")
-    c2.selectbox("Blue corner", b_opts, index=b_opts.index(b), key="ex_b")
+    c1.selectbox("Fighter A", names, key="ex_a")
+    c2.selectbox("Fighter B", b_opts, key="ex_b")
 
     # 12 columns: tape 3 | octagon 6 | tape 3
     with st.container(key="oct_tape"):
@@ -168,12 +165,17 @@ def render(df: pd.DataFrame):
                      hand=fb["hand"], foot=fb["foot"], ghost=True)],
                height=480, autorotate=False, key="ex_body")
 
+    ui.section("Tale of the tape", "Bars run from the lowest to the highest value among the 117 fighters. "
+               "UFC rates cover UFC bouts only.")
+    st.markdown(_attrs(fa, fb, df), unsafe_allow_html=True)
+
+    ui.section("Skills and style", "Percentile against all 117 fighters on the nine skills measured from fight logs.")
     g1, g2 = st.columns([7, 5], gap="small")
     with g1:
         ui.chart(_butterfly(h, a, b), key="ex_fly")
-    with g2, st.container(key="ex_sim", height=432, border=False):
-        st.markdown(f'<div class="simh">Fights most like {escape(a)}</div><div class="sims">Nearest on all '
-                    'nine UFC skill percentiles plus height and reach, out of 100.</div>', unsafe_allow_html=True)
+    with g2, st.container(key="ex_sim", height=436, border=False):
+        st.markdown(f'<div class="simh">Fights most like {escape(a)}</div><div class="sims">Nearest on the nine '
+                    'skill percentiles plus height and reach, scored out of 100.</div>', unsafe_allow_html=True)
         sim = _similar(df, a)
         rows = "".join(
             f'<div class="simrow"><div><b>{escape(r.fighter)}</b><span>{escape(r.weight_class)}, '
@@ -181,28 +183,3 @@ def render(df: pd.DataFrame):
             f'<div class="simbar"><i style="width:{r.similarity:.0f}%"></i></div>'
             f'<em>{r.similarity:.0f}</em></div>' for r in sim.itertuples())
         st.markdown(f'<div class="simlist">{rows}</div>', unsafe_allow_html=True)
-        st.caption("Percentiles compare each fighter with the 117 here: a style comparison, not a prediction.")
-
-    ui.section("All fighters", "Click a row to put that fighter in the red corner.")
-    v = _filters(df)
-    table = v.sort_values("popularity_index", ascending=False)[
-        ["fighter", "stance", "hand", "weight_class", "country", "wins", "losses", "win_rate",
-         "height_cm", "reach_cm", "str_acc", "sapm", "td_avg", "popularity_index"]]
-    st.session_state["ex_table_rows"] = table["fighter"].tolist()
-    st.caption(f"{len(table)} of {len(df)} fighters")
-    st.dataframe(
-        table, hide_index=True, width="stretch", height=420, on_select="rerun",
-        selection_mode="single-row", key="ex_table",
-        column_config={
-            "fighter": "Fighter", "stance": "Stance", "hand": "Hand", "weight_class": "Division",
-            "country": "Country", "wins": "W", "losses": "L",
-            "win_rate": st.column_config.NumberColumn("Win rate", format="%.0f%%"),
-            "height_cm": st.column_config.NumberColumn("Height", format="%.0f cm"),
-            "reach_cm": st.column_config.NumberColumn("Reach", format="%.0f cm"),
-            "str_acc": st.column_config.NumberColumn("Str. acc", format="%.0f%%"),
-            "sapm": st.column_config.NumberColumn("Absorbed/min", format="%.2f"),
-            "td_avg": st.column_config.NumberColumn("TD/15", format="%.2f"),
-            "popularity_index": st.column_config.NumberColumn("Popularity", format="%d"),
-        })
-    st.download_button("Download this view as CSV", table.to_csv(index=False).encode(),
-                       "ufc_fighters.csv", "text/csv")

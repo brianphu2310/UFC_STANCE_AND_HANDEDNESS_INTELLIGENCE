@@ -34,14 +34,14 @@ survives a Holm correction for running several tests at once. Switch-hitters sho
 gap, but with 8 fighters a 5-point edge can't be told apart from chance — a real test would need
 about 60 fighters per group.
 
-Where stance *does* show up is in **how** people fight (Stance lab and Explorer pages): the skill
+Where stance *does* show up is in **how** people fight (Analysis and Matchup pages): the skill
 profiles, reach distributions and striking-vs-grappling mix differ by stance, even though the
 win rates don't.
 
 > Earlier versions of this README reported a 74.3% vs 70.2% "right-handed southpaw advantage"
 > (d = 0.43). Re-checking against the official UFCSTATS stance showed that **43 of 117 fighters had
 > the wrong stance** in the original spreadsheet, and the corrected data shows no such advantage.
-> The app lists every correction on its Data page.
+> The app lists every correction on its Methodology page.
 
 ## See it move
 
@@ -67,33 +67,31 @@ distance in the range table; **Height** and **Reach** line the two fighters up a
 
 ## The app
 
-The app opens on a 7-second fight-night intro drawn in HTML and CSS, no video: a red and a blue
-light streak meet, the orthodox and southpaw corners slide in with "VS" between them, the roster
-counts up, "Which side do you lead with?" lands word by word, and the two halves open like doors on
-the landing page. It plays once per visit, has a **Skip intro** button, and is skipped under
-reduced motion.
-Every page then sits on a slow slideshow of real fight photos behind a dark veil, with a
-broadcast-style banner at the top.
+A fight-intelligence product in a charcoal-and-fight-red identity: condensed editorial headlines,
+thin borders, square corners, and red kept for one job at a time (the active page, the primary
+action, and the southpaw in every chart, against orthodox in steel and switch in brass). It opens on
+a 7-second intro drawn in HTML and CSS (skippable, off under reduced motion), then the landing page.
 
 | Page | What it does |
 |---|---|
-| **Home** | Landing page: "Which side do you lead with?", the headline numbers, a southpaw vs orthodox tale of the tape and tonight's card linking to every page |
-| **Overview** | One-screen dashboard: rotatable 3D globe with fighter names on each country, continent picker, debut-year timeline with slider, and charts on stance, hand and foot |
-| **Explorer** | Pick any two fighters: tale of the tape, a 3D face-off in the Octagon (jab, cross and kick thrown from real range, plus height and reach views), skill-percentile butterfly chart, stance geometry, and the five fighters who fight most like them. Filterable table with CSV export |
-| **Build a fighter** | Enter height, weight, reach, dominant hand and foot, style, training and goal → rotatable 3D body model, stance advice, fighters to study, a phased roadmap, weekly schedule, **gear to buy** (with photos, for your budget), classes and coaches. Downloadable plan |
-| **Stance lab** | Welch t-test, Mann-Whitney, Cohen's d, bootstrap intervals, Holm correction and power analysis for any outcome and grouping |
-| **Spar vs Brian** | Open vs closed stance game plan against a right-handed southpaw, with both fighters sparring in 3D |
-| **Data** | Where every column comes from, the 43 stance corrections, and limitations |
+| **Home** | "Read the fight beyond the octagon": the research question, three findings with their numbers, an orthodox vs southpaw tale of the tape, and a way into every page |
+| **Dashboard** | Sample counts, win rate by stance, Welch tests with bootstrap intervals and effect sizes for the three headline gaps, stance × hand and hand × foot distributions, a 3D globe with debut timeline, and how the styles differ. One Filters button drives every block |
+| **Fighters** | Searchable, filterable directory of all 117 fighters: stance, hand, division, record, frame and UFC fight-log rates. Select a row to open the fighter in the Matchup lab; export the view as CSV |
+| **Matchup** | Two fighters side by side: tale of the tape on nine attributes, a 3D face-off in the Octagon, skill-percentile butterfly chart and look-alike fighters. No predictions |
+| **Analysis** | Any outcome by stance, hand or foot: Welch t-test, Mann-Whitney, bootstrap intervals, Cohen's d, Holm correction, ANOVA, power, and what the results do and do not support |
+| **Build** | Your height, weight, reach, dominant hand and foot, style and goal → 3D body model, stance advice, fighters to study, a phased roadmap, gear to buy and classes. Downloadable plan |
+| **Spar** | The case study that started the project: a game plan against a right-handed southpaw |
+| **Methodology** | Sources, cleaning steps, the 43 stance corrections, feature definitions, methods, limitations and how to reproduce every number |
 
 <table><tr><td colspan="2"><img src="docs/img/home.png" alt="Home: landing page"></td></tr><tr>
-<td><img src="docs/img/overview.png" alt="Overview"></td>
-<td><img src="docs/img/explorer.png" alt="Explorer"></td>
+<td><img src="docs/img/overview.png" alt="Intelligence dashboard"></td>
+<td><img src="docs/img/fighters.png" alt="Fighter directory"></td>
+</tr><tr>
+<td><img src="docs/img/explorer.png" alt="Matchup lab"></td>
+<td><img src="docs/img/stance_lab.png" alt="Statistical analysis"></td>
 </tr><tr>
 <td><img src="docs/img/build_fighter.png" alt="Build a fighter"></td>
-<td><img src="docs/img/stance_lab.png" alt="Stance lab"></td>
-</tr><tr>
-<td><img src="docs/img/spar_vs_brian.png" alt="Spar vs Brian"></td>
-<td><img src="docs/img/data.png" alt="Data"></td>
+<td><img src="docs/img/data.png" alt="Methodology"></td>
 </tr></table>
 
 Colours, type, components and accessibility notes are in [docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md).
@@ -119,7 +117,7 @@ explains every measure. Stance, hand and weight-class filters apply on every pag
 | Derived | Strike accuracy/defence, output, damage absorbed, takedowns, control time, fighting style, popularity index |
 | Estimated | **Dominant foot only** — no public source records it; clearly marked "≈" / "EST" everywhere |
 | [MakeHuman](https://github.com/makehumancommunity/makehuman) (CC0) | 3D body mesh, skeleton, skin weights and body-shape targets for the fighter model |
-| Press photos and a broadcast still | Page banners and the background slideshow; each one is credited on screen and listed in `static/hero/credits.csv` (gear photos in `static/gear/credits.csv`) |
+| Press photos | The landing page; each one is credited on screen and listed in `static/hero/credits.csv` (gear photos in `static/gear/credits.csv`) |
 
 Every column's source is listed in `data/data_dictionary.csv`. Coaches and classes on the
 Build-a-fighter page are a fictional sample catalogue you can replace with a real gym's roster.
@@ -157,13 +155,13 @@ pytest -q
 ```
 ufc_intelligence_app.py     entry point, top-bar navigation (Home is the default page)
 ufc_core.py                 statistics, recommender, roadmap (no Streamlit — unit-tested)
-ui.py                       theme tokens, fonts, banners, background slideshow, motion, shared HTML pieces
+ui.py                       design tokens, fonts, navigation, panels, chart defaults, motion, shared HTML pieces
 views/                      one module per page (home.py holds the landing page and intro)
 components/globe3d/         three.js globe (bundled locally, no CDN)
 components/body3d/          three.js face-off: skinned MakeHuman body (fighter.glb) driven by a joint solver
-static/hero/                banner and background photos, credits.csv
+static/hero/                fight photos for the landing page, credits.csv
 static/gear/                gear photos for Build a fighter, credits.csv
-static/fonts/               self-hosted Big Shoulders Display and Instrument Sans
+static/fonts/               self-hosted Big Shoulders Display and Inter (OFL)
 pipeline/                   ETL into a SQLite star schema with data-quality checks (schema.sql)
 sql/                        ten analysis queries, results in docs/query_results/
 ingestion/                  live UFCSTATS scraper (run by .github/workflows/live-ingestion.yml)

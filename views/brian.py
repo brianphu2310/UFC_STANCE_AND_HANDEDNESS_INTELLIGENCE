@@ -12,8 +12,9 @@ from body3d import body3d
 def render(df: pd.DataFrame):
     B = core.BRIAN
     ui.page_header("Sparring a right-handed southpaw",
-                   "A game plan against Brian's stance and reach. These are coaching heuristics: "
-                   "the data has no head-to-head results to predict from.")
+                   "The case study that started the project: Brian is a southpaw whose lead hand is his strong hand. "
+                   "Set your own frame to get a game plan. These are coaching heuristics, not predictions: the data "
+                   "has no head-to-head results.", kicker="Case study")
     with st.container(key="oct_brian"):
         left, mid, right = st.columns([1.2, 2.2, 1.25], gap="medium")
     with left:
@@ -32,9 +33,9 @@ def render(df: pd.DataFrame):
                      ghost=True)], height=500, key="brian_body")
     with right:
         m1, m2, m3 = st.columns(3)
-        m1.metric("Height", f"{h}", f"{h - B['height_cm']:+d} cm", delta_color="off", delta_arrow="off")
-        m2.metric("Reach", f"{r}", f"{r - B['reach_cm']:+d} cm", delta_color="off", delta_arrow="off")
-        m3.metric("Weight", f"{w}", f"{w - B['weight_kg']:+d} kg", delta_color="off", delta_arrow="off")
+        m1.metric("Height, cm", f"{h}", f"{h - B['height_cm']:+d} vs Brian", delta_color="off", delta_arrow="off")
+        m2.metric("Reach, cm", f"{r}", f"{r - B['reach_cm']:+d} vs Brian", delta_color="off", delta_arrow="off")
+        m3.metric("Weight, kg", f"{w}", f"{w - B['weight_kg']:+d} vs Brian", delta_color="off", delta_arrow="off")
         notes = core.matchup_notes(stance, hand)
         keys = "".join(f"<li>{escape(k)}</li>" for k in notes["keys"])
         gap = r - B["reach_cm"]
