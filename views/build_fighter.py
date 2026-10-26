@@ -12,7 +12,8 @@ import ufc_core as core
 import ui
 from body3d import body3d
 
-PHASE_COLORS = dict(zip([p for p, _ in core.PHASES], ui.PALETTE))
+GREYS = ["#FFFFFF", "#B4B4B4", "#7A7A7A", "#4A4A4A", "#333333", "#262626"]   # ordered parts: one ink, stepping down
+PHASE_COLORS = dict(zip([p for p, _ in core.PHASES], GREYS))
 
 
 def _inputs():
@@ -86,9 +87,9 @@ def _models(df, p, stance):
             + [f"<li>{escape(x)}</li>" for x in learn]
         c.markdown(f"""
         <div class="card" style="height:100%">
-          <div class="score">{f['match_score']:.0f}<small> / 100 match</small></div>
-          <div class="t" style="margin-top:8px">{escape(f['fighter'])}</div>
+          <div class="t">{escape(f['fighter'])}</div>
           <div class="s">{escape(f['weight_class'])}, {f['wins']}–{f['losses']}</div>
+          <div class="score" style="margin-top:10px">{f['match_score']:.0f}<small> /100 match</small></div>
           <div style="margin-top:6px"><span class="pill">{escape(f['stance'])}</span><span class="pill">{escape(f['hand'])}-handed</span><span class="pill">{escape(f['fighting_style'])}</span></div>
           <div class="s" style="margin-top:6px">{f['height_cm']:.0f} cm tall, reach {f'{f["reach_cm"]:.0f} cm' if pd.notna(f['reach_cm']) else 'n/a'}</div>
           <div class="b"><b>What to learn</b><ul>{''.join(items)}</ul></div>
@@ -100,7 +101,7 @@ def _models(df, p, stance):
     fig = go.Figure()
     for i, (col, label) in enumerate(parts):
         fig.add_bar(y=order["fighter"], x=order[col], name=label, orientation="h",
-                    marker=dict(color=ui.PALETTE[i], line=dict(color=ui.SURFACE, width=2)),
+                    marker=dict(color=GREYS[i], line=dict(color=ui.SURFACE, width=2)),
                     hovertemplate=f"<b>%{{y}}</b><br>{label}: %{{x:.1f}} pts<extra></extra>")
     fig.update_layout(barmode="stack", xaxis=dict(range=[0, 100], title="match points"))
     st.write("")
@@ -131,8 +132,8 @@ def _roadmap(p, stance):
         focus = "".join(f"<li>{escape(x)}</li>" for x in r["focus"])
         week = "".join(f'<span class="pill">{escape(x)}</span>' for x in r["week"])
         c.markdown(f"""
-        <div class="card" style="height:100%;border-top:3px solid {PHASE_COLORS[r['phase']]}">
-          <div class="t">{escape(r['phase'])}</div>
+        <div class="card" style="height:100%">
+          <div class="t"><i class="dot" style="background:{PHASE_COLORS[r['phase']]}"></i>{escape(r['phase'])}</div>
           <div class="s">Months {r['start_month']:.0f}–{r['end_month']:.0f}</div>
           <div class="b"><ul>{focus}</ul></div>
           <div class="s" style="margin-top:8px">Weekly classes</div><div>{week}</div>
@@ -207,31 +208,28 @@ def _gear(p, rm):
 GEAR_CSS = f"""<style>
   .gearsum {{ display: grid; grid-template-columns: auto auto 1fr; gap: 6px 34px; align-items: end;
               margin: 6px 0 14px; }}
-  .gearsum b {{ display: block; font-family: {ui.DISPLAY}; font-weight: 800; font-size: 2.1rem; line-height: 1;
+  .gearsum b {{ display: block; font-family: {ui.FONT}; font-weight: 400; font-size: 28px; line-height: 1.2;
                 color: {ui.INK}; font-variant-numeric: tabular-nums; }}
-  .gearsum span {{ font-size: .8rem; color: {ui.INK_MUTED}; }}
-  .gearnote {{ font-size: .82rem; color: {ui.INK_2}; max-width: 62ch; line-height: 1.45; }}
-  .gearwhen {{ font-family: {ui.DISPLAY}; font-weight: 700; font-size: 1.25rem; color: {ui.INK};
-               border-top: 1px solid {ui.BORDER}; padding-top: 10px; margin: 10px 0 6px; }}
-  .gearwhen span {{ font-family: {ui.BODY}; font-weight: 500; font-size: .8rem; color: {ui.INK_MUTED};
+  .gearsum span {{ font-size: 13px; color: {ui.INK_MUTED}; }}
+  .gearnote {{ font-size: 13px; color: {ui.INK_2}; max-width: 62ch; line-height: 1.45; }}
+  .gearwhen {{ font: 500 16px/1.3 {ui.FONT}; color: {ui.INK}; margin: 28px 0 10px; }}
+  .gearwhen span {{ font-family: {ui.FONT}; font-weight: 400; font-size: 13px; color: {ui.INK_MUTED};
                     margin-left: 10px; }}
   .card.gear {{ margin-bottom: 12px; }}
-  .gimg {{ display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 3px;
-           margin-bottom: 4px; background: {ui.SURFACE_2}; }}
-  .gcred {{ font-size: .68rem; color: {ui.INK_MUTED}; margin-bottom: 8px; }}
+  .gimg {{ display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 6px;
+           margin-bottom: 6px; background: {ui.SURFACE_2}; }}
+  .gcred {{ font-size: 11px; color: {ui.INK_MUTED}; margin-bottom: 8px; }}
   .gtop {{ display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }}
-  .gp {{ font-family: {ui.DISPLAY}; font-weight: 700; font-size: 1.15rem; color: {ui.RULE};
+  .gp {{ font-family: {ui.FONT}; font-weight: 500; font-size: 15px; color: {ui.INK};
          font-variant-numeric: tabular-nums; white-space: nowrap; }}
-  .gsize {{ display: inline-block; margin-top: 6px; padding: 2px 8px; border-radius: 3px; font-size: .82rem;
-            font-weight: 600; color: {ui.ON_ACCENT}; background: {ui.ACCENT_FILL}; }}
+  .gsize {{ display: inline-block; margin-top: 6px; padding: 2px 8px; border-radius: 4px; font-size: 12px;
+            font-weight: 500; color: {ui.INK}; background: {ui.RAISED}; }}
   @media (max-width: 900px) {{ .gearsum {{ grid-template-columns: 1fr 1fr; }} .gearnote {{ grid-column: 1 / -1; }} }}
 </style>"""
 
 
 def render(df: pd.DataFrame):
-    ui.page_header("Build your fighter",
-                   "Enter your frame and goals on the left. You get a stance, fighters to study, a "
-                   "training roadmap and the gear to buy for it, all in one plan you can download.")
+    head = st.empty()
     with st.container(key="oct_build"):
         left, mid, right = st.columns([1.05, 2.0, 1.2], gap="medium")
     with left:
@@ -248,6 +246,12 @@ def render(df: pd.DataFrame):
                               weight_kg=p["weight_kg"], stance=stance, hand=p["hand"],
                               foot=p["foot"], style=p["style"], gender=p["gender"],
                               goal=p["goal"], n=1)
+    with head:
+        ui.page_header("Build a fighter",
+                       f"For your frame the plan is <b>{escape(stance.lower())}</b>"
+                       f"{' (suggested)' if choice == 'Suggested' else ''}, and the pro closest to you is "
+                       f"<b>{escape(top.iloc[0]['fighter'])}</b>, a {top.iloc[0]['match_score']:.0f}/100 match. "
+                       "Change your body on the left; every tab below follows.", kicker="Personal plan")
     with mid:
         show_ghost = st.toggle(f"Compare with {top.iloc[0]['fighter']}", True, key="bf_ghost")
         figs = [dict(label="You", height_cm=p["height_cm"], weight_kg=p["weight_kg"],
@@ -304,7 +308,7 @@ def render(df: pd.DataFrame):
                 <div class="card" style="margin-bottom:10px">
                   <div class="t">{escape(r['coach'])}</div>
                   <div class="s">{escape(r['discipline'])}, {r['years_coaching']} years coaching, {escape(r['level'].lower())}</div>
-                  <div class="b">{escape(r['specialty'])}{'<br><span style="color:' + ui.ACCENT + '">Match: ' + escape(', '.join(why)) + '</span>' if why else ''}</div>
+                  <div class="b">{escape(r['specialty'])}{'<br><span class="pill" style="margin-top:8px">Match: ' + escape(', '.join(why)) + '</span>' if why else ''}</div>
                 </div>""", unsafe_allow_html=True)
 
     st.write("")

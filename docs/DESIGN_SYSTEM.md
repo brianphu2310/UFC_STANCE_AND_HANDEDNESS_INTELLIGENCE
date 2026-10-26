@@ -1,40 +1,37 @@
 # Stance Intelligence design system
 
-The app is built to look like a fight-night broadcast: an arena-black canvas, a red corner and a
-blue corner, real fight photos in the page banners and in a slow slideshow behind every page, and
-red neon light on the 3D stage. A gold rule marks reference lines and the
-dominant hand and foot. The signature shape is the octagon: it appears in the logo mark, the hero
-panels and the 3D mat. A faint chain-link diamond from the cage fence sits in the page background.
+A premium fight-intelligence product: a charcoal ground, panels one step lighter with a 1px border
+and 4px corners, condensed editorial headlines, and one restrained accent. Red does one job at a time:
+it marks the active page, the primary action, and in every chart the southpaw (the side the research
+asks about). Orthodox is drawn in steel and switch in brass. No gradients, glows or resting shadows.
+The signature shape is the octagon: the logo mark, the landing page's line motif and the 3D mat.
 
-All tokens live in `ui.py`; Streamlit's own widgets (sliders, toggles, radios, inputs) take the same
-colours from `.streamlit/config.toml`. Views import tokens as `ui.ACCENT`, `ui.INK_2` and so on.
-The only hex values outside `ui.py` are in `.streamlit/config.toml` and the two three.js
-components, and those mirror these tokens.
+All tokens live in `ui.py`; Streamlit's own widgets take theirs from `.streamlit/config.toml`, and the
+two three.js components mirror them. Views import tokens as `ui.ACCENT`, `ui.INK_2` and so on.
 
 ## Tokens
 
 ### Colour
 
-| Token | Hex | Use | Contrast on BG |
+| Token | Hex | Use | Contrast |
 |---|---|---|---|
-| `BG` | `#0A0A0A` | Page canvas | — |
-| `SURFACE` | `#151515` | Panels, charts | — |
-| `SURFACE_2` | `#1F1F20` | Raised areas, inputs, hover | — |
-| `BORDER` | `#2E2E30` | Decorative hairlines only | decorative |
-| `FIELD_BORDER` | `#6E6E72` | Input and select outlines | 3.2:1 on SURFACE_2 |
-| `INK` | `#F5F5F5` | Headings, values | 18.2:1 |
-| `INK_2` | `#C8C8C8` | Body text | 11.8:1 |
-| `INK_MUTED` | `#8E8E8E` | Labels, captions | 6.0:1 |
-| `ACCENT` | `#EB3F45` | Red corner: marks, lines and text | 5.0:1 (4.6:1 on SURFACE) |
-| `ACCENT_FILL` | `#C8102E` | Filled buttons, selected pills, sliders | white text 5.9:1 |
-| `ACCENT_2` | `#3B82F6` | Blue corner: marks and lines (text uses `ACCENT_2_TEXT` `#5B9BFF`, 7.1:1) | 5.4:1 |
-| `ON_ACCENT` | `#FFFFFF` | Text on `ACCENT_FILL` | 5.9:1 |
-| `RULE` | `#E9B44C` | Reference lines, dominant side, focus ring | 10.5:1 |
-| `MUTED_FILL` | `#2A2A2C` | Bars outside a selection | — |
+| `BG` | `#0B0B0D` | Ground: bar, page, gutters | — |
+| `SURFACE` | `#131316` | Panels, charts, tables | — |
+| `SURFACE_2` | `#1A1A1F` | Inputs, nested cards, popovers | — |
+| `RAISED` | `#24242A` | Selected segment, bar tracks | — |
+| `BORDER` | `#26262C` | 1px panel edges and row rules | decorative |
+| `CONTROL` | `#3A3A42` | Control outlines | — |
+| `INK` | `#F5F5F5` | Headlines, values | 17.6:1 on SURFACE |
+| `INK_2` | `#A9A9B1` | Body and secondary text | 8.2:1 on SURFACE |
+| `INK_MUTED` | `#86868F` | Labels, captions, axis ticks | 5.3:1 on SURFACE |
+| `ACCENT` | `#E5383B` | Fight red: active page, section labels, southpaw in charts | 4.9:1 on BG |
+| `ACCENT_FILL` | `#C81E2A` | The primary button | white text 5.9:1 |
+| `STEEL` | `#C9CCD3` | Orthodox in charts; fighter B in a matchup | 12:1 on SURFACE |
+| `BRASS` | `#C9A227` | Switch in charts; the estimated / dominant side | 7.6:1 on SURFACE |
 
-Categorical palette (dark surface, assigned in a fixed order):
-`#EB3F45`, `#3B82F6`, `#E9B44C`, `#2DBE8C`, `#B8B8B8`, `#6E6E72`.
-Sequential scale (globe, bubbles): red-black `#2A0A0E` → red `#B3121A` → pale red `#FFB3B3`.
+Data palette, in a fixed order per dimension (Orthodox, Southpaw, Switch / Right, Left / ...):
+`#C9CCD3`, `#E5383B`, `#C9A227`, then neutrals `#6E6E78`, `#4A4A52`, `#34343B`. Magnitudes (the
+globe, the hand and foot discs) use a grey ramp, never a hue, so red keeps one meaning.
 
 Helpers:
 - `ui.text_color(c)`: use whenever a series colour is drawn as text (returns a text-safe variant where one exists).
@@ -44,30 +41,32 @@ Helpers:
 
 | Role | Face | Size / weight |
 |---|---|---|
-| Page title (`h1`) | Big Shoulders Display | 3.1rem / 800, line-height 0.98 |
-| Section title (`role="heading" aria-level="2"`) | Big Shoulders Display | 1.6rem / 700 |
-| Card title, chart title | Big Shoulders Display | 1.35rem / 700, charts 19px |
-| Stat value | Big Shoulders Display | 1.35–2.2rem / 700–800 |
-| Body | Instrument Sans | 1rem / 400, line-height 1.5, max 70ch |
-| Label, caption | Instrument Sans | 0.78–0.88rem / 500 |
+| Landing headline | Big Shoulders Display | 56–100px / 800, capitals, leading 0.9 |
+| Page title (`h1`) | Big Shoulders Display | 44px / 800, capitals (32px on a phone) |
+| Section and card titles | Big Shoulders Display | 19–24px / 700, capitals |
+| Key figures | Big Shoulders Display | 24–56px / 800, tabular figures |
+| Section label above a title | Inter | 12px / 600, tracked capitals, red |
+| Body | Inter | 14–16px / 400, line-height 1.55–1.6 |
+| Labels, captions, axis ticks | Inter | 12–13px / 500 |
 
-Both fonts are self-hosted in `static/fonts` (OFL licensed) and served by Streamlit's static file serving (`enableStaticServing` in `.streamlit/config.toml`); `ui.inject_css()` declares the `@font-face` rules. The app makes no font requests to third parties.
+Both fonts are self-hosted in `static/fonts` (OFL) and inlined as data URIs by `ui._font_faces()`, so
+they load under Community Cloud's path prefix; the app makes no font requests to third parties.
 
 Writing rules: sentence case everywhere, no all-caps labels, no middle-dot meta strings, and
 numbers come with their unit ("4 cm short", not "−4").
 
 ### Shape, spacing, motion
 
-- Radius is 3–4px on controls. Panels use the octagon cut (`clip-path`, 22–30px corner) instead of rounding.
+- Radius: 4px on panels, 2–3px on buttons, inputs and segments. No pills except status tags.
 - Spacing steps: 4, 8, 12, 16, 22, 30px. Sections open with 30px above them and a hairline.
-- Motion: pages rise in on load, sections reveal as they scroll into view, tab panels slide in, a red
-  sweep bar runs under the header while a request is running, and the background photos cross-fade
-  slowly. The 3D views stop when the user presses Pause. Under `prefers-reduced-motion` the 3D views
-  start paused and every CSS animation and transition is switched off.
+- Motion: page blocks rise 10px in on arrival (staggered 40ms), tab panels fade in, the tab indicator
+  glides, chart updates animate over 300ms, the landing octagon draws itself once, and a red bar sweeps
+  under the header while a request runs. Hover lightens a panel's border; buttons press to 98%.
+  Under `prefers-reduced-motion` every animation and transition is switched off.
 
 ## Iconography
 
-`static/mark.svg` / `mark.png` is an octagon split down the middle into red and blue, the two corner colours. It
+`static/mark.svg` / `mark.png` is an octagon split down the middle into steel and red. It
 is the favicon and sits beside the wordmark in the top bar. It is an original mark and is
 deliberately not the UFC logo: the app uses public fight data, but it is not affiliated with UFC.
 
@@ -77,11 +76,10 @@ The app uses no other icons. Words label every control.
 
 | Component | Where | Notes |
 |---|---|---|
-| `ui.page_header(title, dek)` | Top of every page | Broadcast banner: page number and name, `h1`, one-sentence dek, and the page's fight photo with its credit (`static/hero/`, inlined as data URIs) |
-| `ui.backdrop()` | Behind every page | Seven fight photos cross-fading in a random order under a dark veil |
+| `ui.page_header(title, finding, kicker)` | Top of every page | Red section label, the `h1`, and the page's finding in one sentence built from the data, over a 1px rule |
 | `ui.section(title, sub, estimated)` | Section breaks | Heading role level 2; `estimated` adds the dashed gold badge |
-| Octagon hero (`st.container(key="oct_…")`) | Main panel of each page | The only place the octagon cut is used on a page |
-| `.card` | Tale of the tape, plans | Title, meta line, `.kv` stat grid, `.pill` tags |
+| Panel (`st.container(key="oct_…")`) | Grouped blocks | `SURFACE` with a 1px `BORDER`, 4px corners; charts inside drop their own frame |
+| `.card` | Fighter tapes, plans, gear | Title, meta line, `.kv` stat grid, `.pill` tags |
 | `ui.callout(html)` | Verdicts and explanations | Red left rule |
 | `.simlist / .simrow` | "Fights most like" | Name, meta, bar, score |
 | `ui.chart(fig, key, alt)` | Every Plotly chart | Writes a screen-reader description (auto-built from title and series, or `alt`) |
@@ -92,7 +90,7 @@ The app uses no other icons. Words label every control.
 
 | Control | Type | States | Keyboard |
 |---|---|---|---|
-| Face-off / Height / Reach | Segmented, `aria-pressed` | Selected = red fill, white text | Tab, Enter or Space |
+| Face-off / Height / Reach | Segmented, `aria-pressed` | Selected = raised fill, ink text | Tab, Enter or Space |
 | Spar / Jab / Cross / Kick | Segmented, Face-off only | Same | Same |
 | Pause / Play | Toggle | Label and `aria-pressed` follow the state | Same |
 | Rotate | Toggle | `aria-pressed` | Same |

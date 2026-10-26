@@ -4,68 +4,62 @@
 <meta charset="utf-8">
 <title>Body 3D</title>
 <style>
-  @font-face { font-family: "Instrument Sans"; src: url("fonts/instrument-sans-latin-400-normal.woff2") format("woff2"); font-weight: 400; }
-  @font-face { font-family: "Instrument Sans"; src: url("fonts/instrument-sans-latin-600-normal.woff2") format("woff2"); font-weight: 600; }
-  @font-face { font-family: "Big Shoulders Display"; src: url("fonts/big-shoulders-display-latin-700-normal.woff2") format("woff2"); font-weight: 700; }
-  @font-face { font-family: "Big Shoulders Display"; src: url("fonts/big-shoulders-display-latin-800-normal.woff2") format("woff2"); font-weight: 800; }
-  :root { --bg:#0A0A0A; --ink:#F3F1EC; --ink2:#C4C1BA; --mute:#8F8C86; --line:#2E2E33;
-          --a:#EB3F45; --afill:#C8102E; --b:#3B82F6; --rule:#E9B44C; --neon:#FF3B3B; }
-  html, body { margin:0; height:100%; background:var(--bg); overflow:hidden; color:var(--ink);
-               font-family:"Instrument Sans", "Segoe UI", system-ui, sans-serif; }
+  @font-face { font-family: "Inter"; src: url("fonts/inter-latin-variable.woff2") format("woff2"); font-weight: 400 600; }
+  :root { --bg:#0F0F12; --ink:#FFFFFF; --ink2:#B4B4B4; --mute:#949494; --line:#3A3A42;
+          --a:#E5383B; --afill:#24242A; --b:#C9CCD3; --rule:#E9B44C; --neon:#FF3B3B; }
+  html, body { margin:0; height:100%; background:#131316; overflow:hidden; color:var(--ink);
+               font-family:"Inter", system-ui, sans-serif; font-variant-numeric: tabular-nums; }
   #wrap { position:relative; width:100%; height:100%; overflow:hidden; box-sizing:border-box;
-          border:1px solid var(--line); border-radius:6px;
-          background: radial-gradient(120% 85% at 50% 8%, #1F1F21 0%, #111112 52%, #060606 100%); }
+          border-radius:3px; background:var(--bg); }
   canvas { display:block; position:absolute; inset:0; }
   #labels { position:absolute; inset:0; pointer-events:none; overflow:hidden; }
   .lab { position:absolute; left:0; top:0; white-space:nowrap; will-change:transform; transition:opacity .2s; }
   .tag.l { text-align:right; }
-  .tag { font-family:"Big Shoulders Display", sans-serif; font-weight:700; font-size:17px; line-height:1;
-         text-align:center; text-shadow:0 0 3px #000, 0 0 8px #000, 0 1px 12px rgba(0,0,0,.9); }
-  .tag small { display:block; font-family:"Instrument Sans", sans-serif; font-weight:400; font-size:11.5px;
-               color:var(--ink2); margin-top:3px; }
-  .chip { font-size:12px; font-weight:600; padding:3px 8px; border-radius:3px; line-height:1.2;
-          background:rgba(10,10,10,.88); border:1px solid currentColor; }
-  .val { font-family:"Big Shoulders Display", sans-serif; font-weight:700; font-size:15px;
-         text-shadow:0 0 3px #000, 0 0 8px #000; }
-  .hud { position:absolute; top:12px; left:14px; right:14px; pointer-events:none; display:flex;
+  .tag { font-weight:600; font-size:14px; line-height:1.2; text-align:center; padding:3px 7px;
+         background:rgba(0,0,0,.62); border-radius:6px; }
+  .tag small { display:block; font-weight:400; font-size:11.5px; color:var(--ink2); margin-top:1px; }
+  .chip { font-size:12px; font-weight:500; padding:3px 8px; border-radius:6px; line-height:1.2;
+          background:#1C1C1C; color:#FFFFFF !important; }
+  .val { font-weight:600; font-size:13px; padding:1px 5px; background:rgba(0,0,0,.62); border-radius:4px; }
+  .hud { position:absolute; top:14px; left:16px; right:16px; pointer-events:none; display:flex;
          justify-content:space-between; align-items:flex-start; gap:14px; }
   .head { flex:1 1 auto; min-width:0; }
-  .rt { border-collapse:collapse; font-size:12px; background:rgba(10,10,10,.78); border:1px solid var(--line);
-        border-radius:4px; }
-  .rt th, .rt td { padding:4px 9px; text-align:left; white-space:nowrap; }
-  .rt th { font-family:"Big Shoulders Display", sans-serif; font-weight:700; font-size:14px; padding-top:6px; }
+  .rt { border-collapse:collapse; font-size:12px; background:#1C1C1C; border-radius:8px; overflow:hidden; }
+  .rt th, .rt td { padding:5px 10px; text-align:left; white-space:nowrap; }
+  .rt th { font-weight:600; font-size:12px; padding-top:7px; }
   .rt td:first-child { color:var(--ink2); }
-  .rt tr.on td { background:rgba(233,180,76,.13); }
-  .rt td.ok { color:var(--rule); font-weight:600; }
+  .rt tr.on td { background:#2A2A2A; }
+  .rt td.ok { color:var(--ink); font-weight:500; }
   .rt td.no { color:var(--mute); }
-  .head { font-family:"Big Shoulders Display", sans-serif; font-weight:800; font-size:23px; line-height:1.05;
-          max-width:560px; text-wrap:balance; }
-  .head span { display:block; font-family:"Instrument Sans", sans-serif; font-weight:400; font-size:12.5px;
-               line-height:1.4; color:var(--ink2); margin-top:5px; max-width:460px; }
+  .head { font-weight:600; font-size:16px; line-height:1.3; max-width:560px; text-wrap:balance; }
+  .head span { display:block; font-weight:400; font-size:12px; line-height:1.45; color:var(--ink2);
+               margin-top:4px; max-width:460px; }
   .bar { position:absolute; left:12px; right:12px; bottom:12px; display:flex; align-items:center;
-         gap:6px; flex-wrap:wrap; }
-  .seg { display:inline-flex; border:1px solid var(--line); border-radius:4px; overflow:hidden;
-         background:rgba(20,20,22,.9); }
-  .seg button, .tool { all:unset; cursor:pointer; font-size:12px; padding:6px 9px; color:var(--ink2); }
+         gap:8px; flex-wrap:wrap; }
+  .seg { display:inline-flex; border:1px solid var(--line); border-radius:3px; overflow:hidden; background:#131316; }
+  .seg button, .tool { all:unset; cursor:pointer; font-size:12px; font-weight:500; padding:6px 10px; color:var(--ink2); }
   .seg button + button { border-left:1px solid var(--line); }
-  .seg button.on { background:var(--afill); color:#fff; font-weight:700; }
-  .seg button, .tool { min-height:28px; box-sizing:border-box; }
-  canvas:focus-visible { outline:2px solid var(--rule); outline-offset:-2px; }
+  .seg button.on { background:var(--afill); color:#fff; }
+  .seg button, .tool { min-height:30px; box-sizing:border-box; transition: background-color .15s ease; }
+  .seg button:hover, .tool:hover { color:#fff; }
+  .seg button:active, .tool:active { transform: scale(.97); }
+  canvas:focus-visible { outline:2px solid #fff; outline-offset:-2px; }
   .sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
-  .tool { padding:6px 9px; color:var(--ink2); background:rgba(20,20,22,.9); border:1px solid var(--line); border-radius:4px; }
-  .tool.on { color:var(--ink); border-color:#6A6A72; }
-  .seg button:focus-visible, .tool:focus-visible { outline:2px solid var(--rule); outline-offset:-2px; }
+  .tool { padding:6px 10px; color:var(--ink2); background:#131316; border:1px solid var(--line); border-radius:3px; }
+  .tool.on { color:var(--ink); }
+  .seg button:focus-visible, .tool:focus-visible { outline:2px solid #fff; outline-offset:-2px; }
   .seg.tools .tool { border:none; border-radius:0; background:transparent; }
-  .seg.tools .tool.on { color:var(--ink); background:rgba(243,241,236,.14); }
+  .seg.tools .tool + .tool { border-left:1px solid var(--line); }
+  .seg.tools .tool.on { color:var(--ink); background:#2A2A2A; }
   .spacer { flex:1; }
-  @media (max-width: 1000px) { .seg button, .tool { padding:6px 7px; font-size:11.5px; } .bar { gap:5px; } }
-  .key { font-size:11.5px; color:var(--ink2); }
-  .key i { display:inline-block; width:14px; height:4px; border-radius:2px; margin-right:6px;
-           vertical-align:middle; background:var(--rule); box-shadow:0 0 6px var(--rule); }
+  @media (max-width: 1000px) { .seg button, .tool { padding:6px 8px; font-size:11.5px; } .bar { gap:5px; } }
+  .key { font-size:12px; color:var(--ink2); }
+  .key i { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px;
+           vertical-align:0; background:var(--rule); }
   @media (max-width: 900px) { .key { display:none; } }
   @media (max-width: 760px) { .seg button, .tool { padding:4px 6px; font-size:11px; } .bar { gap:3px; left:8px; right:8px; } }
   @media (max-width: 640px) { .seg button, .tool { padding:5px 7px; font-size:11.5px; } .bar { gap:4px; left:8px; right:8px; } }
-  @media (max-width: 600px) { .head { font-size:19px; } .head span { display:none; } .rt { font-size:11px; }
+  @media (max-width: 600px) { .head { font-size:14px; } .head span { display:none; } .rt { font-size:11px; }
                               .seg button, .tool { padding:5px 8px; font-size:12px; } }
 </style>
 <script type="importmap">
@@ -96,7 +90,7 @@
       <button class="tool" id="bNeon" aria-pressed="false">Neon</button>
     </div>
     <span class="spacer"></span>
-    <span class="key"><i></i>Gold glove and gold ring: dominant hand and foot</span>
+    <span class="key"><i></i>Gold glove and ankle: dominant hand and foot</span>
   </div>
 </div>
 <script type="module">
@@ -110,7 +104,7 @@ const send = (type, data = {}) =>
   window.parent.postMessage({ isStreamlitMessage: true, type, ...data }, "*");
 let frameHeight = 520;
 
-const COL = { a: "#E5252D", b: "#3B82F6", rule: "#E9B44C", skin: "#404047", ink: "#F3F1EC", hit: "#FFD25A" };   // corners: red, blue
+const COL = { a: "#E5383B", b: "#C9CCD3", rule: "#E9B44C", skin: "#404047", ink: "#F3F1EC", hit: "#FFD25A" };   // corners: red, blue
 const REDUCE = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const V = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
 const UP = V(0, 1, 0), ZAX = V(0, 0, 1);
