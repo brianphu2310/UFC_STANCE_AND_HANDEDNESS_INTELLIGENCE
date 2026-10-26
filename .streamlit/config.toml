@@ -1,16 +1,16 @@
-# Stance Intelligence: fight-night broadcast, red corner and blue corner. Keep in step with the tokens in ui.py.
+# Stance Intelligence: true-black flat; red and blue corners are data colours only. Keep in step with the tokens in ui.py.
 [server]
 enableStaticServing = true          # serves static/ (self-hosted fonts, mark, globe topology)
 
 [theme]
 base = "dark"
-primaryColor = "#C8102E"            # ACCENT_FILL: sliders, toggles, radios, selected widgets
-backgroundColor = "#0A0A0A"         # BG
-secondaryBackgroundColor = "#1F1F20" # SURFACE_2: inputs, selects, code
-textColor = "#F5F5F5"               # INK
+primaryColor = "#FFFFFF"            # sliders, toggles and focus stay neutral: colour is for data
+backgroundColor = "#000000"         # BG
+secondaryBackgroundColor = "#111111" # SURFACE: inputs, selects, code
+textColor = "#FFFFFF"               # INK
 font = "sans serif"
-baseRadius = "0px"
-borderColor = "#3A3A3C"               # widget and table hairlines, a step lighter than BORDER
-dataframeBorderColor = "#2C2C33"
-dataframeHeaderBackgroundColor = "#1F1F20"
-dataframeHeaderTextColor = "#C4C1BA"
+baseRadius = "8px"
+borderColor = "#444444"               # CONTROL
+dataframeBorderColor = "#1F1F1F"
+dataframeHeaderBackgroundColor = "#111111"
+dataframeHeaderTextColor = "#949494"

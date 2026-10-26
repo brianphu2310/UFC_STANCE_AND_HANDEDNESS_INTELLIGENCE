@@ -1,9 +1,9 @@
-"""Overview — one screen.
+"""Overview: does leading with the other side change how often you win?
 
-Left : the finding as a headline, then the globe (the page's one bold element) with continent
-       chips and a debut-year strip inside the same octagon-cut panel.
-Right: the scoreline (four numbers) and four charts that compare the stances, separated by
-       hairlines rather than boxed.
+The title row states the finding. The largest block answers it (win rate by stance, the three
+medians in their corner colours over the spread); beside it the roster in figures and the
+hand-and-foot pairings. Below, the globe with the debut years, and how the styles differ.
+Filters live behind one button in the title row, so the screen keeps the whole column.
 """
 from html import escape
 
@@ -26,9 +26,10 @@ MINI_H = 196
 
 
 # =============================================================== filters
-def _sidebar(df):
-    with st.sidebar:
-        st.markdown('<div class="sbh">Filter fighters</div>', unsafe_allow_html=True)
+def _filters(df):
+    """The filter set behind one button in the title row; the button counts the filters that are on."""
+    on = sum(st.session_state.get(k, ALL) != ALL for k in ("ov_wc", "ov_st", "ov_hand", "ov_foot", "ov_style"))
+    with st.popover(f"Filters, {on} on" if on else "Filters", width="content"):
         divs = [d for d in core.DIVISION_ORDER if d in set(df["weight_class"])]
         f = dict(
             weight_class=st.selectbox("Weight class", [ALL] + divs, key="ov_wc"),
@@ -38,8 +39,6 @@ def _sidebar(df):
             fighting_style=st.selectbox("Fighting style", [ALL] + core.STYLES, key="ov_style"),
         )
         names = st.slider("Names per country on the globe", 1, 6, 3, key="ov_names")
-        st.markdown('<div class="sb-note">Dominant foot is estimated. Everything else comes from '
-                    'UFCSTATS, Tapology and Sherdog.</div>', unsafe_allow_html=True)
     return f, names
 
 
@@ -63,7 +62,7 @@ def _rgba(hex_, a):
 
 def _mini(fig, title, sub, height=MINI_H, **kw):
     ui.layout(fig, height=height, margin=kw.pop("margin", dict(l=4, r=8, t=6, b=4)), **kw)
-    fig.update_layout(font=dict(size=10.5), showlegend=False)
+    fig.update_layout(showlegend=False)
     st.markdown(f'<div class="mt">{escape(title)}</div><div class="ms">{sub}</div>',
                 unsafe_allow_html=True)
     return fig
@@ -75,43 +74,47 @@ def _stance_words():
 
 
 # =============================================================== the finding
-def headline(v):
+def finding(v) -> str:
     n = len(v)
     other = v["stance"].isin(["Southpaw", "Switch"])
     share = other.mean() if n else 0
     if other.sum() >= 3 and (~other).sum() >= 3:
-        gap = v.loc[other, "win_rate"].mean() - v.loc[~other, "win_rate"].mean()
-        if abs(gap) < 3:
-            verdict = "They win about as often as everyone else."
-        else:
-            verdict = f"They win {abs(gap):.0f} points {'more' if gap > 0 else 'less'} often here."
-    else:
-        verdict = "Too few of them in this view to compare."
-    st.markdown(f"""
-    <div class="ph" style="margin-bottom:10px">
-      <h1>{share:.0%} of these fighters lead with the other side. {escape(verdict)}</h1>
-    </div>""", unsafe_allow_html=True)
+        a, b = v.loc[other, "win_rate"].median(), v.loc[~other, "win_rate"].median()
+        how = ("about as often as orthodox fighters" if abs(a - b) < 3 else
+               f"{abs(a - b):.0f} points {'more' if a > b else 'less'} often than orthodox fighters")
+        return (f"<b>{share:.0%}</b> of these {n} fighters lead with the other side, and they win {how}: "
+                f"a median of <b>{a:.0f}%</b> against <b>{b:.0f}%</b>.")
+    return f"{n} fighters in this view, too few southpaws or orthodox fighters to compare."
 
 
-def scoreline(v):
+def answer(v):
+    """The screen's answer: the median win rate of each stance, in its corner colour."""
+    cells = "".join(
+        f'<div><span><i class="dot" style="background:{SC[s]}"></i>{s}</span>'
+        f'<b>{v.loc[v["stance"] == s, "win_rate"].median():.0f}%</b>'
+        f'<small>{(v["stance"] == s).sum()} fighters</small></div>'
+        if (v["stance"] == s).sum() else
+        f'<div><span><i class="dot" style="background:{SC[s]}"></i>{s}</span><b class="na">—</b>'
+        f'<small>0 fighters</small></div>' for s in STANCES)
+    st.markdown(f'<div class="cardh">Median career win rate by stance</div><div class="ans">{cells}</div>',
+                unsafe_allow_html=True)
+
+
+def roster(v):
     n = max(len(v), 1)
-    items = [
-        (f"{(v['stance'] == 'Southpaw').sum() / n:.0%}", "southpaw"),
-        (f"{(v['stance'] == 'Switch').sum() / n:.0%}", "switch"),
-        (f"{(v['hand'] == 'Left').sum() / n:.0%}", "left-handed"),
-        (f"{v['win_rate'].median():.0f}%" if len(v) else "—", "median wins"),
-    ]
-    cells = "".join(f'<div><b>{a}</b><span>{escape(b)}</span></div>' for a, b in items)
-    st.markdown(f'<div class="score4">{cells}</div>'
-                f'<div class="scope">{len(v)} fighters from {v["country"].nunique()} countries '
-                f'in this view</div>', unsafe_allow_html=True)
+    items = [("Fighters", f"{len(v)}"), ("Countries", f"{v['country'].nunique()}"),
+             ("Left-handed", f"{(v['hand'] == 'Left').sum() / n:.0%}"),
+             ("Champions", f"{int(v['champion'].sum())}")]
+    cells = "".join(f'<div><span>{escape(a)}</span><b>{b}</b></div>' for a, b in items)
+    st.markdown(f'<div class="cardh">The roster in this view</div><div class="strip4">{cells}</div>',
+                unsafe_allow_html=True)
 
 
 # =============================================================== right column charts
-def split_bar(v, selected):
+def split_bar(v, selected, bar=True):
     n = max(len(v), 1)
     segs = "".join(
-        f'<div style="flex:{c};background:{SC[s]}" title="{s}">'
+        f'<div style="flex:{c};background:{SC[s]};color:{ui.on_color(SC[s])}" title="{s}">'
         f'{"<span>" + s + "</span>" if c / n > .2 else ""}<b>{c / n:.0%}</b></div>'
         for s in STANCES if (c := (v["stance"] == s).sum()))
     sel = ""
@@ -123,7 +126,8 @@ def split_bar(v, selected):
                                                           if len(pool) > 8 else "")
             sel = (f'<div class="selc"><b>{escape(name)}</b>, {len(pool)} fighters: '
                    f'{escape(names)}</div>')
-    st.markdown(f'<div class="split">{segs}</div>{sel}', unsafe_allow_html=True)
+    st.markdown((f'<div class="split" role="img" aria-label="Stance split">{segs}</div>' if bar else "") + sel,
+                unsafe_allow_html=True)
 
 
 def winrate_curves(v):
@@ -135,12 +139,12 @@ def winrate_curves(v):
             continue
         y = gaussian_kde(w)(xs)
         fig.add_scatter(x=xs, y=y, mode="lines", line=dict(color=SC[s], width=2), fill="tozeroy",
-                        fillcolor=_rgba(SC[s], .16), name=s,
+                        fillcolor=_rgba(SC[s], .10), name=s,
                         hovertemplate=f"{s}: median {w.median():.0f}%<extra></extra>")
     fig.update_layout(xaxis=dict(ticksuffix="%", range=[45, 102], dtick=10, showgrid=False),
                       yaxis=dict(visible=False))
-    ui.chart(_mini(fig, "Win rates overlap almost completely",
-                   f"Spread of career win rate for {_stance_words()}"), key="p_kde")
+    ui.chart(_mini(fig, "", f"How career win rates spread for {_stance_words()}: the curves sit on top of "
+                   "each other", height=236), key="p_kde")
 
 
 def fight_profile(v, full):
@@ -162,7 +166,8 @@ def fight_profile(v, full):
     fig.add_vline(x=50, line=dict(color=ui.RULE, width=1, dash="dot"))
     fig.update_layout(xaxis=dict(range=[25, 75], ticksuffix="th", dtick=25, showgrid=False),
                       yaxis=dict(autorange="reversed", showgrid=False))
-    ui.chart(_mini(fig, "Where the styles differ", f"Average skill percentile for {_stance_words()}"),
+    ui.chart(_mini(fig, "Where the styles differ", f"Average skill percentile for {_stance_words()}",
+                   height=262),
              key="p_dumb")
 
 
@@ -187,7 +192,7 @@ def reach_butterfly(v):
     ui.chart(_mini(fig, "Reach beyond height",
                    f'Reach minus height: <span style="color:{ui.text_color(SC["Orthodox"])};font-weight:600">'
                    f'orthodox</span> left, <span style="color:{ui.text_color(SC["Southpaw"])};font-weight:600">'
-                   'southpaw</span> right'), key="p_fly")
+                   'southpaw</span> right', height=262), key="p_fly")
 
 
 def hand_foot(v):
@@ -196,8 +201,10 @@ def hand_foot(v):
     y = g["foot"].map({"Right": 1, "Left": 0})
     fig = go.Figure(go.Scatter(
         x=x, y=y, mode="markers+text", text=g["size"].astype(str),
-        textfont=dict(color=ui.INK, size=12, family=ui.DISPLAY),
-        marker=dict(size=np.sqrt(g["size"]) * 3.6 + 16, color=g["mean"], colorscale=ui.SEQ_BLUE,
+        textfont=dict(color=[ui.on_color("#3A3A3A" if m < 77.5 else "#E6E6E6") for m in g["mean"]],
+                      size=12, family=ui.FONT),
+        marker=dict(size=np.sqrt(g["size"]) * 3.6 + 16, color=g["mean"],
+                    colorscale=[[0, "#3A3A3A"], [1, "#E6E6E6"]],
                     cmin=70, cmax=85, line=dict(width=0), showscale=False),
         customdata=np.stack([g["foot"], g["hand"], g["mean"]], axis=1),
         hovertemplate="%{customdata[0]} foot, %{customdata[1]} hand: %{text} fighters, "
@@ -217,7 +224,7 @@ def timeline(v_no_year, years):
     inside = (counts.index >= lo) & (counts.index <= hi)
     fig = go.Figure()
     fig.add_bar(x=counts.index, y=counts.values, marker=dict(
-        color=[ui.ACCENT if i else ui.MUTED_FILL for i in inside], line=dict(width=0)),
+        color=[ui.INK_2 if i else ui.MUTED_FILL for i in inside], line=dict(width=0)),
         hovertemplate="%{x}: %{y} UFC debuts<extra></extra>")
     fig.update_layout(bargap=0.35, xaxis=dict(dtick=4, range=[1992.4, 2024.6], showgrid=False,
                                               tickfont=dict(size=10)),
@@ -228,87 +235,86 @@ def timeline(v_no_year, years):
 
 CSS = f"""
 <style>
-  .block-container {{ padding-top: 4.6rem !important; padding-bottom: .4rem !important;
-                      max-width: none !important; padding-left: 2rem !important; padding-right: 2rem !important; }}
-  div[data-testid="stVerticalBlock"] {{ gap: .5rem; }}
-  .ph h1 {{ font-size: 2.15rem !important; max-width: 30ch; line-height: 1.02 !important; }}
-  .ph {{ margin-bottom: 14px !important; }}
-  .sb-note {{ color: {ui.INK_MUTED}; font-size: .82rem; margin-top: 12px; line-height: 1.45; }}
-
-  .score4 {{ display: grid; grid-template-columns: repeat(4, 1fr); margin-top: 4px; }}
-  .score4 div {{ padding: 2px 10px 0; border-left: 1px solid {ui.BORDER}; }}
-  .score4 div:first-child {{ padding-left: 0; border-left: none; }}
-  .score4 b {{ display: block; font-family: {ui.DISPLAY}; font-weight: 800; font-size: 2.3rem;
-               line-height: .95; color: {ui.INK}; }}
-  .score4 span {{ font-size: .76rem; color: {ui.INK_MUTED}; white-space: nowrap; }}
-  .scope {{ font-size: .78rem; color: {ui.INK_MUTED}; margin: 8px 0 4px; }}
-
-  /* the one bold element: globe in an octagon-cut panel */
-  .st-key-globepanel {{ position: relative; padding: 10px 18px 4px;
-      background: {ui.SURFACE};
-      clip-path: polygon(0 0, calc(100% - 34px) 0, 100% 34px, 100% 100%, 34px 100%, 0 calc(100% - 34px)); }}
-  .st-key-globepanel [data-testid="stPlotlyChart"] {{ border: none; background: transparent; }}
-  .st-key-globepanel [data-testid="stPills"] label {{ display: none; }}
-  .tlh {{ display: flex; justify-content: space-between; align-items: baseline;
-          border-top: 1px solid {ui.BORDER}; padding-top: 8px; margin-top: 2px; }}
-  .tlh b {{ font-family: {ui.DISPLAY}; font-size: 1.15rem; font-weight: 700; color: {ui.INK}; }}
-  .tlh span {{ font-size: .76rem; color: {ui.INK_MUTED}; }}
-
-  /* right column: hairline sections, no boxes */
-  .st-key-rightcol [data-testid="stPlotlyChart"] {{ border: none; background: transparent; }}
-  .mt {{ font-family: {ui.DISPLAY}; font-weight: 700; font-size: 1.18rem; color: {ui.INK};
-         line-height: 1.1; border-top: 1px solid {ui.BORDER}; padding-top: 10px; margin-top: 6px; }}
-  .ms {{ color: {ui.INK_MUTED}; font-size: .76rem; margin: 2px 0 2px; line-height: 1.35; }}
-  .split {{ display: flex; height: 34px; gap: 2px; margin: 12px 0 4px; }}
-  .split div {{ display: flex; justify-content: space-between; align-items: center; padding: 0 9px;
-                color: #fff; min-width: 44px; overflow: hidden; white-space: nowrap; }}
-  .split span {{ font-size: .74rem; opacity: .9; }}
-  .split b {{ font-family: {ui.DISPLAY}; font-size: 1.15rem; font-weight: 800; margin-left: 6px; }}
-  .selc {{ font-size: .8rem; color: {ui.INK_2}; margin: 6px 0 2px; line-height: 1.4; }}
-  .selc b {{ color: {ui.INK}; }}
+  .cardh {{ font: 500 16px/1.3 {ui.FONT}; color: {ui.INK}; margin: 2px 0 12px; }}
+  .ans {{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }}
+  .ans span {{ display: block; font-size: 13px; color: {ui.INK_2}; }}
+  .ans b {{ display: block; font: 400 34px/1.1 {ui.FONT}; color: {ui.INK}; margin-top: 4px;
+           font-variant-numeric: tabular-nums; letter-spacing: -.01em; }}
+  .ans b.na {{ font-size: 14px; color: {ui.INK_MUTED}; line-height: 37px; }}
+  .ans small {{ font-size: 12px; color: {ui.INK_MUTED}; }}
+  .strip4 {{ display: grid; grid-template-columns: repeat(4, 1fr); }}
+  .strip4 div {{ padding: 0 14px; border-left: 1px solid {ui.BORDER}; }}
+  .strip4 div:first-child {{ padding-left: 0; border-left: none; }}
+  .strip4 span {{ display: block; font-size: 12px; color: {ui.INK_MUTED}; }}
+  .strip4 b {{ display: block; font: 400 24px/1.25 {ui.FONT}; color: {ui.INK}; font-variant-numeric: tabular-nums; }}
+  [class*="st-key-oct_"] [data-testid="stPlotlyChart"] {{ background: transparent; padding: 0; }}
+  [class*="st-key-oct_"] {{ padding: 18px 20px 12px !important; }}
+  .mt {{ font: 500 16px/1.3 {ui.FONT}; color: {ui.INK}; margin: 2px 0 0; }}
+  .ms {{ color: {ui.INK_MUTED}; font-size: 12px; margin: 2px 0 6px; line-height: 1.4; }}
+  .split {{ display: flex; height: 32px; gap: 2px; margin: 16px 0 4px; border-radius: 6px; overflow: hidden; }}
+  .split div {{ display: flex; justify-content: space-between; align-items: center; padding: 0 10px;
+                min-width: 44px; overflow: hidden; white-space: nowrap; }}
+  .split span {{ font-size: 12px; font-weight: 500; }}
+  .split b {{ font: 600 13px/1 {ui.FONT}; color: inherit; margin-left: 6px; font-variant-numeric: tabular-nums; }}
+  .selc {{ font-size: 13px; color: {ui.INK_2}; margin: 8px 0 2px; line-height: 1.45; }}
+  .tlh {{ display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-top: 10px; }}
+  .tlh b {{ font: 500 14px/1.3 {ui.FONT}; color: {ui.INK}; }}
+  .tlh span {{ font-size: 12px; color: {ui.INK_MUTED}; }}
+  .empty {{ background: {ui.SURFACE}; border-radius: 10px; padding: 14px 18px; font-size: 14px; color: {ui.INK_2}; }}
+  @media (max-width: 640px) {{ .ans b {{ font-size: 26px; }} .strip4 {{ grid-template-columns: 1fr 1fr; gap: 12px 0; }}
+    .strip4 div:nth-child(3) {{ padding-left: 0; border-left: none; }} }}
 </style>"""
 
 
 def render(df: pd.DataFrame):
     df = df.assign(debut_year=pd.to_datetime(df["first_ufc_fight"], errors="coerce").dt.year)
     st.markdown(CSS, unsafe_allow_html=True)
-    f, names = _sidebar(df)
     y_min, y_max = 1993, 2024
     years = st.session_state.get("ov_years", (y_min, y_max))
     continents = st.session_state.get("ov_cont") or []
 
+    t, act = st.columns([5, 1], vertical_alignment="bottom")
+    st.markdown('<style>.st-key-ovact {{ display: flex; justify-content: flex-end; }}</style>'.replace("{{", "{").replace("}}", "}"),
+                unsafe_allow_html=True)
+    with act, st.container(key="ovact"):
+        f, names = _filters(df)
     v = _apply(df, f, continents, years)
     v_no_year = _apply(df, f, continents, None)
+    with t:
+        ui.page_header("Overview", finding(v))
 
-    left, right = st.columns([1.42, 1], gap="large")
-    with left:
-        headline(v)
-        with st.container(key="globepanel"):
-            st.pills("Continents", CONTINENTS, selection_mode="multi", key="ov_cont",
-                     label_visibility="collapsed")
-            selected = globe3d(country_payload(v), height=H_GLOBE, max_names=names, key="globe")
-            in_range = v["debut_year"].notna().sum()
-            st.markdown(f'<div class="tlh"><b>UFC debuts by year</b><span>{in_range} fighters '
-                        f'debuted {years[0]}–{years[1]}. Drag the slider to narrow it.</span></div>',
-                        unsafe_allow_html=True)
-            timeline(v_no_year, years)
-            st.slider("Debut years", y_min, y_max, (y_min, y_max), key="ov_years",
-                      label_visibility="collapsed")
+    if v.empty:
+        st.markdown('<div class="empty">No fighters match these filters. Open Filters and set one back '
+                    'to All.</div>', unsafe_allow_html=True)
+        return
 
-    with right:
-        with st.container(key="rightcol"):
-            scoreline(v)
-            if v.empty:
-                st.info("No fighters match these filters. Clear a filter in the sidebar to see more.")
-                return
-            split_bar(v, selected if selected in {r["iso3"] for r in country_payload(v)} else None)
-            a, b = st.columns(2, gap="medium")
-            with a:
-                winrate_curves(v)
-            with b:
-                fight_profile(v, df)
-            c, d = st.columns(2, gap="medium")
-            with c:
-                reach_butterfly(v)
-            with d:
-                hand_foot(v)
+    # 12 columns at 1208px: 7 + 5 with a 16px gutter on both rows, so every block lands on one edge
+    l1, r1 = st.columns([7, 5], gap="small")
+    with l1, st.container(key="oct_answer", height=432, border=False):
+        answer(v)
+        winrate_curves(v)
+    with r1, st.container(key="oct_roster", height=432, border=False):
+        roster(v)
+        split_bar(v, None)
+        hand_foot(v)
+
+    l2, r2 = st.columns([7, 5], gap="small")
+    with l2, st.container(key="oct_globe", border=False):
+        st.markdown('<div class="mt">Where they fight from</div><div class="ms">Drag to turn, click a '
+                    'country to list its fighters.</div>', unsafe_allow_html=True)
+        st.pills("Continents", CONTINENTS, selection_mode="multi", key="ov_cont",
+                 label_visibility="collapsed")
+        selected = globe3d(country_payload(v), height=H_GLOBE, max_names=names, key="globe")
+        if selected in {r["iso3"] for r in country_payload(v)}:
+            split_bar(v, selected, bar=False)
+        in_range = v["debut_year"].notna().sum()
+        st.markdown(f'<div class="tlh"><b>UFC debuts by year</b><span>{in_range} fighters debuted '
+                    f'{years[0]}–{years[1]}</span></div>', unsafe_allow_html=True)
+        timeline(v_no_year, years)
+        st.slider("Debut years", y_min, y_max, (y_min, y_max), key="ov_years",
+                  label_visibility="collapsed")
+    with r2:
+        with st.container(key="oct_styles", border=False):
+            fight_profile(v, df)
+        with st.container(key="oct_reach", border=False):
+            reach_butterfly(v)

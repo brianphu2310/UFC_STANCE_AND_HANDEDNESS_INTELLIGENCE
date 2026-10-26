@@ -15,7 +15,7 @@ from views import brian, build_fighter, data_notes, explorer, home, overview, st
 
 st.set_page_config(page_title="UFC Stance Intelligence", layout="wide",
                    page_icon=str(Path(__file__).parent / "static" / "mark.png"),
-                   initial_sidebar_state="auto")
+                   initial_sidebar_state="collapsed")
 ui.inject_css()
 
 
@@ -33,9 +33,6 @@ except Exception as exc:  # surfaced in the UI
 
 def _page(render, title, footer=True):
     def run():
-        i = [p.title for p in pages].index(title) + 1
-        ui.KICKER.update(value=f'<i>{i:02d}</i>{title}', slug=title.lower().replace(' ', '-'))
-        ui.backdrop()
         render(df)
         if footer:
             ui.footer(len(df))

@@ -19,3 +19,4 @@ data/raw/
 
 # MakeHuman assets downloaded by scripts/build_body_model.py
 .mh_cache/
+.taste-skill/
