@@ -1,0 +1,21 @@
+key,item,category,price_low_aud,price_high_aud,optional,why
+hand_wraps,Hand wraps,Hands,12,30,False,Protect the small bones of the hand and the wrist under every glove.
+boxing_gloves,Boxing gloves,Hands,60,220,False,"For pads, bag work and striking sparring."
+bag_mitts,Bag mitts,Hands,40,120,True,Light gloves for heavy-bag rounds that spare your sparring gloves; never spar in them.
+mouthguard,Mouthguard,Protection,15,60,False,"Required for any live rounds, striking or grappling."
+groin,Groin guard,Protection,30,90,False,Kicks and knees land low by accident; most gyms require one for sparring.
+shins,Shin guards,Protection,60,200,False,Protect you and your partner when checking and throwing kicks.
+headgear,Headgear,Protection,70,220,False,Cuts the risk of cuts and bruising in sparring; required for most amateur bouts.
+mma_spar,MMA sparring gloves (7 oz),Hands,70,160,False,"Padded enough for striking, open enough to grab and grapple."
+mma_fight,MMA fight gloves (4 oz),Hands,60,150,False,The glove you compete in; train with it in the weeks before a bout.
+gi,BJJ gi,Grappling,100,260,False,Required for gi classes.
+rash,Rash guard,Grappling,40,110,False,Tight top that won't catch fingers or toes; keeps mats hygienic.
+fight_shorts,MMA shorts,Grappling,40,110,False,"Split-leg shorts with no pockets or zips: free to kick, nothing to catch on."
+wrestling_shoes,Wrestling shoes,Grappling,80,180,False,Grip for shots and sprawls if your gym wrestles in shoes (some go barefoot).
+ear_guards,Ear guards,Grappling,30,70,True,Wrestling headgear that prevents cauliflower ear from friction in the clinch and on the mat.
+boxing_shoes,Boxing shoes,Conditioning,90,280,True,"Light, flat-soled and ankle-high for pivots on canvas; only for gyms that train in shoes."
+knee_pads,Knee pads,Grappling,30,80,True,Padding for knees that hit the mat hundreds of times a session in shots and scrambles.
+ankle_supports,Ankle supports,Protection,15,40,True,Light compression for ankles that pivot on every kick; not a fix for an injury.
+timer,Round timer,Conditioning,40,150,True,"Rounds and rest on the clock, so shadowboxing and home sessions run like a real class."
+gym_bag,Gym backpack,Conditioning,50,180,True,Separate pockets keep wet gloves and wraps away from clean clothes so they dry and don't smell.
+rope,Skipping rope,Conditioning,15,45,False,Cheapest conditioning there is: footwork rhythm and a warm-up anywhere.
